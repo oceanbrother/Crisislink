@@ -1,0 +1,105 @@
+{
+  "common": {
+    "appName": "CrisisLink",
+    "back": "返回",
+    "search": "搜索",
+    "filter": "筛选",
+    "sort": "排序",
+    "claim": "认领",
+    "close": "关闭",
+    "submit": "提交",
+    "cancel": "取消",
+    "error": "错误",
+    "success": "成功",
+    "loading": "加载中..."
+  },
+  "language": {
+    "label": "语言",
+    "en": "English",
+    "zh_CN": "简体中文",
+    "vi": "Tiếng Việt"
+  },
+  "home": {
+    "title": "CrisisLink",
+    "subtitle": "食物资源协调平台",
+    "donor": "我是捐赠者",
+    "donorDesc": "分享多余食物，帮助有需要的人",
+    "organization": "我是组织",
+    "orgDesc": "为社区管理食物资源",
+    "selectRole": "选择你的角色以继续"
+  },
+  "postcode": {
+    "title": "查找附近的食物",
+    "label": "输入你的4位邮编",
+    "placeholder": "例如：3000",
+    "submit": "查找食物",
+    "error": "请输入有效的4位邮编"
+  },
+  "feed": {
+    "title": "食物推送",
+    "subtitle": "附近可用的资源",
+    "noListings": "该地区未找到食物清单",
+    "tryAdjust": "尝试调整你的搜索"
+  },
+  "donation": {
+    "title": "新建捐赠",
+    "photo": "添加照片",
+    "takePhoto": "拍照",
+    "choosePhoto": "从相册选择",
+    "quantity": "数量",
+    "description": "描述",
+    "tags": "标签",
+    "allergens": "过敏原",
+    "pickupTime": "取货时间",
+    "submit": "提交捐赠",
+    "success": "捐赠提交成功！",
+    "error": "提交捐赠失败。请重试。"
+  },
+  "listing": {
+    "quantity": "数量",
+    "distance": "距离",
+    "time": "时间",
+    "matchScore": "匹配度",
+    "tags": "标签",
+    "allergens": "过敏原",
+    "pickupTime": "取货时间",
+    "description": "描述",
+    "category": "类别",
+    "source": "来源",
+    "available": "可用",
+    "claimed": "已认领",
+    "pickupArrangement": "需要安排取货"
+  },
+  "listingBoard": {
+    "title": "实时清单",
+    "smartMatch": "智能匹配已激活",
+    "smartMatchDesc": "根据你的饮食需求进行 NLP 排名 • 按匹配度排序",
+    "filters": {
+      "all": "全部",
+      "bakery": "烘焙食品",
+      "produce": "农产品",
+      "prepared": "熟食",
+      "grocery": "杂货"
+    },
+    "sortOptions": {
+      "recent": "最新",
+      "match": "最匹配",
+      "distance": "最近"
+    }
+  },
+  "orgCode": {
+    "title": "组织登录",
+    "label": "输入你的组织代码",
+    "placeholder": "例如：HCFB-2841",
+    "submit": "登录",
+    "demo": "以 Sarah 身份演示",
+    "error": "请输入你的组织代码",
+    "success": "登录成功！"
+  },
+  "categories": {
+    "bakery": "烘焙食品",
+    "produce": "农产品",
+    "prepared": "熟食",
+    "grocery": "杂货"
+  }
+}

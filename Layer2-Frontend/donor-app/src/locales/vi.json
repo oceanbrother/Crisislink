@@ -1,0 +1,105 @@
+{
+  "common": {
+    "appName": "CrisisLink",
+    "back": "Quay lại",
+    "search": "Tìm kiếm",
+    "filter": "Lọc",
+    "sort": "Sắp xếp",
+    "claim": "Yêu cầu",
+    "close": "Đóng",
+    "submit": "Gửi",
+    "cancel": "Hủy",
+    "error": "Lỗi",
+    "success": "Thành công",
+    "loading": "Đang tải..."
+  },
+  "language": {
+    "label": "Ngôn ngữ",
+    "en": "English",
+    "zh_CN": "简体中文",
+    "vi": "Tiếng Việt"
+  },
+  "home": {
+    "title": "CrisisLink",
+    "subtitle": "Nền tảng Phối hợp Tài nguyên Thực phẩm",
+    "donor": "Tôi là Nhà tài trợ",
+    "donorDesc": "Chia sẻ thực phẩm dư thừa để giúp những người cần",
+    "organization": "Tôi là Tổ chức",
+    "orgDesc": "Quản lý tài nguyên thực phẩm cho cộng đồng của bạn",
+    "selectRole": "Chọn vai trò của bạn để tiếp tục"
+  },
+  "postcode": {
+    "title": "Tìm Thực phẩm Gần Bạn",
+    "label": "Nhập mã bưu chính 4 chữ số của bạn",
+    "placeholder": "ví dụ: 3000",
+    "submit": "Tìm Thực phẩm",
+    "error": "Vui lòng nhập mã bưu chính 4 chữ số hợp lệ"
+  },
+  "feed": {
+    "title": "Bảng Tin Thực phẩm",
+    "subtitle": "Tài nguyên có sẵn gần bạn",
+    "noListings": "Không tìm thấy danh sách thực phẩm ở khu vực này",
+    "tryAdjust": "Hãy thử điều chỉnh tìm kiếm của bạn"
+  },
+  "donation": {
+    "title": "Quyên Tặng Mới",
+    "photo": "Thêm Ảnh",
+    "takePhoto": "Chụp Ảnh",
+    "choosePhoto": "Chọn từ Thư viện",
+    "quantity": "Số lượng",
+    "description": "Mô tả",
+    "tags": "Thẻ",
+    "allergens": "Chất gây dị ứng",
+    "pickupTime": "Thời gian Nhận",
+    "submit": "Gửi Quyên Tặng",
+    "success": "Quyên tặng được gửi thành công!",
+    "error": "Không thể gửi quyên tặng. Vui lòng thử lại."
+  },
+  "listing": {
+    "quantity": "Số lượng",
+    "distance": "Khoảng cách",
+    "time": "Thời gian",
+    "matchScore": "Điểm Phù hợp",
+    "tags": "Thẻ",
+    "allergens": "Chất gây dị ứng",
+    "pickupTime": "Thời gian Nhận",
+    "description": "Mô tả",
+    "category": "Danh mục",
+    "source": "Nguồn",
+    "available": "Có sẵn",
+    "claimed": "Đã Yêu cầu",
+    "pickupArrangement": "Cần sắp xếp nhận hàng"
+  },
+  "listingBoard": {
+    "title": "Danh Sách Trực Tiếp",
+    "smartMatch": "Kích hoạt Phù hợp Thông minh",
+    "smartMatchDesc": "Được xếp hạng NLP cho yêu cầu chế độ ăn của bạn • Sắp xếp theo điểm phù hợp",
+    "filters": {
+      "all": "Tất cả",
+      "bakery": "Bánh mỳ",
+      "produce": "Nông sản",
+      "prepared": "Thực phẩm nấu sẵn",
+      "grocery": "Tạp hóa"
+    },
+    "sortOptions": {
+      "recent": "Gần đây nhất",
+      "match": "Phù hợp Nhất",
+      "distance": "Gần Nhất"
+    }
+  },
+  "orgCode": {
+    "title": "Đăng Nhập Tổ chức",
+    "label": "Nhập mã tổ chức của bạn",
+    "placeholder": "ví dụ: HCFB-2841",
+    "submit": "Đăng Nhập",
+    "demo": "Dùng thử Như Sarah",
+    "error": "Vui lòng nhập mã tổ chức của bạn",
+    "success": "Đăng nhập thành công!"
+  },
+  "categories": {
+    "bakery": "Bánh mỳ",
+    "produce": "Nông sản",
+    "prepared": "Thực phẩm nấu sẵn",
+    "grocery": "Tạp hóa"
+  }
+}

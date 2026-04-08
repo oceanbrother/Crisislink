@@ -1,0 +1,105 @@
+{
+  "common": {
+    "appName": "CrisisLink",
+    "back": "Back",
+    "search": "Search",
+    "filter": "Filter",
+    "sort": "Sort",
+    "claim": "Claim",
+    "close": "Close",
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "error": "Error",
+    "success": "Success",
+    "loading": "Loading..."
+  },
+  "language": {
+    "label": "Language",
+    "en": "English",
+    "zh_CN": "简体中文",
+    "vi": "Tiếng Việt"
+  },
+  "home": {
+    "title": "CrisisLink",
+    "subtitle": "Food Resource Coordination Platform",
+    "donor": "I'm a Donor",
+    "donorDesc": "Share surplus food to help those in need",
+    "organization": "I'm an Organization",
+    "orgDesc": "Manage food resources for your community",
+    "selectRole": "Select your role to continue"
+  },
+  "postcode": {
+    "title": "Find Food Near You",
+    "label": "Enter your 4-digit postcode",
+    "placeholder": "e.g., 3000",
+    "submit": "Find Food",
+    "error": "Please enter a valid 4-digit postcode"
+  },
+  "feed": {
+    "title": "Food Feed",
+    "subtitle": "Available resources near you",
+    "noListings": "No food listings found in this area",
+    "tryAdjust": "Try adjusting your search"
+  },
+  "donation": {
+    "title": "New Donation",
+    "photo": "Add Photo",
+    "takePhoto": "Take Photo",
+    "choosePhoto": "Choose from Gallery",
+    "quantity": "Quantity",
+    "description": "Description",
+    "tags": "Tags",
+    "allergens": "Allergens",
+    "pickupTime": "Pickup Time",
+    "submit": "Submit Donation",
+    "success": "Donation submitted successfully!",
+    "error": "Failed to submit donation. Please try again."
+  },
+  "listing": {
+    "quantity": "Quantity",
+    "distance": "Distance",
+    "time": "Time",
+    "matchScore": "Match Score",
+    "tags": "Tags",
+    "allergens": "Allergens",
+    "pickupTime": "Pickup Time",
+    "description": "Description",
+    "category": "Category",
+    "source": "Source",
+    "available": "Available",
+    "claimed": "Claimed",
+    "pickupArrangement": "Pickup arrangement needed"
+  },
+  "listingBoard": {
+    "title": "Live Listings",
+    "smartMatch": "Smart Match active",
+    "smartMatchDesc": "NLP-ranked for your dietary requirements • Sorted by fit score",
+    "filters": {
+      "all": "All",
+      "bakery": "Bakery",
+      "produce": "Produce",
+      "prepared": "Prepared",
+      "grocery": "Grocery"
+    },
+    "sortOptions": {
+      "recent": "Most Recent",
+      "match": "Best Match",
+      "distance": "Closest"
+    }
+  },
+  "orgCode": {
+    "title": "Organization Login",
+    "label": "Enter your organization code",
+    "placeholder": "e.g., HCFB-2841",
+    "submit": "Login",
+    "demo": "Demo as Sarah",
+    "error": "Please enter your organization code",
+    "success": "Login successful!"
+  },
+  "categories": {
+    "bakery": "Bakery",
+    "produce": "Produce",
+    "prepared": "Prepared Food",
+    "grocery": "Grocery"
+  }
+}
