@@ -7,9 +7,9 @@ const LanguageSwitcher = () => {
   const [isOpen, setIsOpen] = React.useState(false)
 
   const languages = [
-    { code: 'en', name: t('language.en'), flag: '🇬🇧' },
-    { code: 'zh-CN', name: t('language.zh_CN'), flag: '🇨🇳' },
-    { code: 'vi', name: t('language.vi'), flag: '🇻🇳' }
+    { code: 'en', name: t('language.en'), short: 'EN' },
+    { code: 'zh-CN', name: t('language.zh_CN'), short: '中文' },
+    { code: 'vi', name: t('language.vi'), short: 'VI' }
   ]
 
   const handleLanguageChange = (langCode) => {
@@ -19,7 +19,9 @@ const LanguageSwitcher = () => {
     localStorage.setItem('preferred-language', langCode)
   }
 
-  const currentLang = languages.find(lang => lang.code === i18n.language) || languages[0]
+  const currentLang =
+    languages.find(lang => i18n.language === lang.code || i18n.language.startsWith(`${lang.code}-`)) ||
+    languages[0]
 
   return (
     <div className="language-switcher">
@@ -28,8 +30,7 @@ const LanguageSwitcher = () => {
         onClick={() => setIsOpen(!isOpen)}
         title={t('language.label')}
       >
-        <span className="language-flag">{currentLang.flag}</span>
-        <span className="language-code">{i18n.language.split('-')[0].toUpperCase()}</span>
+        <span className="language-code">{currentLang.short}</span>
       </button>
 
       {isOpen && (
@@ -40,7 +41,6 @@ const LanguageSwitcher = () => {
               className={`language-option ${i18n.language === lang.code ? 'active' : ''}`}
               onClick={() => handleLanguageChange(lang.code)}
             >
-              <span className="option-flag">{lang.flag}</span>
               <span className="option-name">{lang.name}</span>
               {i18n.language === lang.code && <span className="checkmark">✓</span>}
             </button>

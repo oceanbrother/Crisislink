@@ -1,9 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import LanguageSwitcher from '../components/LanguageSwitcher'
 import '../styles/LiveListingBoard.css'
 
 const LiveListingBoard = () => {
   const navigate = useNavigate()
+  const { t, i18n } = useTranslation()
   const [listings] = useState([
     {
       id: 1,
@@ -11,6 +14,7 @@ const LiveListingBoard = () => {
       title: 'Artisan Sourdough Loaves',
       source: 'Bourke St Bakehouse',
       category: 'Bakery',
+      categoryKey: 'bakery',
       quantity: '18 loaves',
       distance: '0.4 km',
       matchScore: 94,
@@ -18,7 +22,27 @@ const LiveListingBoard = () => {
       time: '8 min ago',
       description: 'High-quality sourdough loaves from this morning\'s batch.',
       pickupTime: 'Anytime today',
-      allergens: 'May contain gluten, sesame'
+      allergens: 'May contain gluten, sesame',
+      translations: {
+        'zh-CN': {
+          title: '手工酸面包',
+          quantity: '18 条面包',
+          tags: ['纯素友好', '新鲜烘焙'],
+          time: '8 分钟前',
+          description: '今天早晨新鲜出炉的高品质酸面包。',
+          pickupTime: '今天任意时间',
+          allergens: '可能含有麸质、芝麻'
+        },
+        vi: {
+          title: 'Ổ bánh mì chua thủ công',
+          quantity: '18 ổ bánh',
+          tags: ['Phù hợp ăn chay', 'Mới nướng'],
+          time: '8 phút trước',
+          description: 'Những ổ bánh mì chua chất lượng cao vừa ra lò sáng nay.',
+          pickupTime: 'Bất kỳ lúc nào hôm nay',
+          allergens: 'Có thể chứa gluten, mè'
+        }
+      }
     },
     {
       id: 2,
@@ -26,6 +50,7 @@ const LiveListingBoard = () => {
       title: 'Mixed Seasonal Vegetables',
       source: 'Richmond Farmers Market',
       category: 'Produce',
+      categoryKey: 'produce',
       quantity: '~30 kg',
       distance: '0.8 km',
       matchScore: 91,
@@ -33,7 +58,27 @@ const LiveListingBoard = () => {
       time: 'Just now',
       description: 'Fresh seasonal vegetables including carrots, zucchini, capsicum.',
       pickupTime: 'Before 4 PM',
-      allergens: 'None'
+      allergens: 'None',
+      translations: {
+        'zh-CN': {
+          title: '当季混合蔬菜',
+          quantity: '约 30 公斤',
+          tags: ['有机', '新鲜', '当季'],
+          time: '刚刚',
+          description: '新鲜当季蔬菜，包括胡萝卜、西葫芦和甜椒。',
+          pickupTime: '下午 4 点前',
+          allergens: '无'
+        },
+        vi: {
+          title: 'Rau củ theo mùa hỗn hợp',
+          quantity: 'khoảng 30 kg',
+          tags: ['Hữu cơ', 'Tươi', 'Theo mùa'],
+          time: 'Vừa xong',
+          description: 'Rau củ theo mùa tươi mới gồm cà rốt, bí ngòi và ớt chuông.',
+          pickupTime: 'Trước 4 giờ chiều',
+          allergens: 'Không có'
+        }
+      }
     },
     {
       id: 3,
@@ -41,6 +86,7 @@ const LiveListingBoard = () => {
       title: 'Prepared Pizza & Pasta',
       source: 'River Cafe',
       category: 'Prepared',
+      categoryKey: 'prepared',
       quantity: '6 boxes',
       distance: '1.2 km',
       matchScore: 87,
@@ -48,7 +94,27 @@ const LiveListingBoard = () => {
       time: '15 min ago',
       description: 'Surplus from catering event. Mix of pizzas and pasta.',
       pickupTime: 'Within 2 hours',
-      allergens: 'Contains gluten, dairy, sesame'
+      allergens: 'Contains gluten, dairy, sesame',
+      translations: {
+        'zh-CN': {
+          title: '熟食披萨和意面',
+          quantity: '6 盒',
+          tags: ['可即食', '热餐'],
+          time: '15 分钟前',
+          description: '来自餐饮活动的剩余食物，包含披萨和意面。',
+          pickupTime: '两小时内',
+          allergens: '含有麸质、乳制品、芝麻'
+        },
+        vi: {
+          title: 'Pizza và mì Ý nấu sẵn',
+          quantity: '6 hộp',
+          tags: ['Sẵn sàng phục vụ', 'Bữa ăn nóng'],
+          time: '15 phút trước',
+          description: 'Phần thực phẩm dư từ sự kiện phục vụ ăn uống, gồm pizza và mì Ý.',
+          pickupTime: 'Trong vòng 2 giờ',
+          allergens: 'Chứa gluten, sữa, mè'
+        }
+      }
     },
     {
       id: 4,
@@ -56,6 +122,7 @@ const LiveListingBoard = () => {
       title: 'Dairy Products Bundle',
       source: 'Spencer St Groceries',
       category: 'Grocery',
+      categoryKey: 'grocery',
       quantity: '12 units',
       distance: '0.6 km',
       matchScore: 85,
@@ -63,7 +130,27 @@ const LiveListingBoard = () => {
       time: '22 min ago',
       description: 'Yogurt, cheese blocks, and milk approaching best-by dates.',
       pickupTime: 'ASAP',
-      allergens: 'Contains dairy'
+      allergens: 'Contains dairy',
+      translations: {
+        'zh-CN': {
+          title: '乳制品组合包',
+          quantity: '12 件',
+          tags: ['需冷藏', '即将到期'],
+          time: '22 分钟前',
+          description: '酸奶、奶酪和牛奶，临近最佳食用日期。',
+          pickupTime: '尽快',
+          allergens: '含有乳制品'
+        },
+        vi: {
+          title: 'Gói sản phẩm sữa',
+          quantity: '12 phần',
+          tags: ['Bảo quản lạnh', 'Sắp hết hạn'],
+          time: '22 phút trước',
+          description: 'Sữa chua, phô mai và sữa tươi gần đến hạn dùng tốt nhất.',
+          pickupTime: 'Càng sớm càng tốt',
+          allergens: 'Chứa sữa'
+        }
+      }
     },
     {
       id: 5,
@@ -71,6 +158,7 @@ const LiveListingBoard = () => {
       title: 'Apples & Citrus Bulk',
       source: 'Collingwood Orchard Co',
       category: 'Produce',
+      categoryKey: 'produce',
       quantity: '~50 kg',
       distance: '2.1 km',
       matchScore: 92,
@@ -78,9 +166,44 @@ const LiveListingBoard = () => {
       time: '45 min ago',
       description: 'Mixed apples and oranges from this week\'s harvest.',
       pickupTime: 'Anytime',
-      allergens: 'None'
+      allergens: 'None',
+      translations: {
+        'zh-CN': {
+          title: '苹果与柑橘大宗水果',
+          quantity: '约 50 公斤',
+          tags: ['大宗', '有机'],
+          time: '45 分钟前',
+          description: '本周采收的混合苹果和橙子。',
+          pickupTime: '任意时间',
+          allergens: '无'
+        },
+        vi: {
+          title: 'Táo và cam quýt số lượng lớn',
+          quantity: 'khoảng 50 kg',
+          tags: ['Số lượng lớn', 'Hữu cơ'],
+          time: '45 phút trước',
+          description: 'Táo và cam hỗn hợp từ đợt thu hoạch tuần này.',
+          pickupTime: 'Bất kỳ lúc nào',
+          allergens: 'Không có'
+        }
+      }
     }
   ])
+
+  const currentLanguage =
+    i18n.language.startsWith('zh') ? 'zh-CN' :
+    i18n.language.startsWith('vi') ? 'vi' :
+    'en'
+
+  const getLocalizedListing = (listing) => {
+    const localized = listing.translations?.[currentLanguage]
+    if (!localized) return listing
+
+    return {
+      ...listing,
+      ...localized
+    }
+  }
 
   const [filteredListings, setFilteredListings] = useState(listings)
   const [searchTerm, setSearchTerm] = useState('')
@@ -152,10 +275,13 @@ const LiveListingBoard = () => {
             <div className="header-left">
               <div className="header-title">
                 <span className="logo">🥬</span>
-                <span className="title-text">CrisisLink</span>
+                <span className="title-text">{t('common.appName')}</span>
               </div>
             </div>
-            <button className="notification-btn">🔔</button>
+            <div className="header-actions">
+              <LanguageSwitcher />
+              <button className="notification-btn">🔔</button>
+            </div>
           </div>
           <div className="org-info">
             <h2 className="org-name">Harvest City Food Bank</h2>
@@ -164,12 +290,12 @@ const LiveListingBoard = () => {
           <div className="org-stats">
             <div className="stat-item">
               <span className="stat-value">3</span>
-              <span className="stat-label">available</span>
+              <span className="stat-label">{t('listing.available')}</span>
             </div>
             <div className="stat-divider">|</div>
             <div className="stat-item">
               <span className="stat-value">1</span>
-              <span className="stat-label">claimed</span>
+              <span className="stat-label">{t('listing.claimed')}</span>
             </div>
           </div>
         </div>
@@ -179,8 +305,8 @@ const LiveListingBoard = () => {
       <div className="smart-match-alert">
         <span className="alert-icon">💡</span>
         <div className="alert-content">
-          <strong>Smart Match active</strong>
-          <span className="alert-desc">NLP-ranked for your dietary requirements • Sorted by fit score</span>
+          <strong>{t('listingBoard.smartMatch')}</strong>
+          <span className="alert-desc">{t('listingBoard.smartMatchDesc')}</span>
         </div>
       </div>
 
@@ -190,7 +316,7 @@ const LiveListingBoard = () => {
         <div className="search-section">
           <input
             type="text"
-            placeholder="🔍 Search food, source, tags..."
+            placeholder={`🔍 ${t('listingBoard.searchPlaceholder')}`}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="search-input"
@@ -205,7 +331,11 @@ const LiveListingBoard = () => {
               onClick={() => setFilterType(category)}
               className={`filter-btn ${filterType === category ? 'active' : ''}`}
             >
-              {category}
+              {category === 'All' && t('listingBoard.filters.all')}
+              {category === 'Bakery' && t('listingBoard.filters.bakery')}
+              {category === 'Produce' && t('listingBoard.filters.produce')}
+              {category === 'Prepared' && t('listingBoard.filters.prepared')}
+              {category === 'Grocery' && t('listingBoard.filters.grocery')}
             </button>
           ))}
         </div>
@@ -217,21 +347,24 @@ const LiveListingBoard = () => {
             onChange={(e) => setSortBy(e.target.value)}
             className="sort-dropdown"
           >
-            <option value="recent">📍 Most Recent</option>
-            <option value="match">⭐ Best Match</option>
-            <option value="distance">📏 Closest</option>
+            <option value="recent">📍 {t('listingBoard.sortOptions.recent')}</option>
+            <option value="match">⭐ {t('listingBoard.sortOptions.match')}</option>
+            <option value="distance">📏 {t('listingBoard.sortOptions.distance')}</option>
           </select>
         </div>
 
         {/* Listings Grid */}
         {filteredListings.length === 0 ? (
           <div className="empty-state">
-            <p>No listings found matching your search</p>
-            <small>Try adjusting your filters</small>
+            <p>{t('feed.noListings')}</p>
+            <small>{t('feed.tryAdjust')}</small>
           </div>
         ) : (
           <div className="listings-grid">
-            {filteredListings.map(listing => (
+            {filteredListings.map(listing => {
+              const localizedListing = getLocalizedListing(listing)
+
+              return (
               <div
                 key={listing.id}
                 className={`listing-card ${claimedListings.has(listing.id) ? 'claimed' : ''}`}
@@ -247,43 +380,44 @@ const LiveListingBoard = () => {
                   {claimedListings.has(listing.id) && (
                     <div className="claimed-badge">
                       <span className="badge-icon">✓</span>
-                      <span className="badge-text">Claimed</span>
+                      <span className="badge-text">{t('listing.claimed')}</span>
                     </div>
                   )}
                 </div>
 
                 {/* Card Content */}
                 <div className="card-content">
-                  <h3 className="card-title">{listing.title}</h3>
-                  <p className="card-source">{listing.source}</p>
+                  <h3 className="card-title">{localizedListing.title}</h3>
+                  <p className="card-source">{localizedListing.source}</p>
 
                   <div className="card-meta">
                     <span className="meta-item">
                       <span className="meta-icon">📦</span>
-                      <span className="meta-text">{listing.quantity}</span>
+                      <span className="meta-text">{localizedListing.quantity}</span>
                     </span>
                     <span className="meta-item">
                       <span className="meta-icon">📍</span>
-                      <span className="meta-text">{listing.distance}</span>
+                      <span className="meta-text">{localizedListing.distance}</span>
                     </span>
                     <span className="meta-item">
                       <span className="meta-icon">⏱️</span>
-                      <span className="meta-text">{listing.time}</span>
+                      <span className="meta-text">{localizedListing.time}</span>
                     </span>
                   </div>
 
                   <div className="card-tags">
-                    {listing.tags.map(tag => (
+                    {localizedListing.tags.map(tag => (
                       <span key={tag} className="tag">{tag}</span>
                     ))}
                   </div>
 
                   {claimedListings.has(listing.id) && (
-                    <div className="claimed-notice">You claimed this: Pickup arrangement needed</div>
+                    <div className="claimed-notice">{t('listing.pickupArrangement')}</div>
                   )}
                 </div>
               </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </div>
@@ -301,53 +435,53 @@ const LiveListingBoard = () => {
 
             <div className="modal-header">
               <span className="modal-emoji">{selectedListing.emoji}</span>
-              <h2 className="modal-title">{selectedListing.title}</h2>
-              <p className="modal-source">{selectedListing.source}</p>
+              <h2 className="modal-title">{getLocalizedListing(selectedListing).title}</h2>
+              <p className="modal-source">{getLocalizedListing(selectedListing).source}</p>
             </div>
 
             <div className="modal-details">
               <div className="detail-row">
-                <span className="label">Category</span>
-                <span className="value">{selectedListing.category}</span>
+                <span className="label">{t('listing.category')}</span>
+                <span className="value">{t(`categories.${selectedListing.categoryKey}`)}</span>
               </div>
               <div className="detail-row">
-                <span className="label">Quantity</span>
-                <span className="value">{selectedListing.quantity}</span>
+                <span className="label">{t('listing.quantity')}</span>
+                <span className="value">{getLocalizedListing(selectedListing).quantity}</span>
               </div>
               <div className="detail-row">
-                <span className="label">Distance</span>
+                <span className="label">{t('listing.distance')}</span>
                 <span className="value">{selectedListing.distance}</span>
               </div>
               <div className="detail-row">
-                <span className="label">Pickup Time</span>
-                <span className="value">{selectedListing.pickupTime}</span>
+                <span className="label">{t('listing.pickupTime')}</span>
+                <span className="value">{getLocalizedListing(selectedListing).pickupTime}</span>
               </div>
               <div className="detail-row">
-                <span className="label">Allergens</span>
-                <span className="value">{selectedListing.allergens}</span>
+                <span className="label">{t('listing.allergens')}</span>
+                <span className="value">{getLocalizedListing(selectedListing).allergens}</span>
               </div>
             </div>
 
             <div className="modal-description">
-              <p>{selectedListing.description}</p>
+              <p>{getLocalizedListing(selectedListing).description}</p>
             </div>
 
             <div className="match-score-section">
-              <div className="score-label">Match Score</div>
+              <div className="score-label">{t('listing.matchScore')}</div>
               <div className="score-bar">
                 <div
                   className="score-fill"
                   style={{ width: `${selectedListing.matchScore}%` }}
                 ></div>
               </div>
-              <div className="score-value">{selectedListing.matchScore}% Match</div>
+              <div className="score-value">{selectedListing.matchScore}% {t('listingBoard.sortOptions.match')}</div>
             </div>
 
             <button
               className="claim-btn"
               onClick={() => handleClaim(selectedListing.id)}
             >
-              ✓ Claim This Listing
+              ✓ {t('listingBoard.claimButton')}
             </button>
           </div>
         </div>

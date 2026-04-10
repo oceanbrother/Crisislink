@@ -1,9 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react'
 import { useParams } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import '../styles/DonationForm.css'
 
 const DonationForm = () => {
   const { postcode } = useParams()
+  const { t } = useTranslation()
   const [photoPreview, setPhotoPreview] = useState(null)
   const [aiSuggestions, setAiSuggestions] = useState({
     foodType: 'Artisan Sourdough Loaves',
@@ -66,14 +68,14 @@ const DonationForm = () => {
     <div className="donation-form">
       {submitted && (
         <div className="success-overlay">
-          <div className="success-message">✅ Surplus posted!</div>
+          <div className="success-message">✅ {t('donation.posted')}</div>
         </div>
       )}
 
       <form onSubmit={handleSubmit} className="form-content">
         {/* Photo Section */}
         <div className="form-section">
-          <label className="section-label">📸 Your surplus</label>
+          <label className="section-label">📸 {t('donation.yourSurplus')}</label>
           <div className="photo-upload-section">
             {photoPreview ? (
               <div className="photo-preview-container">
@@ -83,7 +85,7 @@ const DonationForm = () => {
                   onClick={handleCameraClick}
                   className="change-photo-btn"
                 >
-                  Change ↻
+                  {t('donation.changePhoto')} ↻
                 </button>
               </div>
             ) : (
@@ -108,8 +110,8 @@ const DonationForm = () => {
                   📷
                 </div>
 
-                <p className="upload-title">Snap your surplus</p>
-                <p className="upload-subtitle">Take a photo or upload from gallery</p>
+                <p className="upload-title">{t('donation.snapTitle')}</p>
+                <p className="upload-subtitle">{t('donation.snapSubtitle')}</p>
 
                 <div className="button-group">
                   <button
@@ -117,14 +119,14 @@ const DonationForm = () => {
                     onClick={handleCameraClick}
                     className="primary-btn"
                   >
-                    📷 Scan your food
+                    📷 {t('donation.scanFood')}
                   </button>
                   <button
                     type="button"
                     onClick={handleGalleryClick}
                     className="secondary-btn"
                   >
-                    Upload from gallery
+                    {t('donation.choosePhoto')}
                   </button>
                 </div>
               </div>
@@ -135,18 +137,18 @@ const DonationForm = () => {
         {/* AI Suggestions */}
         {photoPreview && (
           <div className="form-section ai-section">
-            <label className="section-label">🤖 AI identified</label>
+            <label className="section-label">🤖 {t('donation.aiIdentified')}</label>
             <div className="ai-card">
               <div className="ai-row">
-                <span className="ai-label">Food type</span>
+                <span className="ai-label">{t('donation.foodType')}</span>
                 <span className="ai-value">{aiSuggestions.foodType}</span>
               </div>
               <div className="ai-row">
-                <span className="ai-label">Quantity</span>
-                <span className="ai-value">{aiSuggestions.quantity} portions</span>
+                <span className="ai-label">{t('donation.quantity')}</span>
+                <span className="ai-value">{aiSuggestions.quantity} {t('donation.portions')}</span>
               </div>
               <div className="ai-confidence">
-                Confidence <strong>{aiSuggestions.confidence}%</strong>
+                {t('donation.confidence')} <strong>{aiSuggestions.confidence}%</strong>
               </div>
             </div>
           </div>
@@ -154,10 +156,10 @@ const DonationForm = () => {
 
         {/* Location Section */}
         <div className="form-section">
-          <label className="section-label">📍 Location</label>
+          <label className="section-label">📍 {t('donation.location')}</label>
           <div className="location-info-display">
             <div className="info-row">
-              <span className="info-label">Postcode</span>
+              <span className="info-label">{t('donation.postcode')}</span>
               <span className="info-value">{postcode || 'N/A'}</span>
             </div>
           </div>
@@ -166,12 +168,12 @@ const DonationForm = () => {
         {/* Quantity Section */}
         <div className="form-section">
           <label htmlFor="quantity" className="section-label">
-            📦 How much?
+            📦 {t('donation.howMuch')}
           </label>
           <input
             id="quantity"
             type="text"
-            placeholder="e.g. 18 loaves, 5 kg, 3 boxes"
+            placeholder={t('donation.quantityPlaceholder')}
             value={formData.quantity}
             onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
             className="form-input"
@@ -182,12 +184,12 @@ const DonationForm = () => {
         {/* Organization Code Section */}
         <div className="form-section">
           <label htmlFor="orgCode" className="section-label">
-            🏢 Organization code (optional)
+            🏢 {t('donation.orgCodeOptional')}
           </label>
           <input
             id="orgCode"
             type="text"
-            placeholder="Enter org code if applicable"
+            placeholder={t('donation.orgCodePlaceholder')}
             value={formData.orgCode}
             onChange={(e) => setFormData({ ...formData, orgCode: e.target.value })}
             className="form-input"
@@ -197,11 +199,11 @@ const DonationForm = () => {
         {/* Notes Section */}
         <div className="form-section">
           <label htmlFor="notes" className="section-label">
-            💬 Additional notes (optional)
+            💬 {t('donation.notesOptional')}
           </label>
           <textarea
             id="notes"
-            placeholder="Keep refrigerated, allergens, pickup time, etc."
+            placeholder={t('donation.notesPlaceholder')}
             value={formData.notes}
             onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
             className="form-textarea"
@@ -215,12 +217,12 @@ const DonationForm = () => {
           className="submit-btn"
           disabled={!photoPreview || !formData.quantity}
         >
-          Post Surplus
+          {t('donation.submitCta')}
         </button>
 
         {/* Footer Message */}
         <p className="form-footer">
-          ✅ Available for <strong>60 minutes</strong> · 📍 5 km radius · Real time updates
+          ✅ {t('donation.footerInfo')}
         </p>
       </form>
     </div>

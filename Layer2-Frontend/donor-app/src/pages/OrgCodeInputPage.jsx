@@ -1,9 +1,12 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
+import LanguageSwitcher from '../components/LanguageSwitcher'
 import '../styles/OrgCodeInputPage.css'
 
 const OrgCodeInputPage = () => {
   const navigate = useNavigate()
+  const { t } = useTranslation()
   const [orgCode, setOrgCode] = useState('')
   const [error, setError] = useState('')
 
@@ -16,7 +19,7 @@ const OrgCodeInputPage = () => {
   const handleSubmit = (e) => {
     e.preventDefault()
     if (!orgCode.trim()) {
-      setError('Please enter your organisation code')
+      setError(t('orgCode.error'))
       return
     }
     // TODO: Validate org code with backend
@@ -33,30 +36,32 @@ const OrgCodeInputPage = () => {
     <div className="org-code-page">
       {/* Header */}
       <header className="org-code-header">
-        <button 
-          onClick={() => navigate('/')}
-          className="back-link"
-        >
-          ← Back
-        </button>
+        <div className="header-top">
+          <button 
+            onClick={() => navigate('/')}
+            className="back-link"
+          >
+            ← {t('common.back')}
+          </button>
+          <LanguageSwitcher />
+        </div>
 
         <div className="logo-section">
           <div className="logo">🥬</div>
-          <div className="logo-text">CrisisLink</div>
+          <div className="logo-text">{t('common.appName')}</div>
         </div>
 
         <div className="tagline">
-          Move surplus food to the people<br />
-          who need it most — in seconds
+          {t('home.subtitle')}
         </div>
 
         <div className="stats">
           <div className="stat-item">
             <div className="stat-dot"></div>
-            <div className="stat-text"><strong>2,841 meals saved</strong> this week</div>
+            <div className="stat-text">{t('home.statsMeals')}</div>
           </div>
           <div className="stat-item">
-            <div className="stat-text"><strong>94 donors</strong> · <strong>31 food banks</strong></div>
+            <div className="stat-text">{t('home.statsNetwork')}</div>
           </div>
         </div>
       </header>
@@ -66,8 +71,8 @@ const OrgCodeInputPage = () => {
         <div className="card">
           <div className="card-icon">👥</div>
           
-          <h1 className="card-title">Organisation code</h1>
-          <p className="card-subtitle">Issued with your FoodSafe registration</p>
+          <h1 className="card-title">{t('orgCode.title')}</h1>
+          <p className="card-subtitle">{t('orgCode.label')}</p>
 
           <form onSubmit={handleSubmit} className="form-group">
             <div className="input-wrapper">
@@ -75,7 +80,7 @@ const OrgCodeInputPage = () => {
                 type="text" 
                 value={orgCode}
                 onChange={handleInputChange}
-                placeholder="HCFB-2841"
+                placeholder={t('orgCode.placeholder')}
                 maxLength="20"
                 autoComplete="off"
                 autoFocus
@@ -85,7 +90,7 @@ const OrgCodeInputPage = () => {
             {error && <div className="error-message">{error}</div>}
 
             <button type="submit" className="submit-btn">
-              Go to dashboard →
+              {t('orgCode.submit')} →
             </button>
           </form>
 
@@ -93,7 +98,7 @@ const OrgCodeInputPage = () => {
             onClick={handleDemoLogin}
             className="demo-link"
           >
-            Demo as Sarah · Harvest City Food Bank →
+            {t('orgCode.demo')} · Harvest City Food Bank →
           </button>
         </div>
       </main>

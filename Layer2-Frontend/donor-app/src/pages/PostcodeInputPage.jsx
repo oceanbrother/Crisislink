@@ -55,10 +55,10 @@ const PostcodeInputPage = () => {
         <div className="stats">
           <div className="stat-item">
             <div className="stat-dot"></div>
-            <div className="stat-text"><strong>2,841 meals saved</strong> this week</div>
+            <div className="stat-text">{t('home.statsMeals')}</div>
           </div>
           <div className="stat-item">
-            <div className="stat-text"><strong>94 donors</strong> · <strong>31 food banks</strong></div>
+            <div className="stat-text">{t('home.statsNetwork')}</div>
           </div>
         </div>
       </header>

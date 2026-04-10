@@ -27,10 +27,10 @@ const HomePage = () => {
         <div className="stats">
           <div className="stat-item">
             <div className="stat-dot"></div>
-            <div className="stat-text"><strong>2,841 meals saved</strong> this week</div>
+            <div className="stat-text">{t('home.statsMeals')}</div>
           </div>
           <div className="stat-item">
-            <div className="stat-text"><strong>94 donors</strong> · <strong>31 food banks</strong></div>
+            <div className="stat-text">{t('home.statsNetwork')}</div>
           </div>
         </div>
       </header>
@@ -44,7 +44,7 @@ const HomePage = () => {
           <div className="card card-donor">
             <div className="card-top">
               <div className="card-icon">📋</div>
-              <div className="badge">⏱️ 60 seconds</div>
+              <div className="badge">⏱️ {t('home.fastBadge')}</div>
             </div>
 
             <h2 className="card-title">{t('home.donor')}</h2>
@@ -64,7 +64,7 @@ const HomePage = () => {
           <div className="card card-org">
             <div className="card-top">
               <div className="card-icon">👥</div>
-              <div className="badge">⚡ Smart match</div>
+              <div className="badge">⚡ {t('home.smartMatchBadge')}</div>
             </div>
 
             <h2 className="card-title">{t('home.organization')}</h2>
@@ -82,13 +82,13 @@ const HomePage = () => {
         </div>
 
         <div className="footer-message">
-          No account, no password, no forms — just a postcode or org code
+          {t('home.footerMessage')}
         </div>
       </main>
 
       {/* Footer */}
       <footer className="home-footer">
-        CrisisLink · Melbourne, VIC · No account required
+        {t('home.footerMeta')}
       </footer>
     </div>
   )
