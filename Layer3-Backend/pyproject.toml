@@ -1,0 +1,60 @@
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "crisislink-backend"
+version = "0.1.0"
+description = "CrisisLink Backend - Food Relief and Surplus Resource Coordination Platform"
+readme = "README.md"
+requires-python = ">=3.12"
+license = {text = "MIT"}
+authors = [
+    {name = "CrisisLink Team", email = "team@crisislink.local"}
+]
+
+keywords = ["food-relief", "surplus-resources", "coordination", "fastapi"]
+
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+dependencies = [
+    "fastapi==0.109.0",
+    "uvicorn==0.27.0",
+    "starlette==0.35.0",
+    "pydantic==2.6.1",
+    "email-validator==2.1.0",
+    "python-multipart==0.0.6",
+    "httpx==0.25.2",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "pytest-cov>=4.0",
+    "black>=23.0",
+    "flake8>=6.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/crisislink/backend"
+Documentation = "http://localhost:9000/docs"
+Repository = "https://github.com/crisislink/backend"
+"Bug Tracker" = "https://github.com/crisislink/backend/issues"
+
+[tool.black]
+line-length = 100
+target-version = ["py312"]
+include = '\.pyi?$'
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = "-ra -q --strict-markers"
+testpaths = ["tests"]

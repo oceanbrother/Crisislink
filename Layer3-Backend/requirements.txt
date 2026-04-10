@@ -1,0 +1,14 @@
+# Core Web Framework
+fastapi==0.109.0
+uvicorn==0.27.0
+starlette==0.35.0
+
+# Data Validation
+pydantic==2.6.1
+email-validator==2.1.0
+
+# JSON/HTTP utilities
+python-multipart==0.0.6
+httpx==0.25.2
+
+# CORS middleware is built-in to FastAPI, no additional package needed
