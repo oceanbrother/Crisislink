@@ -18,6 +18,7 @@ __pycache__/
 .Python
 env/
 venv/
+.venv/
 ENV/
 pip-log.txt
 pip-delete-this-directory.txt
@@ -55,6 +56,7 @@ Thumbs.db
 *.pth
 Food-101/
 trained_models/
+demo_images/
 
 # Docker
 .dockerignore
