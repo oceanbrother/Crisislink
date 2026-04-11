@@ -572,3 +572,10 @@
   background: #f3f4f6;
   color: #374151;
 }
+
+.success-hint {
+  margin-top: 0.5rem;
+  color: #6b7280;
+  font-size: 0.95rem;
+  line-height: 1.5;
+}

@@ -143,13 +143,14 @@ const DonationForm = () => {
               : 'Your food is now visible to local food banks.'}
           </p>
           <p className="success-subtext">Thank you for sharing.</p>
+          <p className="success-hint">You can now check whether your listing appears on the coordinator board.</p>
 
           <div className="success-actions">
             <button className="success-primary-btn" onClick={openDashboard}>
-              {orgMode ? 'Go to dashboard' : 'View organisation dashboard'}
+              View Coordinator Dashboard
             </button>
             <button className="success-secondary-btn" onClick={() => navigate('/')}>
-              Back to home
+              Back to Home
             </button>
           </div>
         </div>

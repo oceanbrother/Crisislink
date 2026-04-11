@@ -16,17 +16,11 @@ const OrgCodeInputPage = () => {
   const handleSubmit = (e) => {
     e.preventDefault()
     if (!orgCode.trim()) {
-      setError('Please enter your organisation code')
+      setError('Please enter your organisation code to continue.')
       return
     }
     // TODO: Validate org code with backend
     navigate('/org/dashboard', { state: { orgCode } })
-  }
-
-  const handleDemoLogin = () => {
-    setOrgCode('HCFB-2841')
-    // Auto login as demo
-    navigate('/org/dashboard', { state: { orgCode: 'HCFB-2841', demoMode: true, orgName: 'Harvest City Food Bank', userName: 'Sarah' } })
   }
 
   return (
@@ -88,13 +82,6 @@ const OrgCodeInputPage = () => {
               Go to dashboard →
             </button>
           </form>
-
-          <button 
-            onClick={handleDemoLogin}
-            className="demo-link"
-          >
-            Demo as Sarah · Harvest City Food Bank →
-          </button>
         </div>
       </main>
     </div>

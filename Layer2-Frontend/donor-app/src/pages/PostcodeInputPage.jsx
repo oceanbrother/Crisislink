@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import '../styles/PostcodeInputPage.css'
 
 const PostcodeInputPage = () => {
   const navigate = useNavigate()
   const [postcode, setPostcode] = useState('')
+  const [error, setError] = useState('')
 
   useEffect(() => {
     document.getElementById('postcode-input')?.focus()
@@ -13,6 +14,7 @@ const PostcodeInputPage = () => {
   const handleInputChange = (e) => {
     const value = e.target.value.replace(/[^0-9]/g, '').slice(0, 4)
     setPostcode(value)
+    if (error) setError('')
   }
 
   const handleSubmit = (e) => {
@@ -20,7 +22,7 @@ const PostcodeInputPage = () => {
     if (postcode.length === 4) {
       navigate(`/feed/${postcode}`)
     } else {
-      alert('Please enter a valid 4-digit postcode')
+      setError('Please enter a valid 4-digit postcode to continue.')
     }
   }
 
@@ -77,6 +79,8 @@ const PostcodeInputPage = () => {
                 autoComplete="postal-code"
               />
             </div>
+
+            {error && <div className="inline-error-message">{error}</div>}
 
             <button type="submit" className="submit-btn">
               Post surplus

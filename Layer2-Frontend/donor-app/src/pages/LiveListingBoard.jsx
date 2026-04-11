@@ -256,7 +256,10 @@ const LiveListingBoard = () => {
         ) : filteredListings.length === 0 ? (
           <div className="empty-state">
             <p>No active listings found for postcode {searchPostcode}</p>
-            <small>Try posting surplus from the donor flow or the organisation shortcut above.</small>
+            <small>You can post a new donor listing or use the organisation posting button above.</small>
+            <button className="empty-state-action" onClick={() => navigate('/postcode')}>
+              Post surplus now
+            </button>
           </div>
         ) : (
           <div className="listings-grid">

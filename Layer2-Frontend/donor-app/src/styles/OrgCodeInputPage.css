@@ -186,41 +186,23 @@ input[type="text"]::placeholder {
   transform: scale(0.98);
 }
 
-.demo-link {
-  background: none;
-  border: none;
-  color: #14b8a6;
-  font-size: 13px;
-  font-weight: 600;
-  cursor: pointer;
-  text-decoration: none;
-  transition: opacity 0.2s;
-  margin-top: 8px;
-  padding: 0;
-}
-
-.demo-link:hover {
-  opacity: 0.8;
-  text-decoration: underline;
-}
-
 @media (max-width: 480px) {
   .org-code-header {
     padding: 24px 20px;
   }
-  
+
   .org-code-header .tagline {
     font-size: 14px;
   }
-  
+
   .org-code-main {
     padding: 20px;
   }
-  
+
   .org-code-main .card {
     padding: 24px 20px;
   }
-  
+
   input[type="text"] {
     font-size: 14px;
   }
