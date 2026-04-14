@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CrisisLink | Role Selection</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&amp;family=Plus_Jakarta_Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "secondary-fixed-dim": "#ffb869",
+              "on-primary-fixed-variant": "#00513a",
+              "on-secondary": "#ffffff",
+              "surface-container-lowest": "#ffffff",
+              "inverse-surface": "#31312b",
+              "primary-fixed-dim": "#68dbae",
+              "on-tertiary-container": "#fffbff",
+              "surface-dim": "#dcdad2",
+              "tertiary-fixed-dim": "#ffb3ad",
+              "on-primary-container": "#f5fff7",
+              "surface-tint": "#006c4e",
+              "error": "#ba1a1a",
+              "secondary": "#885200",
+              "on-background": "#1c1c17",
+              "on-surface": "#1c1c17",
+              "on-tertiary-fixed": "#410003",
+              "background": "#fcf9f1",
+              "surface-container": "#f0eee5",
+              "primary-fixed": "#86f8c9",
+              "on-secondary-fixed-variant": "#673d00",
+              "outline-variant": "#bccac1",
+              "primary-container": "#008560",
+              "on-surface-variant": "#3d4943",
+              "surface-container-highest": "#e5e2da",
+              "surface-container-low": "#f6f4eb",
+              "error-container": "#ffdad6",
+              "secondary-fixed": "#ffdcbb",
+              "surface-variant": "#e5e2da",
+              "outline": "#6d7a73",
+              "on-error-container": "#93000a",
+              "surface": "#fcf9f1",
+              "on-tertiary": "#ffffff",
+              "on-error": "#ffffff",
+              "on-primary-fixed": "#002115",
+              "on-secondary-fixed": "#2b1700",
+              "tertiary-container": "#b85751",
+              "secondary-container": "#fdad4e",
+              "inverse-primary": "#68dbae",
+              "surface-container-high": "#eae8e0",
+              "tertiary": "#993f3a",
+              "primary": "#00694c",
+              "on-secondary-container": "#704200",
+              "inverse-on-surface": "#f3f1e8",
+              "surface-bright": "#fcf9f1",
+              "tertiary-fixed": "#ffdad6",
+              "on-tertiary-fixed-variant": "#7e2a27",
+              "on-primary": "#ffffff"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Plus Jakarta Sans"],
+              "label": ["Plus Jakarta Sans"]
+            },
+            borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      body {
+        background-color: #fcf9f1; /* Using surface from design system which aligns with user request */
+      }
+    </style>
+</head>
+<body class="font-body text-on-surface min-h-screen flex flex-col items-center justify-center p-8 md:p-16">
+<!-- Logo Section -->
+<header class="mb-12 md:mb-20">
+<h1 class="text-primary font-headline font-black text-4xl tracking-tighter">CrisisLink</h1>
+</header>
+<!-- Main Content Canvas -->
+<main class="w-full max-w-5xl flex flex-col items-center">
+<!-- Question Header -->
+<h2 class="text-on-surface-variant font-body font-medium text-xl md:text-2xl mb-12 text-center">How are you using CrisisLink today?</h2>
+<!-- Role Selection Cards Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
+<!-- Donor Role Card (Left) -->
+<div class="group relative flex flex-col items-center p-12 bg-surface-container-low rounded-lg transition-all duration-300 hover:bg-surface-bright hover:shadow-[0_20px_40px_rgba(28,28,23,0.04)] cursor-pointer overflow-hidden">
+<!-- Subtle Background Accent -->
+<div class="absolute inset-0 bg-secondary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+<div class="relative z-10 flex flex-col items-center text-center">
+<div class="w-20 h-20 rounded-full bg-secondary-fixed flex items-center justify-center mb-8 text-on-secondary-container">
+<span class="material-symbols-outlined text-4xl" data-icon="bakery_dining">bakery_dining</span>
+</div>
+<h3 class="font-headline font-bold text-2xl text-secondary mb-3">I have food to give</h3>
+<p class="text-on-surface-variant font-body mb-10 max-w-[240px]">Post surplus food for your community</p>
+<button class="px-8 py-4 bg-secondary text-on-secondary rounded-full font-headline font-bold text-sm tracking-wide transition-all active:scale-95 hover:bg-on-secondary-fixed-variant shadow-sm">
+                        Post surplus
+                    </button>
+</div>
+</div>
+<!-- Organization Role Card (Right) -->
+<div class="group relative flex flex-col items-center p-12 bg-surface-container-low rounded-lg transition-all duration-300 hover:bg-surface-bright hover:shadow-[0_20px_40px_rgba(28,28,23,0.04)] cursor-pointer overflow-hidden">
+<!-- Subtle Background Accent -->
+<div class="absolute inset-0 bg-primary/5 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+<div class="relative z-10 flex flex-col items-center text-center">
+<div class="w-20 h-20 rounded-full bg-primary-fixed flex items-center justify-center mb-8 text-on-primary-fixed-variant">
+<span class="material-symbols-outlined text-4xl" data-icon="corporate_fare">corporate_fare</span>
+</div>
+<h3 class="font-headline font-bold text-2xl text-primary mb-3">I run a community group</h3>
+<p class="text-on-surface-variant font-body mb-10 max-w-[240px]">See what is available near you</p>
+<button class="px-8 py-4 bg-primary text-on-primary rounded-full font-headline font-bold text-sm tracking-wide transition-all active:scale-95 hover:bg-on-primary-fixed-variant shadow-sm">
+                        View board
+                    </button>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer Decorative Element -->
+<footer class="mt-20">
+<div class="w-16 h-1 bg-surface-container-highest rounded-full opacity-40"></div>
+</footer>
+</body></html>

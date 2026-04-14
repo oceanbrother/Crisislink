@@ -1,0 +1,192 @@
+{
+  "appName": "CrisisLink",
+  "tagline": "Food relief resource coordination platform",
+
+  "home": {
+    "question": "How are you using CrisisLink today?",
+    "donor": {
+      "title": "I have food to give",
+      "description": "Post surplus food for your community",
+      "button": "Post surplus"
+    },
+    "organization": {
+      "title": "I run a community group",
+      "description": "I coordinate a food bank, pantry or community relief program",
+      "button": "Go to dashboard"
+    }
+  },
+
+  "postcode": {
+    "title": "Enter your postcode",
+    "subtitle": "Help us find food near you",
+    "placeholder": "e.g., 3000",
+    "button": "Post surplus",
+    "example": "Please enter a valid 4-digit postcode to continue."
+  },
+
+  "feed": {
+    "title": "Live Listings",
+    "noListings": "No listings available in your area yet",
+    "claimButton": "Claim food",
+    "claimedBy": "Claimed by",
+    "referenceOnly": "Reference view for donors",
+    "editButton": "Edit listing",
+    "availableToGroups": "For community groups only",
+    "shareButton": "Share Surplus",
+    "filter": "Filter by category",
+    "search": "Search listings",
+    "searchResults": "{{count}} result(s) for \"{{term}}\"",
+    "filterResults": "{{count}} listing(s) in {{filter}}"
+  },
+
+  "donation": {
+    "title": "Share Surplus",
+    "subtitle": "Let AI do the heavy lifting. Just snap a photo of the food you'd like to share.",
+    "aiTitle": "AI Assisted Listing",
+    "orgTitle": "Organization Sharing",
+    "takePhoto": "Take a photo or upload one",
+    "uploadSubtitle": "we will fill in the details",
+    "changePhoto": "Change photo",
+    "analyzing": "Analysing food...",
+    "aiDetails": "AI Generated Details",
+    "guidanceTitle": "Photo tips",
+    "guidanceBody": "Take a clear photo with the full food item visible. Keep the main item centered, use good lighting, avoid blur, and make sure the food is fully inside the frame. AI suggestions may be wrong, so please review and edit before posting.",
+    "guidancePoints": {
+      "fullItem": "Show the full food item clearly inside the frame.",
+      "centered": "Keep the main item centered and easy to identify.",
+      "lighting": "Use good lighting and avoid blur or heavy shadows.",
+      "quantityCue": "If you know the amount, add cues like small, medium, large, heavy, or extra heavy when editing."
+    },
+    "foodName": "Food Name",
+    "quantity": "Estimated Quantity",
+    "sizeCue": "Size / Weight",
+    "sizeCuePlaceholder": "Optional size or weight cue",
+    "sizeCueOptions": {
+      "small": "Small",
+      "medium": "Medium",
+      "large": "Large",
+      "heavy": "Heavy",
+      "extraHeavy": "Extra heavy"
+    },
+    "quantityHint": "If helpful, describe size or weight with cues like small, medium, large, heavy, or extra heavy.",
+    "sizeCueDescriptionPrefix": "Size cue:",
+    "categoryOptions": {
+      "bakedGoods": "Baked goods",
+      "produce": "Fruit & veg",
+      "dairy": "Dairy, eggs & fridge",
+      "pantry": "Pantry",
+      "preparedMeals": "Prepared meals",
+      "other": "Other"
+    },
+    "category": "Category",
+    "postcode": "Your postcode",
+    "orgCode": "Food Bank Code",
+    "postButton": "Post listing - takes under 60 seconds",
+    "errors": {
+      "foodType": "Please enter a food type",
+      "quantity": "Please enter a valid quantity (must be greater than 0)",
+      "postcode": "Please enter a postcode",
+      "orgCode": "Please enter an organization code",
+      "aiTimeout": "AI recognition failed or timed out. You can still manually enter the food details.",
+      "uploadFailed": "Image upload failed",
+      "deleteFailed": "Could not remove this listing. Please try again."
+    },
+    "reviewNotice": "AI suggestions can be inaccurate. Please double-check the food name, quantity, and category before posting.",
+    "success": {
+      "title": "Posted!",
+      "donorMessage": "Your food is now visible to local food banks.",
+      "donorTag": "Thank you for sharing.",
+      "orgMessage": "Your surplus food is now available for other communities to claim.",
+      "orgTag": "Thank you for helping the network.",
+      "backToListings": "Back to live listings",
+      "backToDashboard": "Back to dashboard",
+      "editListing": "Edit this listing",
+      "deleteListing": "Remove this listing"
+    }
+  },
+
+  "orgCode": {
+    "current": "Current organization code",
+    "title": "Enter Organization Code",
+    "subtitle": "Ask your food bank staff for their organization code",
+    "placeholder": "e.g., HCFB-2841",
+    "button": "Access Board",
+    "example": "Ask the food bank staff for their code"
+  },
+
+  "dashboard": {
+    "title": "Live Listing Board",
+    "noListings": "Failed to load listings. Please try again.",
+    "sharing": "Sharing excess from {{orgName}}",
+    "shareButton": "Share Excess",
+    "serviceArea": "Service area",
+    "allServiceAreas": "All service areas",
+    "tabs": {
+      "all": "All",
+      "bakery": "Bakery",
+      "bakedGoods": "Baked goods",
+      "produce": "Fruit & veg",
+      "pantry": "Pantry",
+      "dairy": "Dairy, eggs & fridge",
+      "prepared": "Prepared",
+      "preparedMeals": "Prepared meals",
+      "other": "Other",
+      "grocery": "Grocery",
+      "expiringSoon": "Expiring soon"
+    }
+  },
+
+  "listing": {
+    "itemsAvailable": "{{count}} items available",
+    "claimMovedOut": "Claimed successfully. This item has been moved out of the available board.",
+    "claimedByYou": "Claimed by you",
+    "claimedStatus": "Claimed",
+    "location": "Location: ",
+    "expiresIn": "Expires in {{time}}",
+    "from": "From",
+    "postcode": "Postcode",
+    "claimingButton": "Claiming...",
+    "claimThisButton": "Claim This",
+    "justNow": "Just now",
+    "minutesAgo": "{{count}}m ago",
+    "hoursAgo": "{{count}}h ago",
+    "daysAgo": "{{count}}d ago",
+    "dietary": {
+      "vegetarian": "Vegetarian",
+      "vegan": "Vegan",
+      "glutenFree": "Gluten Free",
+      "dairyFree": "Dairy Free",
+      "nonVegetarian": "Non-vegetarian"
+    },
+    "units": {
+      "portions": "portions",
+      "meals": "meals",
+      "kg": "kg",
+      "units": "units",
+      "boxes": "boxes",
+      "dozen": "dozen",
+      "litres": "litres"
+    }
+  },
+
+  "common": {
+    "close": "Close",
+    "back": "Back",
+    "next": "Next",
+    "cancel": "Cancel",
+    "submit": "Submit",
+    "loading": "Loading...",
+    "error": "Error",
+    "success": "Success",
+    "home": "Back to home",
+    "alerts": "Alerts",
+    "maps": "Maps",
+    "profile": "Profile",
+    "secure": "SECURE CIVIC PLATFORM • DATA ENCRYPTED"
+  },
+
+  "lang": {
+    "en": "English",
+    "zh": "中文"
+  }
+}

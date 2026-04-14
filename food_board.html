@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>CrisisLink | Live Food Board</title>
+<!-- Google Fonts -->
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Plus_Jakarta_Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "secondary-fixed-dim": "#ffb869",
+              "on-primary-fixed-variant": "#00513a",
+              "on-secondary": "#ffffff",
+              "surface-container-lowest": "#ffffff",
+              "inverse-surface": "#31312b",
+              "primary-fixed-dim": "#68dbae",
+              "on-tertiary-container": "#fffbff",
+              "surface-dim": "#dcdad2",
+              "tertiary-fixed-dim": "#ffb3ad",
+              "on-primary-container": "#f5fff7",
+              "surface-tint": "#006c4e",
+              "error": "#ba1a1a",
+              "secondary": "#885200",
+              "on-background": "#1c1c17",
+              "on-surface": "#1c1c17",
+              "on-tertiary-fixed": "#410003",
+              "background": "#fcf9f1",
+              "surface-container": "#f0eee5",
+              "primary-fixed": "#86f8c9",
+              "on-secondary-fixed-variant": "#673d00",
+              "outline-variant": "#bccac1",
+              "primary-container": "#008560",
+              "on-surface-variant": "#3d4943",
+              "surface-container-highest": "#e5e2da",
+              "surface-container-low": "#f6f4eb",
+              "error-container": "#ffdad6",
+              "secondary-fixed": "#ffdcbb",
+              "surface-variant": "#e5e2da",
+              "outline": "#6d7a73",
+              "on-error-container": "#93000a",
+              "surface": "#fcf9f1",
+              "on-tertiary": "#ffffff",
+              "on-error": "#ffffff",
+              "on-primary-fixed": "#002115",
+              "on-secondary-fixed": "#2b1700",
+              "tertiary-container": "#b85751",
+              "secondary-container": "#fdad4e",
+              "inverse-primary": "#68dbae",
+              "surface-container-high": "#eae8e0",
+              "tertiary": "#993f3a",
+              "primary": "#00694c",
+              "on-secondary-container": "#704200",
+              "inverse-on-surface": "#f3f1e8",
+              "surface-bright": "#fcf9f1",
+              "tertiary-fixed": "#ffdad6",
+              "on-tertiary-fixed-variant": "#7e2a27",
+              "on-primary": "#ffffff"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Plus Jakarta Sans"],
+              "label": ["Plus Jakarta Sans"]
+            },
+            borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        body {
+            background-color: #fcf9f1;
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            -webkit-font-smoothing: antialiased;
+        }
+        .bento-shadow {
+            box-shadow: 0 20px 40px rgba(28, 28, 23, 0.04);
+        }
+        .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="text-on-surface">
+<!-- TopNavBar (Shared Component) -->
+<header class="fixed top-0 w-full z-50 shadow-[0_20px_40px_rgba(28,28,23,0.04)] bg-[#ffffff]/80 dark:bg-slate-900/80 backdrop-blur-xl">
+<div class="flex justify-between items-center px-8 md:px-16 py-4 w-full">
+<div class="text-[#00694c] dark:text-[#68dbae] font-black text-2xl tracking-tighter font-headline">
+                CrisisLink
+            </div>
+<div class="hidden md:flex items-center space-x-1">
+<span class="text-[#3d4943] dark:text-slate-400 font-medium font-headline tracking-tight text-lg">Location: 2000</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-[#00694c] dark:text-[#68dbae] p-2 hover:bg-[#f6f4eb] dark:hover:bg-slate-800 transition-colors duration-300 rounded-full flex items-center justify-center">
+<span class="material-symbols-outlined" data-icon="language">language</span>
+</button>
+</div>
+</div>
+<div class="bg-[#f6f4eb] dark:bg-slate-800 h-[1px] w-full"></div>
+</header>
+<main class="pt-24 pb-32 px-6 md:px-16 lg:px-32 max-w-[1600px] mx-auto">
+<!-- Header Section -->
+<div class="mb-12">
+<h1 class="font-headline text-4xl md:text-5xl font-extrabold tracking-tight text-primary mb-4">Live Food Board</h1>
+<p class="text-on-surface-variant text-lg max-w-2xl leading-relaxed">Connecting surplus nourishment with regional community hubs in real-time.</p>
+</div>
+<!-- Filter & Search Section -->
+<section class="mb-10 space-y-6">
+<div class="relative max-w-xl">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="w-full pl-12 pr-4 py-4 bg-surface-container-high border-none rounded-lg focus:ring-2 focus:ring-primary/20 text-on-surface" placeholder="Search available food..." type="text"/>
+</div>
+<div class="flex items-center gap-3 overflow-x-auto hide-scrollbar pb-2">
+<button class="px-6 py-2 rounded-full bg-primary text-on-primary font-semibold text-sm whitespace-nowrap">All</button>
+<button class="px-6 py-2 rounded-full bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high transition-colors font-semibold text-sm whitespace-nowrap">Baked goods</button>
+<button class="px-6 py-2 rounded-full bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high transition-colors font-semibold text-sm whitespace-nowrap">Produce</button>
+<button class="px-6 py-2 rounded-full bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high transition-colors font-semibold text-sm whitespace-nowrap">Dairy</button>
+<button class="px-6 py-2 rounded-full bg-surface-container-low text-on-surface-variant hover:bg-surface-container-high transition-colors font-semibold text-sm whitespace-nowrap">Prepared meals</button>
+<button class="px-6 py-2 rounded-full bg-surface-container-low text-secondary font-semibold text-sm whitespace-nowrap border border-secondary/20">Expiring soon</button>
+</div>
+</section>
+<!-- Main Food Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+<!-- Food Card 1: Available -->
+<div class="bg-surface-container-lowest rounded-lg p-6 bento-shadow flex flex-col h-full group hover:bg-surface-bright transition-all">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-full bg-primary-fixed-dim flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="bakery_dining">bakery_dining</span>
+</div>
+<span class="px-3 py-1 bg-primary-fixed text-on-primary-fixed-variant rounded-full text-xs font-bold tracking-tight">~40 portions</span>
+</div>
+<div class="flex-grow">
+<h3 class="text-xl font-bold font-headline text-on-surface mb-1">Artisan Sourdough Loaves</h3>
+<p class="text-on-surface-variant text-sm mb-4">The Golden Crust Bakery</p>
+<div class="space-y-2 mb-6">
+<div class="flex items-center text-secondary font-semibold text-sm">
+<span class="material-symbols-outlined text-sm mr-2" data-icon="schedule">schedule</span>
+                            Expires in 3 hrs
+                        </div>
+<div class="flex items-center text-outline text-sm">
+<span class="material-symbols-outlined text-sm mr-2" data-icon="location_on">location_on</span>
+                            Surry Hills (0.8km)
+                        </div>
+</div>
+</div>
+<button class="w-full py-3 bg-primary text-on-primary font-bold rounded-full scale-98 active:scale-95 transition-transform">Claim</button>
+</div>
+<!-- Food Card 2: Available -->
+<div class="bg-surface-container-lowest rounded-lg p-6 bento-shadow flex flex-col h-full group hover:bg-surface-bright transition-all">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-full bg-primary-fixed-dim flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="restaurant">restaurant</span>
+</div>
+<span class="px-3 py-1 bg-primary-fixed text-on-primary-fixed-variant rounded-full text-xs font-bold tracking-tight">15 meals</span>
+</div>
+<div class="flex-grow">
+<h3 class="text-xl font-bold font-headline text-on-surface mb-1">Vegetable Curry &amp; Rice</h3>
+<p class="text-on-surface-variant text-sm mb-4">Spice Route Bistro</p>
+<div class="space-y-2 mb-6">
+<div class="flex items-center text-secondary font-semibold text-sm">
+<span class="material-symbols-outlined text-sm mr-2" data-icon="schedule">schedule</span>
+                            Expires in 2 hrs
+                        </div>
+<div class="flex items-center text-outline text-sm">
+<span class="material-symbols-outlined text-sm mr-2" data-icon="location_on">location_on</span>
+                            Chippendale (1.2km)
+                        </div>
+</div>
+</div>
+<button class="w-full py-3 bg-primary text-on-primary font-bold rounded-full scale-98 active:scale-95 transition-transform">Claim</button>
+</div>
+<!-- Food Card 3: Claimed (State) -->
+<div class="bg-surface-container-low/50 rounded-lg p-6 flex flex-col h-full opacity-60">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center text-outline">
+<span class="material-symbols-outlined" data-icon="egg">egg</span>
+</div>
+<span class="px-3 py-1 bg-surface-container-highest text-on-surface-variant rounded-full text-xs font-bold tracking-tight">~10 portions</span>
+</div>
+<div class="flex-grow">
+<h3 class="text-xl font-bold font-headline text-on-surface-variant mb-1">Farm Fresh Eggs</h3>
+<p class="text-outline text-sm mb-4">Locals Market</p>
+<div class="space-y-2 mb-6">
+<div class="flex items-center text-outline text-sm">
+<span class="material-symbols-outlined text-sm mr-2" data-icon="check_circle">check_circle</span>
+                            Claimed by St. Jude's
+                        </div>
+<div class="flex items-center text-outline text-sm">
+<span class="material-symbols-outlined text-sm mr-2" data-icon="location_on">location_on</span>
+                            Redfern (2.1km)
+                        </div>
+</div>
+</div>
+<button class="w-full py-3 bg-surface-container-highest text-outline font-bold rounded-full cursor-not-allowed uppercase tracking-widest text-xs" disabled="">Claimed</button>
+</div>
+<!-- Food Card 4: Available -->
+<div class="bg-surface-container-lowest rounded-lg p-6 bento-shadow flex flex-col h-full group hover:bg-surface-bright transition-all">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-full bg-primary-fixed-dim flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="nutrition">nutrition</span>
+</div>
+<span class="px-3 py-1 bg-primary-fixed text-on-primary-fixed-variant rounded-full text-xs font-bold tracking-tight">20kg bulk</span>
+</div>
+<div class="flex-grow">
+<h3 class="text-xl font-bold font-headline text-on-surface mb-1">Seasonal Produce Box</h3>
+<p class="text-on-surface-variant text-sm mb-4">Urban Harvest Co.</p>
+<div class="space-y-2 mb-6">
+<div class="flex items-center text-secondary font-semibold text-sm">
+<span class="material-symbols-outlined text-sm mr-2" data-icon="schedule">schedule</span>
+                            Expires in 6 hrs
+                        </div>
+<div class="flex items-center text-outline text-sm">
+<span class="material-symbols-outlined text-sm mr-2" data-icon="location_on">location_on</span>
+                            Pyrmont (2.5km)
+                        </div>
+</div>
+</div>
+<button class="w-full py-3 bg-primary text-on-primary font-bold rounded-full scale-98 active:scale-95 transition-transform">Claim</button>
+</div>
+<!-- Food Card 5: Available -->
+<div class="bg-surface-container-lowest rounded-lg p-6 bento-shadow flex flex-col h-full group hover:bg-surface-bright transition-all">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-full bg-primary-fixed-dim flex items-center justify-center text-primary">
+<span class="material-symbols-outlined" data-icon="icecream">icecream</span>
+</div>
+<span class="px-3 py-1 bg-primary-fixed text-on-primary-fixed-variant rounded-full text-xs font-bold tracking-tight">12 units</span>
+</div>
+<div class="flex-grow">
+<h3 class="text-xl font-bold font-headline text-on-surface mb-1">Assorted Organic Yogurts</h3>
+<p class="text-on-surface-variant text-sm mb-4">Green Grocer Metro</p>
+<div class="space-y-2 mb-6">
+<div class="flex items-center text-secondary font-semibold text-sm">
+<span class="material-symbols-outlined text-sm mr-2" data-icon="schedule">schedule</span>
+                            Expires in 4 hrs
+                        </div>
+<div class="flex items-center text-outline text-sm">
+<span class="material-symbols-outlined text-sm mr-2" data-icon="location_on">location_on</span>
+                            Darlington (1.5km)
+                        </div>
+</div>
+</div>
+<button class="w-full py-3 bg-primary text-on-primary font-bold rounded-full scale-98 active:scale-95 transition-transform">Claim</button>
+</div>
+<!-- Food Card 6: Claimed (State) -->
+<div class="bg-surface-container-low/50 rounded-lg p-6 flex flex-col h-full opacity-60">
+<div class="flex justify-between items-start mb-4">
+<div class="w-12 h-12 rounded-full bg-surface-container-highest flex items-center justify-center text-outline">
+<span class="material-symbols-outlined" data-icon="lunch_dining">lunch_dining</span>
+</div>
+<span class="px-3 py-1 bg-surface-container-highest text-on-surface-variant rounded-full text-xs font-bold tracking-tight">8 boxes</span>
+</div>
+<div class="flex-grow">
+<h3 class="text-xl font-bold font-headline text-on-surface-variant mb-1">Premium Deli Sandwiches</h3>
+<p class="text-outline text-sm mb-4">The Lunch Spot</p>
+<div class="space-y-2 mb-6">
+<div class="flex items-center text-outline text-sm">
+<span class="material-symbols-outlined text-sm mr-2" data-icon="check_circle">check_circle</span>
+                            Claimed by Hope House
+                        </div>
+<div class="flex items-center text-outline text-sm">
+<span class="material-symbols-outlined text-sm mr-2" data-icon="location_on">location_on</span>
+                            Newtown (3.0km)
+                        </div>
+</div>
+</div>
+<button class="w-full py-3 bg-surface-container-highest text-outline font-bold rounded-full cursor-not-allowed uppercase tracking-widest text-xs" disabled="">Claimed</button>
+</div>
+</div>
+</main>
+<!-- Floating Action Button -->
+<button class="fixed bottom-28 right-8 md:right-16 w-16 h-16 bg-primary text-on-primary rounded-full shadow-lg flex items-center justify-center z-50 hover:scale-110 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-3xl" data-icon="add">add</span>
+</button>
+<!-- BottomNavBar (Shared Component) -->
+<nav class="fixed bottom-0 left-0 w-full flex justify-around items-center px-6 pb-6 pt-3 backdrop-blur-2xl bg-[#ffffff]/80 dark:bg-slate-900/80 z-50 rounded-t-[2rem] shadow-[0_-10px_30px_rgba(28,28,23,0.03)]">
+<a class="flex flex-col items-center justify-center bg-[#00694c] text-white rounded-full px-6 py-2 transition-all scale-110 duration-200 ease-out" href="#">
+<span class="material-symbols-outlined" data-icon="grid_view" style="font-variation-settings: 'FILL' 1;">grid_view</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[11px] font-semibold mt-1">Feed</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#3d4943] dark:text-slate-400 px-4 py-2 hover:text-[#00694c] dark:hover:text-[#68dbae] transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="add_circle">add_circle</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[11px] font-semibold mt-1">Post</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#3d4943] dark:text-slate-400 px-4 py-2 hover:text-[#00694c] dark:hover:text-[#68dbae] transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[11px] font-semibold mt-1">Alerts</span>
+</a>
+<a class="flex flex-col items-center justify-center text-[#3d4943] dark:text-slate-400 px-4 py-2 hover:text-[#00694c] dark:hover:text-[#68dbae] transition-all" href="#">
+<span class="material-symbols-outlined" data-icon="person">person</span>
+<span class="font-['Plus_Jakarta_Sans'] text-[11px] font-semibold mt-1">Profile</span>
+</a>
+</nav>
+</body></html>

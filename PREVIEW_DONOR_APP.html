@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CrisisLink - Share Your Surplus</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+                'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+            min-height: 100vh;
+            padding-top: 20px;
+            padding-bottom: 20px;
+        }
+
+        .donation-form-container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 24px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            border-bottom: 2px solid #fde68a;
+            padding-bottom: 12px;
+        }
+
+        .form-header h1 {
+            font-size: 24px;
+            font-weight: 700;
+            color: #b45309;
+            margin: 0;
+        }
+
+        .timer {
+            font-size: 20px;
+            font-weight: 600;
+            color: #d97706;
+            font-family: 'Courier New', monospace;
+        }
+
+        .photo-section {
+            margin-bottom: 24px;
+        }
+
+        .camera-placeholder {
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+            border: 2px dashed #fcd34d;
+            border-radius: 12px;
+            padding: 40px 20px;
+            text-align: center;
+        }
+
+        .btn-primary {
+            padding: 12px 24px;
+            background-color: #f59e0b;
+            color: white;
+            font-weight: 600;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+            width: 100%;
+        }
+
+        .btn-primary:hover {
+            background-color: #d97706;
+        }
+
+        .btn-primary.large {
+            font-size: 18px;
+            padding: 16px 24px;
+            margin-top: 16px;
+        }
+
+        .form-content {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .form-group label {
+            font-weight: 600;
+            margin-bottom: 6px;
+            color: #92400e;
+            font-size: 14px;
+        }
+
+        .form-group input,
+        .form-group select,
+        .form-group textarea {
+            padding: 10px 12px;
+            border: 1px solid #d1d5db;
+            border-radius: 8px;
+            font-size: 14px;
+            font-family: inherit;
+            transition: outline 0.3s;
+        }
+
+        .form-group input:focus,
+        .form-group select:focus,
+        .form-group textarea:focus {
+            outline: none;
+            ring: 2px;
+            border-color: #f59e0b;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+        }
+
+        .form-group small {
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 4px;
+        }
+
+        .form-row {
+            display: flex;
+            gap: 16px;
+        }
+
+        .form-row .form-group {
+            flex: 1;
+        }
+
+        .info-text {
+            text-align: center;
+            font-size: 12px;
+            color: #6b7280;
+            margin-top: 12px;
+        }
+
+        /* Demo-specific */
+        .demo-note {
+            background-color: #dbeafe;
+            border-left: 4px solid #3b82f6;
+            padding: 12px;
+            margin-bottom: 16px;
+            border-radius: 4px;
+            font-size: 12px;
+            color: #1e40af;
+        }
+
+        .timer.active {
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+        }
+    </style>
+</head>
+<body>
+    <div class="donation-form-container">
+        <div class="demo-note">
+            📱 This is a preview of the Donor App (US 3.1 - Quick Donation Form)
+        </div>
+
+        <!-- Header -->
+        <div class="form-header">
+            <h1>Share Your Surplus</h1>
+            <div class="timer active">
+                1:00
+            </div>
+        </div>
+
+        <!-- Photo Section -->
+        <div class="photo-section">
+            <div class="camera-placeholder">
+                <button class="btn-primary" style="width: auto; padding: 14px 24px;">
+                    📷 Snap Food Photo
+                </button>
+                <p style="margin-top: 12px; color: #6b7280; font-size: 12px;">
+                    AI will auto-fill food type & quantity
+                </p>
+            </div>
+        </div>
+
+        <!-- Form -->
+        <form class="form-content">
+            <!-- Food Type -->
+            <div class="form-group">
+                <label for="foodType">Food Type *</label>
+                <input
+                    type="text"
+                    id="foodType"
+                    placeholder="e.g., Bread, Pastries, Mixed Vegetables"
+                    value=""
+                />
+                <small>AI will auto-fill from your photo</small>
+            </div>
+
+            <!-- Quantity -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="quantity">Quantity *</label>
+                    <input
+                        type="number"
+                        id="quantity"
+                        placeholder="e.g., 5"
+                        value=""
+                    />
+                </div>
+
+                <div class="form-group">
+                    <label for="unit">Unit</label>
+                    <select id="unit">
+                        <option value="portions">Portions</option>
+                        <option value="kg">Kilograms</option>
+                        <option value="items">Items</option>
+                        <option value="boxes">Boxes</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Description -->
+            <div class="form-group">
+                <label for="description">Description (optional)</label>
+                <textarea
+                    id="description"
+                    placeholder="e.g., Fresh baked this morning, gluten-free options available"
+                    rows="2"
+                ></textarea>
+            </div>
+
+            <!-- Postcode & Org Code -->
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="postcode">Postcode *</label>
+                    <input
+                        type="text"
+                        id="postcode"
+                        placeholder="e.g., 3000"
+                        maxlength="4"
+                        value=""
+                    />
+                </div>
+
+                <div class="form-group">
+                    <label for="orgCode">Organization Code *</label>
+                    <input
+                        type="text"
+                        id="orgCode"
+                        placeholder="e.g., ABC123"
+                        value=""
+                    />
+                </div>
+            </div>
+
+            <!-- Submit Button -->
+            <button type="button" class="btn-primary large">
+                ✓ Post Now
+            </button>
+
+            <p class="info-text">
+                No account needed. Just postcode & org code.
+            </p>
+        </form>
+    </div>
+
+    <script>
+        // Timer countdown effect
+        let timer = 60;
+        const timerElement = document.querySelector('.timer');
+        
+        setInterval(() => {
+            if (timer > 0) {
+                timer--;
+                const minutes = Math.floor(timer / 60);
+                const seconds = String(timer % 60).padStart(2, '0');
+                timerElement.textContent = `${minutes}:${seconds}`;
+                
+                // Add warning effect when < 15 seconds
+                if (timer < 15) {
+                    timerElement.style.color = '#92400e';
+                }
+            }
+        }, 1000);
+
+        // Simple form interactions
+        document.querySelector('.btn-primary').addEventListener('click', function() {
+            alert('Camera would open here (React app would handle this)');
+        });
+
+        document.querySelector('form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            alert('Form submitted! (Backend API call would happen here)');
+        });
+    </script>
+</body>
+</html>
