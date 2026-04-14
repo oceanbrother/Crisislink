@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CrisisLink - Move Surplus Food to People Who Need It</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+                'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            background: linear-gradient(180deg, #fafaf9 0%, #f5f5f4 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Header */
+        header {
+            padding: 32px 20px;
+            text-align: center;
+            background: white;
+            border-bottom: 1px solid #e8e8e8;
+        }
+
+        .logo-section {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .logo {
+            width: 48px;
+            height: 48px;
+            background: linear-gradient(135deg, #7ee8c3 0%, #36b886 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+        }
+
+        .logo-text {
+            font-size: 28px;
+            font-weight: 700;
+            color: #1f2937;
+        }
+
+        .tagline {
+            font-size: 16px;
+            color: #6b7280;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .stats {
+            display: flex;
+            justify-content: center;
+            gap: 32px;
+            font-size: 14px;
+            flex-wrap: wrap;
+        }
+
+        .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .stat-dot {
+            width: 8px;
+            height: 8px;
+            background: #7ee8c3;
+            border-radius: 50%;
+        }
+
+        .stat-text {
+            color: #6b7280;
+        }
+
+        .stat-text strong {
+            color: #1f2937;
+            font-weight: 600;
+        }
+
+        /* Main Content */
+        main {
+            flex: 1;
+            padding: 48px 20px;
+            max-width: 1000px;
+            margin: 0 auto;
+            width: 100%;
+        }
+
+        .section-title {
+            text-align: center;
+            font-size: 12px;
+            font-weight: 700;
+            color: #9ca3af;
+            letter-spacing: 0.1em;
+            margin-bottom: 32px;
+            text-transform: uppercase;
+        }
+
+        .cards-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        @media (max-width: 768px) {
+            .cards-container {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+        }
+
+        .card {
+            border-radius: 16px;
+            padding: 32px;
+            position: relative;
+            overflow: hidden;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08);
+        }
+
+        /* Amber Card */
+        .card-donor {
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+            border: 2px solid #fde68a;
+            color: #92400e;
+        }
+
+        .card-donor .card-icon {
+            background: #f59e0b;
+            color: white;
+        }
+
+        .card-donor .badge {
+            background: #fef08a;
+            color: #d97706;
+            border: 1px solid #fcd34d;
+        }
+
+        .card-donor .cta-link {
+            color: #d97706;
+        }
+
+        .card-donor .cta-link:hover {
+            color: #b45309;
+        }
+
+        /* Teal Card */
+        .card-org {
+            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+            border: 2px solid #a7f3d0;
+            color: #1e5f4f;
+        }
+
+        .card-org .card-icon {
+            background: #14b8a6;
+            color: white;
+        }
+
+        .card-org .badge {
+            background: #ccfbf1;
+            color: #0d9488;
+            border: 1px solid #99f6e4;
+        }
+
+        .card-org .cta-link {
+            color: #0d9488;
+        }
+
+        .card-org .cta-link:hover {
+            color: #1e5f4f;
+        }
+
+        /* Card Content */
+        .card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 24px;
+        }
+
+        .card-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 28px;
+        }
+
+        .badge {
+            font-size: 12px;
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 20px;
+            white-space: nowrap;
+        }
+
+        .card-title {
+            font-size: 24px;
+            font-weight: 700;
+            margin-bottom: 8px;
+            line-height: 1.3;
+        }
+
+        .card-description {
+            font-size: 15px;
+            margin-bottom: 24px;
+            line-height: 1.6;
+            opacity: 0.9;
+        }
+
+        .user-example {
+            background: rgba(0, 0, 0, 0.05);
+            border-radius: 12px;
+            padding: 12px;
+            margin-bottom: 24px;
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+            margin-top: auto;
+        }
+
+        .user-avatar {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            font-size: 14px;
+            flex-shrink: 0;
+        }
+
+        .card-donor .user-avatar {
+            background: #fed7aa;
+            color: #92400e;
+        }
+
+        .card-org .user-avatar {
+            background: #99f6e4;
+            color: #1e5f4f;
+        }
+
+        .user-text {
+            font-size: 13px;
+            line-height: 1.5;
+        }
+
+        .user-text strong {
+            font-weight: 600;
+            display: block;
+        }
+
+        .cta-link {
+            font-size: 15px;
+            font-weight: 600;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            transition: gap 0.3s ease;
+        }
+
+        .cta-link:hover {
+            gap: 12px;
+        }
+
+        .cta-link::after {
+            content: '→';
+            font-size: 18px;
+        }
+
+        /* Footer Message */
+        .footer-message {
+            text-align: center;
+            font-size: 14px;
+            color: #9ca3af;
+            padding: 32px 20px;
+            border-top: 1px solid #e8e8e8;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 20px;
+            font-size: 12px;
+            color: #d1d5db;
+            background: white;
+        }
+
+        /* Animation */
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .card {
+            animation: fadeInUp 0.6s ease-out forwards;
+        }
+
+        .card:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        header {
+            animation: fadeInUp 0.6s ease-out;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <header>
+        <div class="logo-section">
+            <div class="logo">🥬</div>
+            <div class="logo-text">CrisisLink</div>
+        </div>
+
+        <div class="tagline">
+            Move surplus food to the people<br>
+            who need it most — in seconds
+        </div>
+
+        <div class="stats">
+            <div class="stat-item">
+                <div class="stat-dot"></div>
+                <div class="stat-text"><strong>2,841 meals saved</strong> this week</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-text"><strong>94 donors</strong> · <strong>31 food banks</strong></div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main>
+        <div class="section-title">What brings you here?</div>
+
+        <div class="cards-container">
+            <!-- Donor Card (Amber) -->
+            <div class="card card-donor">
+                <div class="card-top">
+                    <div class="card-icon">📋</div>
+                    <div class="badge">⏱️ 60 seconds</div>
+                </div>
+
+                <h2 class="card-title">Post surplus</h2>
+                <p class="card-description">
+                    I have food to donate — bakery, produce, prepared meals
+                </p>
+
+                <a href="#" class="cta-link" onclick="alert('Navigating to donation form...'); return false;">
+                    Post surplus
+                </a>
+            </div>
+
+            <!-- Organization Card (Teal) -->
+            <div class="card card-org">
+                <div class="card-top">
+                    <div class="card-icon">👥</div>
+                    <div class="badge">⚡ Smart match</div>
+                </div>
+
+                <h2 class="card-title">Go to dashboard</h2>
+                <p class="card-description">
+                    I coordinate a food bank, pantry or community relief program
+                </p>
+
+                <a href="#" class="cta-link" onclick="alert('Navigating to organization dashboard...'); return false;">
+                    Go to dashboard
+                </a>
+            </div>
+        </div>
+
+        <div class="footer-message">
+            No account, no password, no forms — just a postcode or org code
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer>
+        CrisisLink · Melbourne, VIC · No account required
+    </footer>
+
+    <script>
+        // Add smooth scroll behavior
+        document.querySelectorAll('a').forEach(link => {
+            link.addEventListener('click', function(e) {
+                if (this.href === '#') {
+                    e.preventDefault();
+                }
+            });
+        });
+    </script>
+</body>
+</html>

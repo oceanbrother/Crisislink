@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CrisisLink - Post Surplus</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+                'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            background: #f9fafb;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* Top Navigation */
+        .navbar {
+            background: #f59e0b;
+            padding: 12px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            color: white;
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.15);
+        }
+
+        .nav-left {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 18px;
+            font-weight: 700;
+        }
+
+        .nav-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: opacity 0.3s;
+        }
+
+        .nav-item:hover {
+            opacity: 0.8;
+        }
+
+        .notification-icon {
+            font-size: 20px;
+        }
+
+        /* Content Area */
+        .content {
+            flex: 1;
+            padding: 24px 20px;
+            max-width: 600px;
+            margin: 0 auto;
+            width: 100%;
+            overflow-y: auto;
+        }
+
+        /* Location Info */
+        .location-info {
+            background: rgba(245, 158, 11, 0.1);
+            padding: 12px 16px;
+            border-radius: 8px;
+            margin-bottom: 24px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 14px;
+        }
+
+        .location-left {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            color: #6b7280;
+        }
+
+        .location-left strong {
+            color: #1f2937;
+            font-weight: 600;
+        }
+
+        .stats {
+            display: flex;
+            gap: 16px;
+            color: #1f2937;
+            font-weight: 600;
+        }
+
+        /* Main Post Section */
+        .post-section {
+            background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+            border: 2px solid #fde68a;
+            border-radius: 16px;
+            padding: 24px;
+            margin-bottom: 32px;
+            animation: slideDown 0.5s ease-out;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .post-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+
+        .user-avatar {
+            width: 40px;
+            height: 40px;
+            background: #fed7aa;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 700;
+            color: #92400e;
+            font-size: 18px;
+        }
+
+        .post-search {
+            position: relative;
+        }
+
+        .post-search input {
+            width: 100%;
+            padding: 12px 16px;
+            border: 1px solid #fcd34d;
+            background: white;
+            border-radius: 20px;
+            font-size: 14px;
+            color: #6b7280;
+            transition: all 0.3s;
+        }
+
+        .post-search input:focus {
+            outline: none;
+            border-color: #f59e0b;
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.1);
+            color: #1f2937;
+        }
+
+        /* Tabs */
+        .post-tabs {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 16px;
+            border-bottom: 1px solid rgba(245, 158, 11, 0.2);
+            padding-bottom: 12px;
+        }
+
+        .tab-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            padding: 8px 12px;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            color: #9ca3af;
+            font-size: 13px;
+            transition: all 0.3s;
+        }
+
+        .tab-btn:hover {
+            color: #f59e0b;
+        }
+
+        .tab-btn.active {
+            color: #d97706;
+            border-bottom: 2px solid #f59e0b;
+            margin-bottom: -13px;
+        }
+
+        /* Submit Button */
+        .post-btn {
+            width: 100%;
+            padding: 14px;
+            background: #f59e0b;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .post-btn:hover {
+            background: #d97706;
+            gap: 12px;
+        }
+
+        .post-btn::after {
+            content: '→';
+            font-size: 18px;
+        }
+
+        /* Alert Box */
+        .alert-box {
+            background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%);
+            border: 1px solid #fca5a5;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 24px;
+            display: flex;
+            gap: 12px;
+            align-items: flex-start;
+        }
+
+        .alert-icon {
+            font-size: 24px;
+            flex-shrink: 0;
+        }
+
+        .alert-content {
+            flex: 1;
+        }
+
+        .alert-title {
+            font-weight: 600;
+            color: #991b1b;
+            margin-bottom: 4px;
+            font-size: 15px;
+        }
+
+        .alert-text {
+            color: #7f1d1d;
+            font-size: 13px;
+            line-height: 1.4;
+            margin-bottom: 8px;
+        }
+
+        .alert-link {
+            color: #dc2626;
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 13px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .alert-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Recent Listings (Secondary) */
+        .recent-listings-section {
+            margin-top: 32px;
+        }
+
+        .section-title {
+            font-size: 12px;
+            font-weight: 700;
+            color: #9ca3af;
+            letter-spacing: 0.1em;
+            margin-bottom: 16px;
+            text-transform: uppercase;
+        }
+
+        .listing-item {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            display: flex;
+            gap: 12px;
+            border: 1px solid #e5e7eb;
+            transition: all 0.3s;
+        }
+
+        .listing-item:hover {
+            border-color: #fde68a;
+            box-shadow: 0 2px 8px rgba(245, 158, 11, 0.1);
+        }
+
+        .listing-image {
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%);
+            border-radius: 8px;
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+        }
+
+        .listing-content {
+            flex: 1;
+        }
+
+        .listing-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            margin-bottom: 4px;
+        }
+
+        .listing-title {
+            font-weight: 600;
+            color: #1f2937;
+            font-size: 14px;
+        }
+
+        .listing-source {
+            font-size: 12px;
+            color: #9ca3af;
+        }
+
+        .listing-badge {
+            display: inline-flex;
+            padding: 4px 10px;
+            border-radius: 16px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .badge-ai {
+            background: #fef08a;
+            color: #b45309;
+        }
+
+        .badge-live {
+            background: #dcfce7;
+            color: #166534;
+        }
+
+        .badge-claimed {
+            background: #dbeafe;
+            color: #1e40af;
+        }
+
+        .listing-time {
+            font-size: 12px;
+            color: #9ca3af;
+            margin-top: 6px;
+        }
+
+        /* Bottom Navigation */
+        .bottom-nav {
+            background: white;
+            border-top: 1px solid #e5e7eb;
+            padding: 16px;
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin-top: auto;
+        }
+
+        .nav-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            background: none;
+            border: none;
+            cursor: pointer;
+            color: #d1d5db;
+            font-size: 24px;
+            transition: color 0.3s;
+            text-decoration: none;
+        }
+
+        .nav-btn.active {
+            color: #f59e0b;
+        }
+
+        .nav-btn:hover {
+            color: #f59e0b;
+        }
+
+        .nav-label {
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .post-icon-btn {
+            width: 56px;
+            height: 56px;
+            background: #f59e0b;
+            color: white;
+            border: none;
+            border-radius: 50%;
+            font-size: 28px;
+            cursor: pointer;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .post-icon-btn:hover {
+            background: #d97706;
+            transform: scale(1.1);
+        }
+
+        /* Responsive */
+        @media (max-width: 480px) {
+            .content {
+                padding: 16px;
+            }
+
+            .post-section {
+                padding: 16px;
+            }
+
+            .listing-item {
+                padding: 12px;
+            }
+
+            .listing-image {
+                width: 70px;
+                height: 70px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Top Navigation -->
+    <nav class="navbar">
+        <div class="nav-left">
+            <span>🥬</span>
+            <span>CrisisLink</span>
+        </div>
+        <div class="nav-right">
+            <div class="nav-item">
+                🌐 English
+            </div>
+            <div class="nav-item notification-icon">
+                🔔
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="content">
+        <!-- Location Info -->
+        <div class="location-info">
+            <div class="location-left">
+                <span>📍</span>
+                <span>Postcode <strong>3149</strong> · 5 km radius</span>
+            </div>
+            <div class="stats">
+                <span><strong>4</strong> available</span>
+                <span><strong>2</strong> claimed</span>
+            </div>
+        </div>
+
+        <!-- Main Post Section -->
+        <div class="post-section">
+            <div class="post-header">
+                <div class="user-avatar">D</div>
+                <div class="post-search">
+                    <input 
+                        type="text" 
+                        placeholder="What food are you posting today?"
+                        onclick="this.focus()"
+                    />
+                </div>
+            </div>
+
+            <div class="post-tabs">
+                <button class="tab-btn">📷 Photo</button>
+                <button class="tab-btn active">📍 Location</button>
+                <button class="tab-btn">🖼️ Gallery</button>
+            </div>
+
+            <button class="post-btn">Post surplus</button>
+        </div>
+
+        <!-- Alert Box -->
+        <div class="alert-box">
+            <div class="alert-icon">⏰</div>
+            <div class="alert-content">
+                <div class="alert-title">4 high-need zones near you</div>
+                <div class="alert-text">
+                    Sunshine · Footscray · Noble Park · Werribee
+                </div>
+                <a href="#" class="alert-link" onclick="alert('Opening map...'); return false;">
+                    View map →
+                </a>
+            </div>
+        </div>
+
+        <!-- Recent Listings -->
+        <div class="recent-listings-section">
+            <div class="section-title">Recent Listings</div>
+
+            <!-- Listing Item 1 -->
+            <div class="listing-item">
+                <div class="listing-image">🍞</div>
+                <div class="listing-content">
+                    <div class="listing-header">
+                        <div>
+                            <div class="listing-title">Artisan Sourdough Loaves</div>
+                            <div class="listing-source">Bourke St Bakehouse</div>
+                        </div>
+                        <span class="listing-badge badge-ai">+ AI 94%</span>
+                    </div>
+                    <div style="margin-top: 4px;">
+                        <span style="font-size: 12px; color: #6b7280;">18 loaves · Bakery</span>
+                    </div>
+                    <div class="listing-time">📍 0.4 km · ⏱️ 8 min ago · Available</div>
+                </div>
+            </div>
+
+            <!-- Listing Item 2 -->
+            <div class="listing-item">
+                <div class="listing-image">🥕</div>
+                <div class="listing-content">
+                    <div class="listing-header">
+                        <div>
+                            <div class="listing-title">Mixed Seasonal Vegetables</div>
+                            <div class="listing-source">Richmond Farmers Market</div>
+                        </div>
+                        <span class="listing-badge badge-ai">+ AI 91%</span>
+                    </div>
+                    <div style="margin-top: 4px;">
+                        <span style="font-size: 12px; color: #6b7280;">~30 kg · Market</span>
+                    </div>
+                    <div class="listing-time">
+                        🏢 <strong>F</strong> Picked up by Fitzroy Food Bank · Claimed
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Bottom Navigation -->
+    <nav class="bottom-nav">
+        <button class="nav-btn active">
+            <span>🏠</span>
+            <span class="nav-label">Feed</span>
+        </button>
+        <button class="post-icon-btn">+</button>
+        <button class="nav-btn">
+            <span>📍</span>
+            <span class="nav-label">Map</span>
+        </button>
+    </nav>
+</body>
+</html>

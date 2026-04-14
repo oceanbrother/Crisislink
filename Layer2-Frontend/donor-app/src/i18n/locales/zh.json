@@ -1,0 +1,193 @@
+{
+  "appName": "CrisisLink",
+  "tagline": "食物救济资源协调平台",
+
+  "home": {
+    "question": "您今天如何使用 CrisisLink？",
+    "donor": {
+      "title": "我有剩余食物要分享",
+      "description": "为您社区发布剩余食物",
+      "button": "发布剩余"
+    },
+    "organization": {
+      "title": "我运营一个社区组织",
+      "description": "我在协调食物银行、食品储藏室或社区救济项目",
+      "button": "前往面板"
+    }
+  },
+
+  "postcode": {
+    "title": "输入您的邮编",
+    "subtitle": "帮助我们找到您附近的食物",
+    "placeholder": "例如 3000",
+    "button": "发布剩余",
+    "example": "请输入有效的 4 位邮编后继续。"
+  },
+
+  "feed": {
+    "title": "实时物品列表",
+    "noListings": "您所在地区暂无物品列表",
+    "claimButton": "领取食物",
+    "claimedBy": "领取人",
+    "referenceOnly": "Donor 参考视图",
+    "editButton": "编辑物品",
+    "availableToGroups": "仅供社区组织领取",
+    "shareButton": "分享剩余",
+    "filter": "按类别筛选",
+    "search": "搜索物品",
+    "searchResults": "\"{{term}}\" 的结果：{{count}} 条",
+    "filterResults": "{{filter}} 中共有 {{count}} 条物品"
+  },
+
+  "donation": {
+    "title": "分享剩余",
+    "subtitle": "让 AI 为您承担繁重工作。只需拍摄或上传您想分享的食物照片。",
+    "aiTitle": "AI 辅助物品发布",
+    "orgTitle": "组织分享",
+    "takePhoto": "拍照或上传照片",
+    "uploadSubtitle": "我们会帮您填入详情",
+    "changePhoto": "更改照片",
+    "analyzing": "正在分析食物...",
+    "aiDetails": "AI 生成的详情",
+    "guidanceTitle": "拍照提示",
+    "guidanceBody": "请拍清楚完整食物，尽量让主体位于画面中央，并确保光线充足、画面不模糊、食物完整出现在照片中。AI 结果可能出错，发布前请务必检查并手动修改。",
+    "guidancePoints": {
+      "fullItem": "请确保整份食物完整出现在画面中，主体不要被裁切。",
+      "centered": "尽量让主要食物位于画面中央，方便识别。",
+      "lighting": "保持光线充足，避免模糊、反光或大面积阴影。",
+      "quantityCue": "如果您知道大概份量，也可以在修改时补充“小 / 中 / 大 / 重 / 超重”等提示。"
+    },
+    "foodName": "食物名称",
+    "quantity": "估计数量",
+    "sizeCue": "大小 / 重量提示",
+    "sizeCuePlaceholder": "可选：大小或重量提示",
+    "sizeCueOptions": {
+      "small": "小",
+      "medium": "中",
+      "large": "大",
+      "heavy": "重",
+      "extraHeavy": "超重"
+    },
+    "quantityHint": "如果有帮助，您可以用“小 / 中 / 大 / 重 / 超重”等词补充大小或重量信息。",
+    "sizeCueDescriptionPrefix": "大小提示：",
+    "categoryOptions": {
+      "bakedGoods": "烘焙食品",
+      "produce": "水果与蔬菜",
+      "dairy": "乳制品、鸡蛋与冷藏",
+      "pantry": "日杂与调味",
+      "preparedMeals": "预制餐点",
+      "other": "其他"
+    },
+    "category": "类别",
+    "postcode": "您的邮编",
+    "orgCode": "食物银行代码",
+    "postButton": "发布物品 - 耗时少于 60 秒",
+    "errors": {
+      "foodType": "请输入食物类型",
+      "quantity": "请输入有效数量（必须大于 0）",
+      "postcode": "请输入邮编",
+      "orgCode": "请输入组织代码",
+      "aiTimeout": "AI 识别失败或超时。您仍可以手动输入食物详情。",
+      "uploadFailed": "图片上传失败",
+      "deleteFailed": "无法删除这条物品，请重试。"
+    },
+    "reviewNotice": "AI 建议可能不准确。请在发布前再次确认食物名称、数量和类别。",
+    "success": {
+      "title": "已发布！",
+      "donorMessage": "您的食物现在对当地食物银行可见。",
+      "donorTag": "感谢您的分享。",
+      "orgMessage": "您的剩余食物现在可供其他社区领取。",
+      "orgTag": "感谢您帮助网络。",
+      "backToListings": "返回实时列表",
+      "backToDashboard": "返回面板",
+      "editListing": "编辑这条物品",
+      "deleteListing": "删除这条物品"
+    }
+  },
+
+  "orgCode": {
+    "current": "当前组织代码",
+    "title": "输入组织代码",
+    "subtitle": "向食物银行工作人员索取他们的组织代码",
+    "placeholder": "例如 HCFB-2841",
+    "button": "访问物品板",
+    "example": "向食物银行工作人员索取代码"
+  },
+
+  "dashboard": {
+    "title": "实时物品板",
+    "noListings": "无法加载物品。请重试。",
+    "sharing": "来自 {{orgName}} 的分享",
+    "shareButton": "分享剩余",
+    "serviceArea": "服务区域",
+    "allServiceAreas": "全部服务区域",
+    "tabs": {
+      "all": "全部",
+      "bakery": "烘焙食品",
+      "bakedGoods": "烘焙食品",
+      "produce": "水果与蔬菜",
+      "pantry": "日杂与调味",
+      "dairy": "乳制品、鸡蛋与冷藏",
+      "prepared": "熟食",
+      "preparedMeals": "预制餐点",
+      "other": "其他",
+      "grocery": "杂货",
+      "expiringSoon": "即将过期"
+    }
+  },
+
+  "listing": {
+    "itemsAvailable": "{{count}} 件物品可用",
+    "claimMovedOut": "领取成功。这条物品已从可领取列表中移出。",
+    "claimedByYou": "已由您领取",
+    "claimedStatus": "已领取",
+    "location": "位置：",
+    "itemsAvailableZhSuffix": "件物品可用",
+    "expiresIn": "{{time}}内过期",
+    "from": "来自",
+    "postcode": "邮编",
+    "claimingButton": "领取中...",
+    "claimThisButton": "领取",
+    "justNow": "刚才",
+    "minutesAgo": "{{count}} 分钟前",
+    "hoursAgo": "{{count}} 小时前",
+    "daysAgo": "{{count}} 天前",
+    "dietary": {
+      "vegetarian": "素食",
+      "vegan": "纯素",
+      "glutenFree": "无谷蛋白",
+      "dairyFree": "无乳制品",
+      "nonVegetarian": "非素食"
+    },
+    "units": {
+      "portions": "份",
+      "meals": "餐",
+      "kg": "公斤",
+      "units": "件",
+      "boxes": "盒",
+      "dozen": "打",
+      "litres": "升"
+    }
+  },
+
+  "common": {
+    "close": "关闭",
+    "back": "返回",
+    "next": "下一步",
+    "cancel": "取消",
+    "submit": "提交",
+    "loading": "加载中...",
+    "error": "错误",
+    "success": "成功",
+    "home": "返回首页",
+    "alerts": "通知",
+    "maps": "地图",
+    "profile": "我的",
+    "secure": "安全民众平台 • 数据已加密"
+  },
+
+  "lang": {
+    "en": "English",
+    "zh": "中文"
+  }
+}

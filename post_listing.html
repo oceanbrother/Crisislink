@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Post a Listing | CrisisLink</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;700;800&amp;family=Plus_Jakarta_Sans:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "secondary-fixed-dim": "#ffb869",
+              "on-primary-fixed-variant": "#00513a",
+              "on-secondary": "#ffffff",
+              "surface-container-lowest": "#ffffff",
+              "inverse-surface": "#31312b",
+              "primary-fixed-dim": "#68dbae",
+              "on-tertiary-container": "#fffbff",
+              "surface-dim": "#dcdad2",
+              "tertiary-fixed-dim": "#ffb3ad",
+              "on-primary-container": "#f5fff7",
+              "surface-tint": "#006c4e",
+              "error": "#ba1a1a",
+              "secondary": "#885200",
+              "on-background": "#1c1c17",
+              "on-surface": "#1c1c17",
+              "on-tertiary-fixed": "#410003",
+              "background": "#fcf9f1",
+              "surface-container": "#f0eee5",
+              "primary-fixed": "#86f8c9",
+              "on-secondary-fixed-variant": "#673d00",
+              "outline-variant": "#bccac1",
+              "primary-container": "#008560",
+              "on-surface-variant": "#3d4943",
+              "surface-container-highest": "#e5e2da",
+              "surface-container-low": "#f6f4eb",
+              "error-container": "#ffdad6",
+              "secondary-fixed": "#ffdcbb",
+              "surface-variant": "#e5e2da",
+              "outline": "#6d7a73",
+              "on-error-container": "#93000a",
+              "surface": "#fcf9f1",
+              "on-tertiary": "#ffffff",
+              "on-error": "#ffffff",
+              "on-primary-fixed": "#002115",
+              "on-secondary-fixed": "#2b1700",
+              "tertiary-container": "#b85751",
+              "secondary-container": "#fdad4e",
+              "inverse-primary": "#68dbae",
+              "surface-container-high": "#eae8e0",
+              "tertiary": "#993f3a",
+              "primary": "#00694c",
+              "on-secondary-container": "#704200",
+              "inverse-on-surface": "#f3f1e8",
+              "surface-bright": "#fcf9f1",
+              "tertiary-fixed": "#ffdad6",
+              "on-tertiary-fixed-variant": "#7e2a27",
+              "on-primary": "#ffffff"
+            },
+            fontFamily: {
+              "headline": ["Manrope"],
+              "body": ["Plus Jakarta Sans"],
+              "label": ["Plus Jakarta Sans"]
+            },
+            borderRadius: {"DEFAULT": "1rem", "lg": "2rem", "xl": "3rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .bg-soft-gradient {
+            background: radial-gradient(circle at top right, #f5fff7 0%, #fcf9f1 100%);
+        }
+    </style>
+</head>
+<body class="bg-surface font-body text-on-surface min-h-screen flex flex-col">
+<!-- Top Navigation Bar (Transactional Shell - No Nav Links) -->
+<header class="fixed top-0 w-full z-50 bg-[#ffffff] dark:bg-slate-900 shadow-[0_20px_40px_rgba(28,28,23,0.04)]">
+<div class="flex justify-between items-center px-8 md:px-16 py-4 w-full bg-opacity-80 backdrop-blur-xl">
+<div class="flex items-center gap-4">
+<button class="p-2 hover:bg-surface-container-low rounded-full transition-colors">
+<span class="material-symbols-outlined text-on-surface">close</span>
+</button>
+<span class="text-[#00694c] dark:text-[#68dbae] font-black text-2xl tracking-tighter">CrisisLink</span>
+</div>
+<div class="hidden md:flex items-center gap-2 text-on-surface-variant font-medium">
+<span class="material-symbols-outlined text-sm">bolt</span>
+<span class="text-sm">AI Assisted Listing</span>
+</div>
+</div>
+<div class="bg-[#f6f4eb] dark:bg-slate-800 h-[1px] w-full self-end"></div>
+</header>
+<main class="flex-grow pt-24 pb-32 px-6 md:px-16 max-w-3xl mx-auto w-full">
+<!-- Hero Header -->
+<header class="mb-10 text-center md:text-left">
+<h1 class="font-headline text-4xl font-extrabold tracking-tight text-primary mb-3">Share Surplus</h1>
+<p class="text-on-surface-variant text-lg max-w-md leading-relaxed">Let AI do the heavy lifting. Just snap a photo of the food you'd like to share.</p>
+</header>
+<section class="space-y-12">
+<!-- Upload Area -->
+<div class="group relative flex flex-col items-center justify-center border-2 border-dashed border-outline-variant bg-surface-container-lowest rounded-lg p-12 transition-all hover:border-primary-container hover:bg-on-primary-container/20 cursor-pointer">
+<div class="w-16 h-16 bg-primary-fixed-dim rounded-full flex items-center justify-center mb-4 transition-transform group-hover:scale-110">
+<span class="material-symbols-outlined text-on-primary-fixed text-3xl">photo_camera</span>
+</div>
+<h3 class="font-headline font-bold text-xl text-on-surface mb-2">Take a photo or upload one</h3>
+<p class="text-on-surface-variant text-sm">we will fill in the details</p>
+<input class="absolute inset-0 opacity-0 cursor-pointer" type="file"/>
+</div>
+<!-- AI Result Card (Simulated Post-Upload State) -->
+<div class="bg-on-primary-container border border-primary-fixed-dim rounded-lg p-8 shadow-sm relative overflow-hidden">
+<div class="absolute top-0 right-0 p-4 opacity-10">
+<span class="material-symbols-outlined text-8xl" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+</div>
+<div class="flex items-center gap-3 mb-8">
+<div class="bg-primary-container p-2 rounded-lg">
+<span class="material-symbols-outlined text-white text-sm" style="font-variation-settings: 'FILL' 1;">auto_awesome</span>
+</div>
+<span class="font-headline font-bold text-primary tracking-tight">AI Generated Details</span>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6 relative z-10">
+<!-- Food Name -->
+<div class="col-span-full">
+<label class="block text-xs font-bold uppercase tracking-wider text-primary mb-2 ml-1">Food Name</label>
+<input class="w-full bg-surface-container-lowest border-0 rounded-sm py-4 px-5 focus:ring-2 focus:ring-primary text-on-surface font-medium shadow-sm transition-all" placeholder="What are you sharing?" type="text" value="Fresh Artisan Sourdough Loaves"/>
+</div>
+<!-- Quantity -->
+<div class="md:col-span-1">
+<label class="block text-xs font-bold uppercase tracking-wider text-primary mb-2 ml-1">Estimated Quantity</label>
+<input class="w-full bg-surface-container-lowest border-0 rounded-sm py-4 px-5 focus:ring-2 focus:ring-primary text-on-surface font-medium shadow-sm transition-all" type="number" value="4"/>
+</div>
+<!-- Category -->
+<div class="md:col-span-1">
+<label class="block text-xs font-bold uppercase tracking-wider text-primary mb-2 ml-1">Category</label>
+<div class="relative">
+<select class="w-full bg-surface-container-lowest border-0 rounded-sm py-4 px-5 focus:ring-2 focus:ring-primary text-on-surface font-medium shadow-sm transition-all appearance-none">
+<option>Bakery &amp; Grains</option>
+<option>Fresh Produce</option>
+<option>Dairy &amp; Eggs</option>
+<option>Canned Goods</option>
+</select>
+<span class="material-symbols-outlined absolute right-4 top-4 text-on-surface-variant pointer-events-none">expand_more</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Manual Fields -->
+<div class="space-y-6">
+<div>
+<label class="block text-sm font-semibold text-on-surface mb-3 ml-1">Your postcode</label>
+<input class="w-full md:w-48 bg-surface-container-high border-0 rounded-sm py-4 px-5 focus:ring-2 focus:ring-primary text-on-surface font-medium transition-all" placeholder="e.g. 2000" type="text" value="2000"/>
+<p class="text-xs text-on-surface-variant mt-2 ml-1">Only shared with verified recipients once accepted.</p>
+</div>
+</div>
+</section>
+</main>
+<!-- Fixed Bottom Action Area -->
+<footer class="fixed bottom-0 left-0 w-full p-6 md:p-8 bg-surface/80 backdrop-blur-xl z-50">
+<div class="max-w-3xl mx-auto">
+<button class="w-full bg-primary text-on-primary font-headline font-bold py-5 rounded-full shadow-lg transition-all hover:bg-primary-container active:scale-95 flex items-center justify-center gap-3">
+                Post listing — takes under 60 seconds
+                <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+<p class="text-center text-[10px] uppercase tracking-widest text-on-surface-variant mt-4 font-bold">Secure Civic Platform • Data Encrypted</p>
+</div>
+</footer>
+<!-- Decorative background element -->
+<div class="fixed top-0 right-0 -z-10 w-1/2 h-screen opacity-30 pointer-events-none">
+<div class="absolute inset-0 bg-soft-gradient"></div>
+</div>
+</body></html>

@@ -1,0 +1,202 @@
+/* ── HomePage.css — "Role Selection" screen ──────────────── */
+
+.home-page {
+  min-height: 100vh;
+  background-color: var(--bg);
+  font-family: var(--font-body);
+  color: var(--on-surface);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem 3rem;
+}
+
+/* ── Logo / Brand ─────────────────────────────────────────── */
+.home-header {
+  margin-bottom: 3rem;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.brand-name {
+  font-family: var(--font-headline);
+  font-weight: 900;
+  font-size: 2.5rem;
+  letter-spacing: -0.03em;
+  color: var(--primary);
+}
+
+/* ── Main section ─────────────────────────────────────────── */
+.home-main {
+  width: 100%;
+  max-width: 900px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.home-question {
+  font-family: var(--font-body);
+  font-weight: 500;
+  font-size: 1.25rem;
+  color: var(--on-surface-variant);
+  text-align: center;
+  margin-bottom: 3rem;
+}
+
+/* ── Cards grid ───────────────────────────────────────────── */
+.cards-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  width: 100%;
+}
+
+@media (min-width: 640px) {
+  .cards-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+/* ── Role card ────────────────────────────────────────────── */
+.role-card {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 3rem;
+  background: var(--surface-low);
+  border-radius: var(--radius-lg);
+  box-shadow: none;
+  cursor: pointer;
+  transition: background 0.3s ease, box-shadow 0.3s ease;
+  overflow: hidden;
+  text-align: center;
+}
+
+.role-card:hover {
+  background: var(--surface-bright);
+  box-shadow: var(--shadow-card);
+}
+
+.role-card-accent {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.role-card:hover .role-card-accent {
+  opacity: 1;
+}
+
+.role-card-accent.donor {
+  background: rgba(136, 82, 0, 0.05);
+}
+
+.role-card-accent.org {
+  background: rgba(0, 105, 76, 0.05);
+}
+
+.role-card-inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  width: 100%;
+  height: 100%;
+  justify-content: space-between;
+}
+
+/* ── Icon circle ──────────────────────────────────────────── */
+.role-icon-circle {
+  width: 5rem;
+  height: 5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 2rem;
+}
+
+.role-icon-circle.donor {
+  background: var(--secondary-fixed);
+  color: var(--on-secondary-container);
+}
+
+.role-icon-circle.org {
+  background: var(--primary-fixed);
+  color: var(--on-primary-fixed-variant);
+}
+
+.role-icon-circle .material-symbols-outlined {
+  font-size: 2.5rem;
+}
+
+/* ── Card content ─────────────────────────────────────────── */
+.role-card-title {
+  font-family: var(--font-headline);
+  font-weight: 700;
+  font-size: 1.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.role-card-title.donor { color: var(--secondary); }
+.role-card-title.org   { color: var(--primary); }
+
+.role-card-desc {
+  font-family: var(--font-body);
+  color: var(--on-surface-variant);
+  max-width: 240px;
+  margin-bottom: 2.5rem;
+  line-height: 1.55;
+}
+
+/* ── Pill buttons ─────────────────────────────────────────── */
+.role-btn {
+  padding: 1rem 2rem;
+  border-radius: var(--radius-full);
+  font-family: var(--font-headline);
+  font-weight: 700;
+  font-size: 0.875rem;
+  letter-spacing: 0.02em;
+  border: none;
+  cursor: pointer;
+  transition: transform 0.15s ease, filter 0.15s ease;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+.role-btn:hover {
+  filter: brightness(0.92);
+}
+
+.role-btn:active {
+  transform: scale(0.97);
+}
+
+.role-btn.donor {
+  background: var(--secondary);
+  color: var(--on-secondary);
+}
+
+.role-btn.org {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+/* ── Footer line ──────────────────────────────────────────── */
+.home-footer {
+  margin-top: 5rem;
+  width: 4rem;
+  height: 4px;
+  background: var(--surface-container-highest);
+  border-radius: var(--radius-full);
+  opacity: 0.4;
+}
