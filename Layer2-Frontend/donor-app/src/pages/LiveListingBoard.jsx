@@ -110,8 +110,8 @@ const LiveListingBoard = () => {
           getAvailableListings({ status: 'available' }),
           getAvailableListings({ status: 'claimed', claimedBy: orgCode }),
         ])
-        setListings(availableData)
-        setClaimedListings(claimedData)
+        setListings(Array.isArray(availableData) ? availableData : [])
+        setClaimedListings(Array.isArray(claimedData) ? claimedData : [])
       } catch (err) {
         console.error(err)
         setListings([])
@@ -125,7 +125,7 @@ const LiveListingBoard = () => {
   }, [orgCode, t])
 
   const filtered = useMemo(() => {
-    let next = [...listings]
+    let next = Array.isArray(listings) ? [...listings] : []
     if (activeFilter !== 'all') {
       next = next.filter((listing) => getListingCategory(listing) === activeFilter)
     }
@@ -150,11 +150,11 @@ const LiveListingBoard = () => {
       if (claimedListing) {
         setClaimedListings((current) => [
           { ...claimedListing, claimedByOrgId: orgCode, claimedAt: new Date().toISOString() },
-          ...current.filter((listing) => listing.id !== listingId),
+          ...(Array.isArray(current) ? current : []).filter((listing) => listing.id !== listingId),
         ])
       }
       setSuccess(t('listing.claimMovedOut', 'Claimed successfully. This item has been moved out of the available board.'))
-      setListings((current) => current.filter((listing) => listing.id !== listingId))
+      setListings((current) => (Array.isArray(current) ? current : []).filter((listing) => listing.id !== listingId))
       setTimeout(() => setSuccess(''), 3000)
     } catch (err) {
       console.error(err)
@@ -172,7 +172,7 @@ const LiveListingBoard = () => {
     try {
       await expireListing(listingId)
       setSuccess(t('donation.success.deleteListing'))
-      setListings((current) => current.filter((listing) => listing.id !== listingId))
+      setListings((current) => (Array.isArray(current) ? current : []).filter((listing) => listing.id !== listingId))
       setTimeout(() => setSuccess(''), 1500)
     } catch (err) {
       console.error(err)
@@ -273,7 +273,7 @@ const LiveListingBoard = () => {
         {error && <div className="alert alert-error">{error}</div>}
         {success && <div className="alert alert-success">{success}</div>}
 
-        {claimedListings.length > 0 && (
+        {Array.isArray(claimedListings) && claimedListings.length > 0 && (
           <section className="claimed-section">
             <h2 className="claimed-section-title">{t('listing.claimedByYou', 'Claimed by you')}</h2>
             <div className="food-grid org-food-grid claimed-food-grid">
