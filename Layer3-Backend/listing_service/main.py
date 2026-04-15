@@ -12,12 +12,15 @@ from recognizer import get_recognizer
 
 # ── Standard + third-party imports ────────────────────────────────────────────
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException, UploadFile, File, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 from datetime import datetime
+from slowapi import Limiter, _rate_limit_exceeded_handler
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
 import uuid
 import databases
 from dotenv import load_dotenv
@@ -32,8 +35,14 @@ if not DATABASE_URL:
 # databases wraps asyncpg and gives us await database.execute() / fetch_all()
 database = databases.Database(DATABASE_URL)
 
+limiter = Limiter(key_func=get_remote_address)
+
 # ── ML model (loaded once at startup) ─────────────────────────────────────────
 recognizer = None
+
+ALLOWED_TYPES = {"image/jpeg", "image/png", "image/webp"}
+MAX_SIZE = 5 * 1024 * 1024  # 5 MB
+EXT_MAP = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp"}
 
 
 # ── Lifespan: startup + shutdown ──────────────────────────────────────────────
@@ -66,6 +75,8 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+app.state.limiter = limiter
+app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 # Serve uploaded food images at /static/<filename>
 UPLOADS_DIR = os.path.join(os.path.dirname(__file__), "uploads")
 os.makedirs(UPLOADS_DIR, exist_ok=True)
@@ -75,8 +86,8 @@ app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["GET", "POST", "PATCH"],
+    allow_headers=["Authorization", "Content-Type"],
 )
 
 
@@ -84,14 +95,22 @@ app.add_middleware(
 
 class ListingCreate(BaseModel):
     """Fields the frontend submits when posting a listing."""
-    foodType: str
-    quantity: float
-    unit: str = "portions"
-    postcode: str
-    orgCode: str
-    dietary_tags: list[str] = []
-    description: Optional[str] = None
-    photoUrl: Optional[str] = None
+    foodType:     str            = Field(..., min_length=2, max_length=100)
+    quantity:     float          = Field(..., gt=0, le=10000)
+    unit:         str            = Field(default="portions", pattern=r"^(portions|boxes|kg|litres|items)$")
+    postcode:     str            = Field(..., pattern=r"^\d{4}$")
+    orgCode:      str            = Field(..., min_length=3, max_length=20)
+    dietary_tags: list[str]      = Field(default=[], max_length=10)
+    description:  Optional[str]  = Field(default=None, max_length=500)
+    photoUrl:     Optional[str]  = Field(default=None)
+
+    @field_validator("dietary_tags")
+    @classmethod
+    def validate_tags(cls, tags):
+        for tag in tags:
+            if len(tag) > 50:
+                raise ValueError("Each dietary tag must be 50 characters or fewer")
+        return tags
 
 
 class Listing(ListingCreate):
@@ -105,8 +124,8 @@ class Listing(ListingCreate):
 
 class ClaimRequest(BaseModel):
     """Body for POST /listings/{id}/claim"""
-    orgId: str
-    orgName: Optional[str] = None
+    orgId:   str           = Field(..., min_length=1, max_length=50)
+    orgName: Optional[str] = Field(default=None, max_length=100)
 
 
 class ImageRecognitionResult(BaseModel):
@@ -185,6 +204,7 @@ def health_check():
 
 
 @app.post("/listings", response_model=Listing)
+@limiter.limit("10/minute")
 async def create_listing(listing: ListingCreate):
     """
     Create a new food listing and persist it to PostgreSQL.
@@ -239,13 +259,17 @@ async def create_listing(listing: ListingCreate):
         "claimedAt":    None,
     }
 
+ALLOWED_STATUSES = {"available", "claimed", "expired"}
 
 @app.get("/listings", response_model=list[Listing])
+@limiter.limit("30/minute")
 async def get_listings(
     postcode: Optional[str] = None,
     foodType: Optional[str] = None,
     status: str = "available",
 ):
+    if status not in ALLOWED_STATUSES:
+        raise HTTPException(status_code=400, detail=f"status must be one of: available, claimed, expired")
     """
     Fetch listings from PostgreSQL with optional filters.
 
@@ -280,6 +304,7 @@ async def get_listings(
 
 
 @app.get("/listings/{listing_id}", response_model=Listing)
+@limiter.limit("30/minute")
 async def get_listing(listing_id: str):
     """Get a single listing by its UUID."""
     row = await database.fetch_one(
@@ -301,6 +326,7 @@ async def get_listing(listing_id: str):
 
 
 @app.post("/listings/{listing_id}/claim", response_model=dict)
+@limiter.limit("5/minute")
 async def claim_listing(listing_id: str, claim: ClaimRequest):
     """
     Claim a listing — marks it taken and records which org claimed it.
@@ -349,6 +375,7 @@ async def claim_listing(listing_id: str, claim: ClaimRequest):
 
 
 @app.patch("/listings/{listing_id}/expire")
+@limiter.limit("10/minute")
 async def expire_listing(listing_id: str):
     """Mark a listing as expired."""
     row = await database.fetch_one(
@@ -368,6 +395,7 @@ async def expire_listing(listing_id: str):
 # ── Image Recognition ─────────────────────────────────────────────────────────
 
 @app.post("/image-recognition/recognize", response_model=ImageRecognitionResult)
+@limiter.limit("5/minute")
 async def recognize_food_from_image(image: UploadFile = File(...)):
     """
     Run the uploaded image through ConvNeXt (classification) +
@@ -375,8 +403,14 @@ async def recognize_food_from_image(image: UploadFile = File(...)):
     """
     if not image:
         raise HTTPException(status_code=400, detail="No image provided")
+    
+    if image.content_type not in ALLOWED_TYPES:
+        raise HTTPException(status_code=415, detail="Unsupported file type. Use JPEG, PNG, or WebP.")
 
     img_bytes = await image.read()
+    if len(img_bytes) > MAX_SIZE:
+        raise HTTPException(status_code=413, detail="File too large. Maximum size is 5 MB.")
+    
     result = recognizer.predict(img_bytes)
 
     return ImageRecognitionResult(
@@ -393,23 +427,27 @@ async def recognize_food_from_image(image: UploadFile = File(...)):
 # ── Image Upload ──────────────────────────────────────────────────────────────
 
 @app.post("/upload")
+@limiter.limit("5/minute")
 async def upload_food_image(image: UploadFile = File(...)):
-    """
-    Save an uploaded food image to disk and return a permanent URL.
-    The URL is stored in food_listing.photo_url so it can be displayed
-    in the feed and on listing detail pages.
-    """
     if not image:
         raise HTTPException(status_code=400, detail="No image provided")
 
-    # Build a unique filename preserving the original extension
-    ext = os.path.splitext(image.filename or "food")[1] or ".jpg"
+    # 1. Check MIME type
+    if image.content_type not in ALLOWED_TYPES:
+        raise HTTPException(status_code=415, detail="Unsupported file type. Use JPEG, PNG, or WebP.")
+
+    # 2. Read and size-check
+    contents = await image.read()
+    if len(contents) > MAX_SIZE:
+        raise HTTPException(status_code=413, detail="File too large. Maximum size is 5 MB.")
+
+    # 3. Derive extension from MIME type, not from client filename
+    ext = EXT_MAP[image.content_type]
     filename = f"{uuid.uuid4()}{ext}"
     filepath = os.path.join(UPLOADS_DIR, filename)
 
-    # Stream-save to disk
     with open(filepath, "wb") as f:
-        shutil.copyfileobj(image.file, f)
+        f.write(contents)
 
     return {"url": f"/static/{filename}"}
 
