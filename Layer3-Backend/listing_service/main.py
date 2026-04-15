@@ -8,16 +8,15 @@ import sys
 import os
 import shutil
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../Layer4-AI/image_recognition/food_photo_recognition")))
-from recognizer import get_recognizer
 
 # ── Standard + third-party imports ────────────────────────────────────────────
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, UploadFile, File
+from fastapi import FastAPI, HTTPException, UploadFile, File, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
 import uuid
 import databases
 from dotenv import load_dotenv
@@ -32,8 +31,23 @@ if not DATABASE_URL:
 # databases wraps asyncpg and gives us await database.execute() / fetch_all()
 database = databases.Database(DATABASE_URL)
 
+# Deployment/runtime options
+BACKEND_PUBLIC_URL = os.getenv("BACKEND_PUBLIC_URL", "").rstrip("/")
+ENABLE_AI_RECOGNIZER = os.getenv("ENABLE_AI_RECOGNIZER", "true").lower() in ("1", "true", "yes")
+CORS_ALLOWED_ORIGINS = [
+    origin.strip()
+    for origin in os.getenv("CORS_ALLOWED_ORIGINS", "*").split(",")
+    if origin.strip()
+]
+CORS_ALLOWED_ORIGIN_REGEX = os.getenv("CORS_ALLOWED_ORIGIN_REGEX", r"^https://.*\.vercel\.app$")
+
 # ── ML model (loaded once at startup) ─────────────────────────────────────────
 recognizer = None
+
+
+def utcnow_naive() -> datetime:
+    """Return UTC as a naive datetime for DB columns without timezone."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
 
 
 # ── Lifespan: startup + shutdown ──────────────────────────────────────────────
@@ -47,9 +61,20 @@ async def lifespan(app: FastAPI):
     print("✓ PostgreSQL connected")
 
     # Load ML model
-    print("Starting food recognizer...")
-    recognizer = get_recognizer()
-    print("✓ Model ready")
+    if ENABLE_AI_RECOGNIZER:
+        try:
+            print("Starting food recognizer...")
+            # Lazy import so API can still run if ML dependencies are missing.
+            from recognizer import get_recognizer
+
+            recognizer = get_recognizer()
+            print("✓ Model ready")
+        except Exception as e:
+            recognizer = None
+            print(f"Warning: model disabled due to startup error: {e}")
+    else:
+        recognizer = None
+        print("AI recognizer disabled by ENABLE_AI_RECOGNIZER=false")
 
     yield  # server is running
 
@@ -71,13 +96,23 @@ UPLOADS_DIR = os.path.join(os.path.dirname(__file__), "uploads")
 os.makedirs(UPLOADS_DIR, exist_ok=True)
 app.mount("/static", StaticFiles(directory=UPLOADS_DIR), name="static")
 
+allow_all_origins = "*" in CORS_ALLOWED_ORIGINS
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
+    allow_origins=["*"] if allow_all_origins else CORS_ALLOWED_ORIGINS,
+    allow_origin_regex=None if allow_all_origins else CORS_ALLOWED_ORIGIN_REGEX,
+    allow_credentials=not allow_all_origins,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+def build_public_url(request: Request, path: str) -> str:
+    """Build a public absolute URL for static assets in cloud/local environments."""
+    if BACKEND_PUBLIC_URL:
+        return f"{BACKEND_PUBLIC_URL}{path}"
+    return f"{str(request.base_url).rstrip('/')}{path}"
 
 
 # ── Pydantic models ───────────────────────────────────────────────────────────
@@ -171,6 +206,13 @@ def row_to_listing(row) -> dict:
             size_cue = description_raw[len("[sizeCue:"):prefix_end]
             description_value = description_raw[prefix_end + 1 :].strip() or None
 
+    created_at = row["created_at"]
+    claimed_at = row["claimed_at"]
+    if created_at and created_at.tzinfo is None:
+        created_at = created_at.replace(tzinfo=timezone.utc)
+    if claimed_at and claimed_at.tzinfo is None:
+        claimed_at = claimed_at.replace(tzinfo=timezone.utc)
+
     return {
         "id":           row["listing_id"],
         "foodType":     row["title"] or row["food_category"] or "",
@@ -183,10 +225,10 @@ def row_to_listing(row) -> dict:
         "dietary_tags": tags_list,
         "description":  description_value,
         "photoUrl":     row["photo_url"],
-        "createdAt":    row["created_at"],
+        "createdAt":    created_at,
         "status":       row["status"],
         "claimedBy":    row["claimed_by_org_code"],   # from LEFT JOIN
-        "claimedAt":    row["claimed_at"],
+        "claimedAt":    claimed_at,
     }
 
 
@@ -217,7 +259,13 @@ def normalize_category(value: Optional[str]) -> Optional[str]:
 
 @app.get("/health")
 def health_check():
-    return {"status": "ok", "service": "listing-service", "db": "postgresql"}
+    return {
+        "status": "ok",
+        "service": "listing-service",
+        "db": "postgresql",
+        "ai_enabled": ENABLE_AI_RECOGNIZER,
+        "ai_ready": recognizer is not None,
+    }
 
 
 @app.post("/listings", response_model=Listing)
@@ -234,9 +282,10 @@ async def create_listing(listing: ListingCreate):
     dietary_tags (a list) is stored as a comma-separated string in the DB.
     """
     listing_id = str(uuid.uuid4())
+    normalized_postcode = (listing.postcode or "").strip()
     org_id = await get_or_create_org(listing.orgCode)
     tags_str = ",".join(listing.dietary_tags)
-    now = datetime.now()
+    now_db = utcnow_naive()
 
     description_value = listing.description or ""
     if listing.sizeCue:
@@ -263,17 +312,17 @@ async def create_listing(listing: ListingCreate):
             "food_category": normalize_category(listing.category) or listing.foodType,
             "dietary_tags": tags_str,
             "photo_url":    listing.photoUrl,
-            "postcode":     listing.postcode,
+            "postcode":     normalized_postcode,
             "org_code":     listing.orgCode,
-            "created_at":   now,
+            "created_at":   now_db,
             "org_id":       org_id,
         },
     )
 
     return {
         "id":           listing_id,
-        **listing.model_dump(),
-        "createdAt":    now,
+        **{**listing.model_dump(), "postcode": normalized_postcode},
+        "createdAt":    now_db.replace(tzinfo=timezone.utc),
         "status":       "available",
         "claimedBy":    None,
         "claimedAt":    None,
@@ -307,6 +356,7 @@ async def get_listings(
     params: dict = {"status": status}
 
     if postcode:
+        postcode = postcode.strip()
         query += " AND fl.postcode = :postcode"
         params["postcode"] = postcode
 
@@ -368,7 +418,7 @@ async def claim_listing(listing_id: str, claim: ClaimRequest):
         )
 
     claimer_org_id = await get_or_create_org(claim.orgId)
-    claimed_at = datetime.now()
+    claimed_at_db = utcnow_naive()
 
     await database.execute(
         """
@@ -380,7 +430,7 @@ async def claim_listing(listing_id: str, claim: ClaimRequest):
         """,
         {
             "claimer_org_id": claimer_org_id,
-            "claimed_at":     claimed_at,
+            "claimed_at":     claimed_at_db,
             "listing_id":     listing_id,
         },
     )
@@ -389,7 +439,7 @@ async def claim_listing(listing_id: str, claim: ClaimRequest):
         "success":    True,
         "listing_id": listing_id,
         "claimed_by": claim.orgId,
-        "claimed_at": claimed_at,
+        "claimed_at": claimed_at_db.replace(tzinfo=timezone.utc),
     }
 
 
@@ -420,6 +470,11 @@ async def recognize_food_from_image(image: UploadFile = File(...)):
     """
     if not image:
         raise HTTPException(status_code=400, detail="No image provided")
+    if recognizer is None:
+        raise HTTPException(
+            status_code=503,
+            detail="AI recognizer not available. Check ENABLE_AI_RECOGNIZER and model dependencies.",
+        )
 
     img_bytes = await image.read()
     result = recognizer.predict(img_bytes)
@@ -438,7 +493,7 @@ async def recognize_food_from_image(image: UploadFile = File(...)):
 # ── Image Upload ──────────────────────────────────────────────────────────────
 
 @app.post("/upload")
-async def upload_food_image(image: UploadFile = File(...)):
+async def upload_food_image(request: Request, image: UploadFile = File(...)):
     """
     Save an uploaded food image to disk and return a permanent URL.
     The URL is stored in food_listing.photo_url so it can be displayed
@@ -456,11 +511,13 @@ async def upload_food_image(image: UploadFile = File(...)):
     with open(filepath, "wb") as f:
         shutil.copyfileobj(image.file, f)
 
-    return {"url": f"/static/{filename}"}
+    return {"url": build_public_url(request, f"/static/{filename}")}
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+
+    port = int(os.getenv("PORT", "8000"))
+    uvicorn.run(app, host="0.0.0.0", port=port)

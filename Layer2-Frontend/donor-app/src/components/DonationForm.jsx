@@ -19,6 +19,8 @@ const normalizeCategoryValue = (value = '') => {
   return 'bakedGoods'
 }
 
+const normalizePostcodeValue = (value = '') => String(value).replace(/[^0-9]/g, '').slice(0, 4)
+
 const DonationForm = () => {
   const { postcode } = useParams()
   const navigate = useNavigate()
@@ -54,19 +56,25 @@ const DonationForm = () => {
   const [hasPhotoSelection, setHasPhotoSelection] = useState(Boolean(draftListing?.photoUrl))
   const [editingListingId, setEditingListingId] = useState(replaceListingId)
   const [lastSubmittedDraft, setLastSubmittedDraft] = useState(null)
+  const [lastCreatedListing, setLastCreatedListing] = useState(null)
   const donorGeneratedCode = `DONOR-${(formData.postcode || initialPostcode || 'GUEST').toUpperCase()}`
 
   const handleReturnToPrimary = () => {
+    const normalizedParamPostcode = normalizePostcodeValue(postcode || '')
+    const normalizedFormPostcode = normalizePostcodeValue(formData.postcode || '')
+    const targetPostcode = normalizedParamPostcode || normalizedFormPostcode
+
     if (orgMode) {
-      navigate('/org/dashboard', { state: { orgCode: initialOrgCode, postcode: initialPostcode } })
+      navigate('/org/dashboard', { state: { orgCode: initialOrgCode, postcode: initialPostcode, refreshAt: Date.now() } })
       return
     }
-    if (postcode) {
-      navigate(`/feed/${postcode}`)
-      return
-    }
-    if (formData.postcode) {
-      navigate(`/feed/${formData.postcode}`)
+    if (targetPostcode) {
+      navigate(`/feed/${targetPostcode}`, {
+        state: {
+          refreshAt: Date.now(),
+          postedListing: lastCreatedListing,
+        },
+      })
       return
     }
     navigate('/')
@@ -113,20 +121,22 @@ const DonationForm = () => {
     setError(null)
 
     try {
+      const normalizedPostcode = normalizePostcodeValue(formData.postcode)
+
       console.log('Form validation:', {
         foodType: formData.foodType,
         quantity: formData.quantity,
-        postcode: formData.postcode,
+        postcode: normalizedPostcode,
         orgCode: orgMode ? formData.orgCode : donorGeneratedCode,
       })
       
       if (!formData.foodType) throw new Error(t('donation.errors.foodType'))
       if (!formData.quantity || Number(formData.quantity) <= 0) throw new Error(t('donation.errors.quantity'))
-      if (!formData.postcode) throw new Error(t('donation.errors.postcode'))
+      if (normalizedPostcode.length !== 4) throw new Error(t('donation.errors.postcode'))
       if (orgMode && !formData.orgCode) throw new Error(t('donation.errors.orgCode'))
       const draftPayload = {
         ...formData,
-        postcode: formData.postcode,
+        postcode: normalizedPostcode,
         orgCode: orgMode ? formData.orgCode : donorGeneratedCode,
       }
       setLastSubmittedDraft(draftPayload)
@@ -147,6 +157,7 @@ const DonationForm = () => {
 
       const submissionPayload = {
         ...formData,
+        postcode: normalizedPostcode,
         orgCode: orgMode ? formData.orgCode : donorGeneratedCode,
         photoUrl: permanentPhotoUrl,
         description: formData.description || null,
@@ -154,6 +165,7 @@ const DonationForm = () => {
       console.log('Submitting listing with data:', submissionPayload)
       const createdListing = await submitListing(submissionPayload)
       console.log('Listing submitted successfully')
+      setLastCreatedListing(createdListing || null)
 
       if (editingListingId) {
         try {
@@ -338,7 +350,7 @@ const DonationForm = () => {
               <button
                 type="button"
                 className="btn-change-photo"
-                onClick={() => { setFormData(prev => ({ ...prev, photoUrl: null })); fileInputRef.current.value = '' }}
+                onClick={() => { setFormData(prev => ({ ...prev, photoUrl: null })); if (fileInputRef.current) fileInputRef.current.value = '' }}
               >
                 <span className="material-symbols-outlined">photo_camera</span>
                 {t('donation.changePhoto')}
@@ -487,21 +499,21 @@ const DonationForm = () => {
 
           {/* Manual fields */}
           <div className="manual-fields">
-            {!orgMode && (
-              <div>
-                <label className="field-label muted" htmlFor="postcodeField">{t('donation.postcode')}</label>
-                <input
-                  id="postcodeField"
-                  className="form-input muted-bg"
-                  style={{ maxWidth: '12rem' }}
-                  type="text"
-                  placeholder={t('postcode.example')}
-                  value={formData.postcode}
-                onChange={e => setFormData(prev => ({ ...prev, postcode: e.target.value }))}
+            <div>
+              <label className="field-label muted" htmlFor="postcodeField">{t('donation.postcode')}</label>
+              <input
+                id="postcodeField"
+                className="form-input muted-bg"
+                style={{ maxWidth: '12rem' }}
+                type="text"
+                placeholder={t('postcode.example')}
+                value={formData.postcode}
+                onChange={e => setFormData(prev => ({ ...prev, postcode: normalizePostcodeValue(e.target.value) }))}
               />
-                <span className="field-hint">Only shared with verified recipients once accepted.</span>
-              </div>
-            )}
+              <span className="field-hint">
+                {orgMode ? 'Enter the service-area postcode for this listing.' : 'Only shared with verified recipients once accepted.'}
+              </span>
+            </div>
 
             {orgMode && (
             <div>

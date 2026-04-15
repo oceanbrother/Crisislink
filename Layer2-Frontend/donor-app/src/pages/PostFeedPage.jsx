@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import axios from 'axios'
+import { getAvailableListings } from '../services/api'
 import '../styles/PostFeedPage.css'
 
 const ICON_MAP = {
@@ -71,13 +71,15 @@ const getRelativeTime = (createdAt, t) => {
 const PostFeedPage = () => {
   const { postcode } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const { t, i18n } = useTranslation()
   const [activeFilter, setActiveFilter] = useState('all')
   const [search, setSearch] = useState('')
   const [listings, setListings] = useState([])
   const [loading, setLoading] = useState(true)
   const [showLanguageMenu, setShowLanguageMenu] = useState(false)
-  const donorCode = `DONOR-${String(postcode || 'GUEST').toUpperCase()}`
+  const normalizedPostcode = String(postcode || '').replace(/[^0-9]/g, '').slice(0, 4)
+  const donorCode = `DONOR-${String(normalizedPostcode || 'GUEST').toUpperCase()}`
 
   const handleLanguageChange = (lang) => {
     i18n.changeLanguage(lang)
@@ -88,58 +90,30 @@ const PostFeedPage = () => {
   useEffect(() => {
     const fetchListings = async () => {
       try {
-        const res = await axios.get('/api/listings', {
-          params: { postcode, status: 'available' }
-        })
-        setListings(res.data)
+        const data = await getAvailableListings({ postcode: normalizedPostcode, status: 'available', _ts: Date.now() })
+        const nextListings = Array.isArray(data) ? data : []
+        const postedListing = location.state?.postedListing
+
+        if (
+          postedListing &&
+          String(postedListing.postcode || '') === normalizedPostcode &&
+          String(postedListing.status || 'available') === 'available'
+        ) {
+          const withoutDuplicate = nextListings.filter((item) => item.id !== postedListing.id)
+          setListings([postedListing, ...withoutDuplicate])
+        } else {
+          setListings(nextListings)
+        }
       } catch {
-        // Fallback sample data
-        setListings([
-          {
-            id: '1', foodType: 'Artisan Sourdough Loaves', orgCode: 'The Golden Crust Bakery',
-            quantity: 40, unit: 'portions', postcode, status: 'available',
-            expiresIn: '3 hrs', location: 'Surry Hills (0.8km)',
-            createdAt: new Date().toISOString(), dietary_tags: []
-          },
-          {
-            id: '2', foodType: 'Vegetable Curry & Rice', orgCode: 'Spice Route Bistro',
-            quantity: 15, unit: 'meals', postcode, status: 'available',
-            expiresIn: '2 hrs', location: 'Chippendale (1.2km)',
-            createdAt: new Date().toISOString(), dietary_tags: ['vegetarian']
-          },
-          {
-            id: '3', foodType: 'Farm Fresh Eggs', orgCode: 'Locals Market',
-            quantity: 10, unit: 'portions', postcode, status: 'claimed',
-            claimedBy: "St. Jude's", location: 'Redfern (2.1km)',
-            createdAt: new Date().toISOString(), dietary_tags: ['vegetarian']
-          },
-          {
-            id: '4', foodType: 'Seasonal Produce Box', orgCode: 'Urban Harvest Co.',
-            quantity: 20, unit: 'kg', postcode, status: 'available',
-            expiresIn: '6 hrs', location: 'Pyrmont (2.5km)',
-            createdAt: new Date().toISOString(), dietary_tags: ['vegan']
-          },
-          {
-            id: '5', foodType: 'Assorted Organic Yogurts', orgCode: 'Green Grocer Metro',
-            quantity: 12, unit: 'units', postcode, status: 'available',
-            expiresIn: '4 hrs', location: 'Darlington (1.5km)',
-            createdAt: new Date().toISOString(), dietary_tags: []
-          },
-          {
-            id: '6', foodType: 'Premium Deli Sandwiches', orgCode: 'The Lunch Spot',
-            quantity: 8, unit: 'boxes', postcode, status: 'claimed',
-            claimedBy: 'Hope House', location: 'Newtown (3.0km)',
-            createdAt: new Date().toISOString(), dietary_tags: []
-          }
-        ])
+        setListings([])
       } finally {
         setLoading(false)
       }
     }
     fetchListings()
-  }, [postcode])
+  }, [normalizedPostcode, location.key, location.state?.refreshAt])
 
-  const filtered = listings.filter((l) => {
+  const filtered = (Array.isArray(listings) ? listings : []).filter((l) => {
     const searchLower = search.toLowerCase()
     const matchesSearch =
       !searchLower ||

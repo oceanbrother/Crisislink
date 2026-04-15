@@ -68,7 +68,11 @@ export const getAvailableListings = async (filters = {}) => {
     const response = await apiClient.get('/listings', {
       params: filters,
     })
-    return response.data
+    const payload = response.data
+    if (Array.isArray(payload)) return payload
+    if (Array.isArray(payload?.items)) return payload.items
+    console.warn('Unexpected listings payload shape:', payload)
+    return []
   } catch (error) {
     console.error('Get listings error:', error)
     throw error
