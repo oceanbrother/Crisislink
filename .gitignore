@@ -58,3 +58,6 @@ trained_models/
 
 # Docker
 .dockerignore
+.venv/
+Layer3-Backend/listing_service/uploads/
+Layer3-Backend/listing_service/uploads/

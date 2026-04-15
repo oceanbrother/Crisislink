@@ -23,11 +23,41 @@ import databases
 from dotenv import load_dotenv
 
 # ── Load .env (DATABASE_URL, HOST, PORT) ──────────────────────────────────────
-load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
+import re
 
-DATABASE_URL = os.getenv("DATABASE_URL")
+# Use absolute path to ensure it works from any directory
+listing_service_dir = os.path.dirname(os.path.abspath(__file__))
+backend_dir = os.path.dirname(listing_service_dir)
+env_path = os.path.join(backend_dir, ".env")
+
+DATABASE_URL = None
+
+# Read .env file directly with Windows encoding
+print(f"Looking for .env at: {env_path}")
+print(f"File exists: {os.path.exists(env_path)}")
+
+if os.path.exists(env_path):
+    try:
+        with open(env_path, 'r', encoding='utf-8-sig') as f:  # utf-8-sig handles BOM
+            content = f.read()
+            print(f"File content (first 200 chars): {repr(content[:200])}")
+            for i, line in enumerate(content.split('\n')):
+                line = line.strip()
+                if line and '=' in line and not line.startswith('#'):
+                    key, value = line.split('=', 1)
+                    key = key.strip()
+                    value = value.strip()
+                    print(f"  Line {i}: key='{key}', value='{value[:30]}...'")
+                    if key == 'DATABASE_URL':
+                        DATABASE_URL = value
+                        print(f"  ✓ Found DATABASE_URL")
+                        break
+    except Exception as e:
+        print(f"Error reading .env: {e}")
+
+print(f"DATABASE_URL set: {DATABASE_URL is not None}")
 if not DATABASE_URL:
-    raise RuntimeError("DATABASE_URL not set in .env")
+    raise RuntimeError(f"DATABASE_URL not found in {env_path}")
 
 # databases wraps asyncpg and gives us await database.execute() / fetch_all()
 database = databases.Database(DATABASE_URL)
