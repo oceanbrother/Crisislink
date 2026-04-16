@@ -84,7 +84,7 @@ app.mount("/static", StaticFiles(directory=UPLOADS_DIR), name="static")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["https://donor-app-dusky.vercel.app/"],
     allow_credentials=True,
     allow_methods=["GET", "POST", "PATCH"],
     allow_headers=["Authorization", "Content-Type"],
