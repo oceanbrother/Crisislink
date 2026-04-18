@@ -1,6 +1,6 @@
 """
 Listing Service — FastAPI backend for CrisisLink
-Backed by PostgreSQL (crisislink_db) via the `databases` async library.
+Backed by PostgreSQL (crisislink_db) via the ⁠ databases ⁠ async library.
 """
 
 # ── Path setup for Layer4-AI imports ──────────────────────────────────────────
@@ -17,13 +17,16 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, field_validator
 from typing import Optional
-from datetime import datetime
+from datetime import datetime, timezone
 from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.util import get_remote_address
 from slowapi.errors import RateLimitExceeded
 import uuid
+import re
+import io
 import databases
 from dotenv import load_dotenv
+from PIL import Image
 
 # ── Load .env (DATABASE_URL, HOST, PORT) ──────────────────────────────────────
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
@@ -43,6 +46,25 @@ recognizer = None
 ALLOWED_TYPES = {"image/jpeg", "image/png", "image/webp"}
 MAX_SIZE = 5 * 1024 * 1024  # 5 MB
 EXT_MAP = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp"}
+
+BACKEND_PUBLIC_URL = os.getenv("BACKEND_PUBLIC_URL", "").rstrip("/")
+CORS_ALLOWED_ORIGINS = [
+    origin.strip().rstrip("/")
+    for origin in os.getenv("CORS_ALLOWED_ORIGINS", "https://donor-app-dusky.vercel.app").split(",")
+    if origin.strip()
+]
+
+
+def utcnow_naive() -> datetime:
+    """Store UTC timestamps as naive datetimes for DB columns without timezone."""
+    return datetime.now(timezone.utc).replace(tzinfo=None)
+
+
+def build_public_url(request: Request, path: str) -> str:
+    """Return absolute URL for uploaded assets in cloud/local deployments."""
+    if BACKEND_PUBLIC_URL:
+        return f"{BACKEND_PUBLIC_URL}{path}"
+    return f"{str(request.base_url).rstrip('/')}{path}"
 
 
 # ── Lifespan: startup + shutdown ──────────────────────────────────────────────
@@ -68,11 +90,15 @@ async def lifespan(app: FastAPI):
 
 
 # ── App ───────────────────────────────────────────────────────────────────────
+_is_prod = os.getenv("ENVIRONMENT", "production").lower() == "production"
 app = FastAPI(
     title="CrisisLink Listing Service",
     description="API for creating and managing food listings",
     version="0.2.0",
     lifespan=lifespan,
+    docs_url=None if _is_prod else "/docs",
+    redoc_url=None if _is_prod else "/redoc",
+    openapi_url=None if _is_prod else "/openapi.json",
 )
 
 app.state.limiter = limiter
@@ -84,10 +110,10 @@ app.mount("/static", StaticFiles(directory=UPLOADS_DIR), name="static")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://donor-app-dusky.vercel.app/"],
+    allow_origins=CORS_ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PATCH"],
-    allow_headers=["Authorization", "Content-Type"],
+    allow_methods=["GET", "POST", "PATCH", "OPTIONS"],
+    allow_headers=["Content-Type", "Authorization"],
 )
 
 
@@ -111,6 +137,26 @@ class ListingCreate(BaseModel):
             if len(tag) > 50:
                 raise ValueError("Each dietary tag must be 50 characters or fewer")
         return tags
+
+    @field_validator("description")
+    @classmethod
+    def strip_html(cls, v):
+        if v is None:
+            return v
+        cleaned = re.sub(r"<[^>]+>", "", v)
+        if re.search(r"javascript:", cleaned, re.IGNORECASE):
+            raise ValueError("Description contains disallowed content")
+        return cleaned.strip()
+
+    @field_validator("photoUrl")
+    @classmethod
+    def validate_photo_url(cls, v):
+        if v is None:
+            return v
+        allowed_prefix = os.getenv("BACKEND_PUBLIC_URL", "").rstrip("/")
+        if allowed_prefix and not v.startswith(f"{allowed_prefix}/static/"):
+            raise ValueError("photoUrl must point to this service's /static/ path")
+        return v
 
 
 class Listing(ListingCreate):
@@ -179,6 +225,13 @@ def row_to_listing(row) -> dict:
     tags_raw = row["dietary_tags"] or ""
     tags_list = [t.strip() for t in tags_raw.split(",") if t.strip()]
 
+    created_at = row["created_at"]
+    claimed_at = row["claimed_at"]
+    if created_at and created_at.tzinfo is None:
+        created_at = created_at.replace(tzinfo=timezone.utc)
+    if claimed_at and claimed_at.tzinfo is None:
+        claimed_at = claimed_at.replace(tzinfo=timezone.utc)
+
     return {
         "id":           row["listing_id"],
         "foodType":     row["food_category"] or "",
@@ -200,12 +253,17 @@ def row_to_listing(row) -> dict:
 
 @app.get("/health")
 def health_check():
-    return {"status": "ok", "service": "listing-service", "db": "postgresql"}
+    return {
+        "status": "ok",
+        "service": "listing-service",
+        "db": "postgresql",
+        "ai_ready": recognizer is not None,
+    }
 
 
 @app.post("/listings", response_model=Listing)
 @limiter.limit("10/minute")
-async def create_listing(listing: ListingCreate):
+async def create_listing(request: Request, listing: ListingCreate):
     """
     Create a new food listing and persist it to PostgreSQL.
 
@@ -220,7 +278,7 @@ async def create_listing(listing: ListingCreate):
     listing_id = str(uuid.uuid4())
     org_id = await get_or_create_org(listing.orgCode)
     tags_str = ",".join(listing.dietary_tags)
-    now = datetime.now()
+    now_db = utcnow_naive()
 
     await database.execute(
         """
@@ -245,7 +303,7 @@ async def create_listing(listing: ListingCreate):
             "photo_url":    listing.photoUrl,
             "postcode":     listing.postcode,
             "org_code":     listing.orgCode,
-            "created_at":   now,
+            "created_at":   now_db,
             "org_id":       org_id,
         },
     )
@@ -253,7 +311,7 @@ async def create_listing(listing: ListingCreate):
     return {
         "id":           listing_id,
         **listing.model_dump(),
-        "createdAt":    now,
+        "createdAt":    now_db.replace(tzinfo=timezone.utc),
         "status":       "available",
         "claimedBy":    None,
         "claimedAt":    None,
@@ -261,9 +319,76 @@ async def create_listing(listing: ListingCreate):
 
 ALLOWED_STATUSES = {"available", "claimed", "expired"}
 
+@app.patch("/listings/{listing_id}", response_model=Listing)
+@limiter.limit("10/minute")
+async def update_listing(request: Request, listing_id: str, listing: ListingCreate):
+    """Update an existing available listing in place."""
+    row = await database.fetch_one(
+        "SELECT status FROM food_listing WHERE listing_id = :listing_id",
+        {"listing_id": listing_id},
+    )
+    if not row:
+        raise HTTPException(status_code=404, detail="Listing not found")
+    if row["status"] != "available":
+        raise HTTPException(status_code=400, detail="Only available listings can be edited")
+
+    org_id = await get_or_create_org(listing.orgCode)
+    tags_str = ",".join(listing.dietary_tags)
+
+    await database.execute(
+        """
+        UPDATE food_listing
+        SET
+            title = :title,
+            description = :description,
+            quantity = :quantity,
+            unit = :unit,
+            food_category = :food_category,
+            dietary_tags = :dietary_tags,
+            photo_url = :photo_url,
+            postcode = :postcode,
+            org_code = :org_code,
+            org_id = :org_id
+        WHERE listing_id = :listing_id
+        """,
+        {
+            "listing_id": listing_id,
+            "title": listing.foodType,
+            "description": listing.description,
+            "quantity": listing.quantity,
+            "unit": listing.unit,
+            "food_category": listing.foodType,
+            "dietary_tags": tags_str,
+            "photo_url": listing.photoUrl,
+            "postcode": listing.postcode,
+            "org_code": listing.orgCode,
+            "org_id": org_id,
+        },
+    )
+
+    updated = await database.fetch_one(
+        """
+        SELECT
+            fl.*,
+            o.org_code,
+            co.org_code AS claimed_by_org_code
+        FROM food_listing fl
+        LEFT JOIN organization o  ON fl.org_id            = o.org_id
+        LEFT JOIN organization co ON fl.claimed_by_org_id = co.org_id
+        WHERE fl.listing_id = :listing_id
+        """,
+        {"listing_id": listing_id},
+    )
+    if not updated:
+        raise HTTPException(status_code=404, detail="Listing not found after update")
+    return row_to_listing(updated)
+
+ALLOWED_STATUSES = {"available", "claimed", "expired"}
+
 @app.get("/listings", response_model=list[Listing])
 @limiter.limit("30/minute")
 async def get_listings(
+    request: Request,
     postcode: Optional[str] = None,
     foodType: Optional[str] = None,
     status: str = "available",
@@ -305,7 +430,7 @@ async def get_listings(
 
 @app.get("/listings/{listing_id}", response_model=Listing)
 @limiter.limit("30/minute")
-async def get_listing(listing_id: str):
+async def get_listing(request: Request, listing_id: str):
     """Get a single listing by its UUID."""
     row = await database.fetch_one(
         """
@@ -327,7 +452,7 @@ async def get_listing(listing_id: str):
 
 @app.post("/listings/{listing_id}/claim", response_model=dict)
 @limiter.limit("5/minute")
-async def claim_listing(listing_id: str, claim: ClaimRequest):
+async def claim_listing(request: Request, listing_id: str, claim: ClaimRequest):
     """
     Claim a listing — marks it taken and records which org claimed it.
 
@@ -376,7 +501,7 @@ async def claim_listing(listing_id: str, claim: ClaimRequest):
 
 @app.patch("/listings/{listing_id}/expire")
 @limiter.limit("10/minute")
-async def expire_listing(listing_id: str):
+async def expire_listing(request: Request, listing_id: str):
     """Mark a listing as expired."""
     row = await database.fetch_one(
         "SELECT listing_id FROM food_listing WHERE listing_id = :listing_id",
@@ -396,21 +521,24 @@ async def expire_listing(listing_id: str):
 
 @app.post("/image-recognition/recognize", response_model=ImageRecognitionResult)
 @limiter.limit("5/minute")
-async def recognize_food_from_image(image: UploadFile = File(...)):
+async def recognize_food_from_image(request: Request, image: UploadFile = File(...)):
     """
     Run the uploaded image through ConvNeXt (classification) +
     Grounding DINO (quantity counting) and return autofill data.
     """
     if not image:
         raise HTTPException(status_code=400, detail="No image provided")
-    
+
+    if recognizer is None:
+        raise HTTPException(status_code=503, detail="AI recognizer not available")
+
     if image.content_type not in ALLOWED_TYPES:
         raise HTTPException(status_code=415, detail="Unsupported file type. Use JPEG, PNG, or WebP.")
 
     img_bytes = await image.read()
     if len(img_bytes) > MAX_SIZE:
         raise HTTPException(status_code=413, detail="File too large. Maximum size is 5 MB.")
-    
+
     result = recognizer.predict(img_bytes)
 
     return ImageRecognitionResult(
@@ -428,7 +556,7 @@ async def recognize_food_from_image(image: UploadFile = File(...)):
 
 @app.post("/upload")
 @limiter.limit("5/minute")
-async def upload_food_image(image: UploadFile = File(...)):
+async def upload_food_image(request: Request, image: UploadFile = File(...)):
     if not image:
         raise HTTPException(status_code=400, detail="No image provided")
 
@@ -441,7 +569,13 @@ async def upload_food_image(image: UploadFile = File(...)):
     if len(contents) > MAX_SIZE:
         raise HTTPException(status_code=413, detail="File too large. Maximum size is 5 MB.")
 
-    # 3. Derive extension from MIME type, not from client filename
+    # 3. Validate the bytes are actually a valid image (not just a spoofed MIME type)
+    try:
+        Image.open(io.BytesIO(contents)).verify()
+    except Exception:
+        raise HTTPException(status_code=415, detail="File content is not a valid image.")
+
+    # 4. Derive extension from MIME type, not from client filename
     ext = EXT_MAP[image.content_type]
     filename = f"{uuid.uuid4()}{ext}"
     filepath = os.path.join(UPLOADS_DIR, filename)
