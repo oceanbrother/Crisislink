@@ -1,0 +1,61 @@
+name: Create Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Release version (e.g. v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+      prerelease:
+        description: 'Mark as pre-release'
+        required: false
+        default: 'false'
+        type: boolean
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.version }}
+          name: CrisisLink ${{ github.event.inputs.version }}
+          prerelease: ${{ github.event.inputs.prerelease }}
+          body: |
+            ## CrisisLink ${{ github.event.inputs.version }}
+
+            CrisisLink is a real-time food relief and surplus resource coordination platform powered by AI, connecting surplus food providers with community food relief organisations.
+
+            ### What's Included
+
+            **Layer 2 — Frontend**
+            - Donor app (React + Vite, mobile-first, Amber theme)
+            - Shared components library
+
+            **Layer 3 — Backend Microservices**
+            - Listing Service (FastAPI + PostgreSQL): create, retrieve, and manage food surplus listings with image upload support
+            - Matching Service: NLP-driven matching between surplus food and organisational needs
+            - Prediction Service: demand forecasting
+            - API Router: unified entry point across microservices
+
+            **Layer 4 — AI Engine**
+            - Food photo recognition (SegFormer-based image recognition)
+            - NLP matching engine (Sentence Transformer)
+            - Demand forecasting (K-Means + Random Forest)
+
+            **Layer 5 — Data**
+            - PostgreSQL schema and migrations
+            - ABS SEIFA 2021 socioeconomic data integration
+            - Training datasets (Food-101)
+
+            ### Security
+            - Rate limiting on all public API endpoints
+            - Input validation and sanitisation
+            - Security vulnerability fixes from penetration testing
