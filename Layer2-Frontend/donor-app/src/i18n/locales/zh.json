@@ -84,9 +84,14 @@
     "postButton": "发布物品 - 耗时少于 60 秒",
     "errors": {
       "foodType": "请输入食物类型",
+      "foodTypeLength": "食物名称至少需要 2 个字符。",
       "quantity": "请输入有效数量（必须大于 0）",
-      "postcode": "请输入邮编",
+      "postcode": "请输入 4 位数的 postcode。",
+      "postcodeFormat": "请输入 4 位数的 postcode。",
       "orgCode": "请输入组织代码",
+      "orgCodeLength": "组织代码至少需要 3 个字符。",
+      "unit": "单位不正确，请重新选择。",
+      "validationFailed": "提交失败：请检查输入格式并重试。",
       "aiTimeout": "AI 识别失败或超时。您仍可以手动输入食物详情。",
       "uploadFailed": "图片上传失败",
       "deleteFailed": "无法删除这条物品，请重试。"

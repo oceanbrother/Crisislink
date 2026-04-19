@@ -84,9 +84,14 @@
     "postButton": "Post listing - takes under 60 seconds",
     "errors": {
       "foodType": "Please enter a food type",
+      "foodTypeLength": "Food name must be at least 2 characters.",
       "quantity": "Please enter a valid quantity (must be greater than 0)",
-      "postcode": "Please enter a postcode",
+      "postcode": "Please enter a 4-digit postcode.",
+      "postcodeFormat": "Please enter a 4-digit postcode.",
       "orgCode": "Please enter an organization code",
+      "orgCodeLength": "Organization code must be at least 3 characters.",
+      "unit": "Invalid unit value. Please choose a valid unit.",
+      "validationFailed": "Submission failed. Please check your input and try again.",
       "aiTimeout": "AI recognition failed or timed out. You can still manually enter the food details.",
       "uploadFailed": "Image upload failed",
       "deleteFailed": "Could not remove this listing. Please try again."

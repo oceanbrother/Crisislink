@@ -79,8 +79,13 @@ async def lifespan(app: FastAPI):
 
     # Load ML model
     print("Starting food recognizer...")
-    recognizer = get_recognizer()
-    print("✓ Model ready")
+    try:
+        recognizer = get_recognizer()
+        print("✓ Model ready")
+    except Exception as e:
+        recognizer = None
+        # Keep API available even when AI assets are missing in deployment.
+        print(f"Warning: model init failed: {e}")
 
     yield  # server is running
 
@@ -521,21 +526,27 @@ async def expire_listing(request: Request, listing_id: str):
 
 @app.post("/image-recognition/recognize", response_model=ImageRecognitionResult)
 @limiter.limit("5/minute")
-async def recognize_food_from_image(request: Request, image: UploadFile = File(...)):
+async def recognize_food_from_image(
+    request: Request,
+    image: UploadFile | None = File(default=None),
+    file: UploadFile | None = File(default=None),
+):
     """
     Run the uploaded image through ConvNeXt (classification) +
     Grounding DINO (quantity counting) and return autofill data.
     """
-    if not image:
+    upload = image or file
+
+    if not upload:
         raise HTTPException(status_code=400, detail="No image provided")
 
     if recognizer is None:
         raise HTTPException(status_code=503, detail="AI recognizer not available")
 
-    if image.content_type not in ALLOWED_TYPES:
+    if upload.content_type not in ALLOWED_TYPES:
         raise HTTPException(status_code=415, detail="Unsupported file type. Use JPEG, PNG, or WebP.")
 
-    img_bytes = await image.read()
+    img_bytes = await upload.read()
     if len(img_bytes) > MAX_SIZE:
         raise HTTPException(status_code=413, detail="File too large. Maximum size is 5 MB.")
 
@@ -556,16 +567,22 @@ async def recognize_food_from_image(request: Request, image: UploadFile = File(.
 
 @app.post("/upload")
 @limiter.limit("5/minute")
-async def upload_food_image(request: Request, image: UploadFile = File(...)):
-    if not image:
+async def upload_food_image(
+    request: Request,
+    image: UploadFile | None = File(default=None),
+    file: UploadFile | None = File(default=None),
+):
+    upload = image or file
+
+    if not upload:
         raise HTTPException(status_code=400, detail="No image provided")
 
     # 1. Check MIME type
-    if image.content_type not in ALLOWED_TYPES:
+    if upload.content_type not in ALLOWED_TYPES:
         raise HTTPException(status_code=415, detail="Unsupported file type. Use JPEG, PNG, or WebP.")
 
     # 2. Read and size-check
-    contents = await image.read()
+    contents = await upload.read()
     if len(contents) > MAX_SIZE:
         raise HTTPException(status_code=413, detail="File too large. Maximum size is 5 MB.")
 
@@ -576,7 +593,7 @@ async def upload_food_image(request: Request, image: UploadFile = File(...)):
         raise HTTPException(status_code=415, detail="File content is not a valid image.")
 
     # 4. Derive extension from MIME type, not from client filename
-    ext = EXT_MAP[image.content_type]
+    ext = EXT_MAP[upload.content_type]
     filename = f"{uuid.uuid4()}{ext}"
     filepath = os.path.join(UPLOADS_DIR, filename)
 

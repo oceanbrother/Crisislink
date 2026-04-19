@@ -5,9 +5,11 @@ Loads the convonext_tiny trained weights once at startup via
 get_recognizer() and exposes a single predict(image_path) method.
 """
 
-import sys
 import io
 import json
+import os
+from urllib.error import HTTPError, URLError
+from urllib.request import Request, urlopen
 from pathlib import Path
 from dino_counter import get_dino_counter
 
@@ -45,8 +47,9 @@ class FoodRecognizer:
     def __init__(self, model_pth=None, classes_pth=None, confidence_threshold = 0.7):
         self.confidence_threshold = confidence_threshold
 
-        model_pth = Path(model_pth) if model_pth else  def_wgths
-        classes_pth = Path(classes_pth) if classes_pth else def_classes
+        model_pth, classes_pth = resolve_model_paths(model_pth, classes_pth)
+        ensure_file_available(classes_pth, os.getenv("MODEL_CLASSES_URL"), "classes metadata")
+        ensure_file_available(model_pth, os.getenv("MODEL_WEIGHTS_URL"), "model weights")
 
         with open(classes_pth) as f:
             self.classes = json.load(f)
@@ -143,6 +146,42 @@ def get_recognizer(model_pth=None, classes_pth=None, confidence_threshold = 0.7)
     if recognizer_instance is None:
         recognizer_instance = FoodRecognizer(model_pth, classes_pth, confidence_threshold)
     return recognizer_instance
+
+
+def resolve_model_paths(model_pth=None, classes_pth=None):
+    """Resolve model paths from explicit args, env vars, or local defaults."""
+    model_dir_env = os.getenv("MODEL_DIR", "").strip()
+    model_dir = Path(model_dir_env) if model_dir_env else def_model_dir
+
+    weights_path_env = os.getenv("MODEL_WEIGHTS_PATH", "").strip()
+    classes_path_env = os.getenv("MODEL_CLASSES_PATH", "").strip()
+
+    resolved_model = Path(model_pth) if model_pth else (Path(weights_path_env) if weights_path_env else model_dir / "best_food101_convnext.pth")
+    resolved_classes = Path(classes_pth) if classes_pth else (Path(classes_path_env) if classes_path_env else model_dir / "classes.json")
+
+    return resolved_model, resolved_classes
+
+
+def ensure_file_available(file_path: Path, source_url: str | None, label: str):
+    """Download missing model artifacts from URL when configured."""
+    if file_path.exists():
+        return
+
+    source = (source_url or "").strip()
+    if not source:
+        raise FileNotFoundError(
+            f"Missing {label} at '{file_path}'. "
+            f"Set MODEL_DIR / MODEL_*_PATH to a persistent volume, or provide MODEL_*_URL."
+        )
+
+    file_path.parent.mkdir(parents=True, exist_ok=True)
+    print(f"Downloading {label} from {source} ...")
+    req = Request(source, headers={"User-Agent": "CrisisLink-listing-service"})
+    try:
+        with urlopen(req, timeout=180) as resp, open(file_path, "wb") as out:
+            out.write(resp.read())
+    except (HTTPError, URLError, TimeoutError) as e:
+        raise RuntimeError(f"Failed to download {label} from {source}: {e}") from e
 
     
         

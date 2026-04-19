@@ -22,13 +22,18 @@ const OrgCodeInputPage = () => {
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    if (!orgCode.trim()) {
+    const normalizedOrgCode = orgCode.trim()
+    if (!normalizedOrgCode) {
+      setError(t('donation.errors.orgCode'))
+      return
+    }
+    if (normalizedOrgCode.length < 3) {
       setError(t('donation.errors.orgCode'))
       return
     }
 
-    if (orgCode.trim()) {
-      navigate('/org/dashboard', { state: { orgCode } })
+    if (normalizedOrgCode) {
+      navigate('/org/dashboard', { state: { orgCode: normalizedOrgCode } })
     } else {
       setError(t('orgCode.example'))
     }
