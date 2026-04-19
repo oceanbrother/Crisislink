@@ -98,11 +98,23 @@ const LiveListingBoard = () => {
   const [search, setSearch] = useState('')
   const [activeFilter, setActiveFilter] = useState('all')
 
-  const rawOrgCode = location.state?.orgCode || '1'
-  const orgCode = String(rawOrgCode).trim() || '1'
+  const rawOrgCode = location.state?.orgCode || ''
+  const orgCode = String(rawOrgCode).trim()
+
+  useEffect(() => {
+    if (!orgCode) {
+      navigate('/org/code')
+    }
+  }, [orgCode, navigate])
 
   useEffect(() => {
     const run = async () => {
+      if (!orgCode) {
+        setListings([])
+        setClaimedListings([])
+        setLoading(false)
+        return
+      }
       setLoading(true)
       setError('')
       try {

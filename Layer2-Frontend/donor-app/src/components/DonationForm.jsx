@@ -20,6 +20,42 @@ const normalizeCategoryValue = (value = '') => {
 }
 
 const normalizePostcodeValue = (value = '') => String(value).replace(/[^0-9]/g, '').slice(0, 4)
+const normalizeOrgCodeValue = (value = '') => String(value).toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 20)
+
+const mapValidationDetailToMessage = (item, t) => {
+  const field = Array.isArray(item?.loc) ? String(item.loc[item.loc.length - 1] || '') : ''
+  const msg = String(item?.msg || '').toLowerCase()
+
+  if (field === 'postcode') {
+    return t('donation.errors.postcodeFormat')
+  }
+  if (field === 'orgCode') {
+    if (msg.includes('at least') || msg.includes('min')) return t('donation.errors.orgCodeLength')
+    return t('donation.errors.orgCode')
+  }
+  if (field === 'foodType') {
+    if (msg.includes('at least') || msg.includes('min')) return t('donation.errors.foodTypeLength')
+    return t('donation.errors.foodType')
+  }
+  if (field === 'quantity') {
+    return t('donation.errors.quantity')
+  }
+  if (field === 'unit') {
+    return t('donation.errors.unit')
+  }
+  return item?.msg || t('donation.errors.validationFailed')
+}
+
+const extractApiErrorMessage = (err, fallback, t) => {
+  const detail = err?.response?.data?.detail
+  if (Array.isArray(detail) && detail.length > 0) {
+    const messages = [...new Set(detail.map((item) => mapValidationDetailToMessage(item, t)).filter(Boolean))].join(' | ')
+    if (messages) return messages
+  }
+  if (typeof detail === 'string' && detail.trim()) return detail
+  if (err?.response?.status === 422) return t('donation.errors.validationFailed')
+  return err?.message || fallback
+}
 
 const DonationForm = () => {
   const { postcode } = useParams()
@@ -130,14 +166,20 @@ const DonationForm = () => {
         orgCode: orgMode ? formData.orgCode : donorGeneratedCode,
       })
       
-      if (!formData.foodType) throw new Error(t('donation.errors.foodType'))
-      if (!formData.quantity || Number(formData.quantity) <= 0) throw new Error(t('donation.errors.quantity'))
+      const normalizedFoodType = String(formData.foodType || '').trim()
+      const parsedQuantity = Number(formData.quantity)
+      const normalizedOrgCode = normalizeOrgCodeValue(formData.orgCode)
+
+      if (normalizedFoodType.length < 2) throw new Error(t('donation.errors.foodType'))
+      if (!Number.isFinite(parsedQuantity) || parsedQuantity <= 0) throw new Error(t('donation.errors.quantity'))
       if (normalizedPostcode.length !== 4) throw new Error(t('donation.errors.postcode'))
-      if (orgMode && !formData.orgCode) throw new Error(t('donation.errors.orgCode'))
+      if (orgMode && normalizedOrgCode.length < 3) throw new Error(t('donation.errors.orgCode'))
       const draftPayload = {
         ...formData,
+        foodType: normalizedFoodType,
+        quantity: parsedQuantity,
         postcode: normalizedPostcode,
-        orgCode: orgMode ? formData.orgCode : donorGeneratedCode,
+        orgCode: orgMode ? normalizedOrgCode : donorGeneratedCode,
       }
       setLastSubmittedDraft(draftPayload)
       
@@ -157,8 +199,10 @@ const DonationForm = () => {
 
       const submissionPayload = {
         ...formData,
+        foodType: normalizedFoodType,
+        quantity: parsedQuantity,
         postcode: normalizedPostcode,
-        orgCode: orgMode ? formData.orgCode : donorGeneratedCode,
+        orgCode: orgMode ? normalizedOrgCode : donorGeneratedCode,
         photoUrl: permanentPhotoUrl,
         description: formData.description || null,
       }
@@ -186,7 +230,7 @@ const DonationForm = () => {
       setEditingListingId(createdListing?.id || null)
     } catch (err) {
       console.error('Submit error:', err)
-      setError(err.message || 'Failed to submit listing. Please try again.')
+      setError(extractApiErrorMessage(err, 'Failed to submit listing. Please try again.', t))
     } finally {
       setLoading(false)
     }
@@ -528,7 +572,7 @@ const DonationForm = () => {
                 placeholder={orgMode ? 'Your org code' : 'e.g. FB001'}
                 maxLength="20"
                 value={formData.orgCode}
-                onChange={e => setFormData(prev => ({ ...prev, orgCode: e.target.value.toUpperCase() }))}
+                onChange={e => setFormData(prev => ({ ...prev, orgCode: normalizeOrgCodeValue(e.target.value) }))}
                 readOnly={orgMode}
               />
               <span className="field-hint">
