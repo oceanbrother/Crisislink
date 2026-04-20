@@ -154,9 +154,12 @@ class ListingCreate(BaseModel):
         if v is None:
             return v
         allowed_prefix = os.getenv("BACKEND_PUBLIC_URL", "").rstrip("/")
-        if allowed_prefix and not v.startswith(f"{allowed_prefix}/static/"):
-            raise ValueError("photoUrl must point to this service's /static/ path")
-        return v
+        if v.startswith("/static/"):
+            return v
+        if allowed_prefix and v.startswith(f"{allowed_prefix}/static/"):
+            return v
+        raise ValueError("photoUrl must point to this service's /static/ path")
+
 
 
 class Listing(ListingCreate):
