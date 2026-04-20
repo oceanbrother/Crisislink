@@ -1,0 +1,25 @@
+# Runtime and local env artifacts
+.env
+.env.*
+!.env.railway.example
+
+# Python cache and local virtualenvs
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.venv/
+venv/
+source/
+
+# Local uploads should not be deployed
+uploads/
+
+# Keep classes.json if needed, but skip large local weight files
+models/*.pth
+models/*.pt
+
+# Development/editor files
+.vscode/
+.idea/
+*.log
