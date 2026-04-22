@@ -143,6 +143,7 @@ class Listing(ListingBase):
     status: str = "available"
     claimedBy: Optional[str] = None
     claimedAt: Optional[datetime] = None
+    hasClaims: bool = False
 
 
 class ClaimRequest(BaseModel):
@@ -229,7 +230,12 @@ async def fetch_listing_row(listing_id: str):
             fl.*, 
             COALESCE(fl.org_code, o.org_code) AS owner_org_code,
             co.org_code AS claimed_by_org_code,
-            fl.source_listing_id
+            fl.source_listing_id,
+            EXISTS (
+                SELECT 1 FROM food_listing claimed_child
+                WHERE claimed_child.source_listing_id = fl.listing_id
+                  AND claimed_child.status = 'claimed'
+            ) AS has_claims
         FROM food_listing fl
         LEFT JOIN organization o  ON fl.org_id = o.org_id
         LEFT JOIN organization co ON fl.claimed_by_org_id = co.org_id
@@ -270,6 +276,7 @@ def row_to_listing(row) -> dict:
         "status": row["status"],
         "claimedBy": row["claimed_by_org_code"],
         "claimedAt": row["claimed_at"],
+        "hasClaims": bool(row["has_claims"]) if "has_claims" in row._mapping else False,
         "sourceListingId": row["source_listing_id"],
     }
 
@@ -337,7 +344,12 @@ async def get_listings(
             fl.*, 
             COALESCE(fl.org_code, o.org_code) AS owner_org_code,
             co.org_code AS claimed_by_org_code,
-            fl.source_listing_id
+            fl.source_listing_id,
+            EXISTS (
+                SELECT 1 FROM food_listing claimed_child
+                WHERE claimed_child.source_listing_id = fl.listing_id
+                  AND claimed_child.status = 'claimed'
+            ) AS has_claims
         FROM food_listing fl
         LEFT JOIN organization o  ON fl.org_id = o.org_id
         LEFT JOIN organization co ON fl.claimed_by_org_id = co.org_id
@@ -375,8 +387,8 @@ async def get_listing(request: Request, listing_id: str):
 @limiter.limit("10/minute")
 async def update_listing(request: Request, listing_id: str, listing: ListingUpdate):
     row = await ensure_owner(listing_id, listing.orgCode)
-    if row["status"] == "claimed":
-        raise HTTPException(status_code=400, detail="Claimed listings cannot be edited")
+    if row["status"] == "claimed" or bool(row["has_claims"]):
+        raise HTTPException(status_code=400, detail="Listings that have already been claimed cannot be edited")
 
     tags_str = ",".join(listing.dietary_tags)
     await database.execute(
@@ -413,7 +425,9 @@ async def update_listing(request: Request, listing_id: str, listing: ListingUpda
 @app.delete("/listings/{listing_id}", response_model=ListingDeleteResponse)
 @limiter.limit("10/minute")
 async def delete_listing(request: Request, listing_id: str, orgCode: str):
-    await ensure_owner(listing_id, orgCode)
+    row = await ensure_owner(listing_id, orgCode)
+    if row["status"] == "claimed" or bool(row["has_claims"]):
+        raise HTTPException(status_code=400, detail="Listings that have already been claimed cannot be removed")
     await database.execute(
         "DELETE FROM food_listing WHERE listing_id = :listing_id",
         {"listing_id": listing_id},

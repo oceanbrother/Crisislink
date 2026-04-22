@@ -184,6 +184,7 @@ const PostFeedPage = () => {
               const bestBefore = formatBestBeforeLabel(listing.expiryDate, i18n.language === 'zh' ? 'zh-CN' : 'en-AU')
               const category = normalizeCategory(listing.category || listing.foodType)
               const categoryOption = FILTER_OPTIONS.find((option) => option.value === category)
+              const listingLocked = ownListing && listing.hasClaims
 
               return (
                 <article key={listing.id} className={ownListing ? 'food-card own-listing-card donor-card' : 'food-card donor-card'}>
@@ -244,12 +245,29 @@ const PostFeedPage = () => {
                   <div className="food-card-actions donor-card-actions">
                     {ownListing ? (
                       <>
-                        <button type="button" className="card-action-btn primary" onClick={() => handleEdit(listing)}>
+                        <button
+                          type="button"
+                          className={listingLocked ? 'card-action-btn primary disabled' : 'card-action-btn primary'}
+                          onClick={() => handleEdit(listing)}
+                          disabled={listingLocked}
+                          title={listingLocked ? t('feed.editLockedTooltip', 'This listing has already been claimed and can no longer be edited or removed.') : ''}
+                        >
                           {t('donation.actions.editListing', 'Edit this listing')}
                         </button>
-                        <button type="button" className="card-action-btn" onClick={() => handleRemove(listing)}>
+                        <button
+                          type="button"
+                          className={listingLocked ? 'card-action-btn disabled' : 'card-action-btn'}
+                          onClick={() => handleRemove(listing)}
+                          disabled={listingLocked}
+                          title={listingLocked ? t('feed.editLockedTooltip', 'This listing has already been claimed and can no longer be edited or removed.') : ''}
+                        >
                           {t('donation.actions.removeListing', 'Remove this listing')}
                         </button>
+                        {listingLocked ? (
+                          <div className="donor-edit-lock-note">
+                            {t('feed.editLockedNote', 'A community group has already claimed part of this listing, so editing and removal are now locked.')}
+                          </div>
+                        ) : null}
                       </>
                     ) : (
                       <div className="donor-reference-note">

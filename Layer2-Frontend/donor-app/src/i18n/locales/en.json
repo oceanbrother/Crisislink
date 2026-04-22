@@ -39,6 +39,8 @@
     "removeError": "Unable to remove this listing right now.",
     "referenceTitle": "Donor view only.",
     "groupClaimNote": "Community groups can claim this item from their board.",
+    "editLockedNote": "A community group has already claimed part of this listing, so editing and removal are now locked.",
+    "editLockedTooltip": "This listing has already been claimed and can no longer be edited or removed.",
     "homeLink": "Back to home",
     "kicker": "Donor preview",
     "pageTitle": "Your donor listings"

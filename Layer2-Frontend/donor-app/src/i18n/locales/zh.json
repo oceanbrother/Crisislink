@@ -39,6 +39,8 @@
     "removeError": "暂时无法删除这条物品。",
     "referenceTitle": "这是 donor 参考视图。",
     "groupClaimNote": "社区组织会在他们自己的物品板中领取这条物品。",
+    "editLockedNote": "这条物品已经被社区组织领取过一部分，所以现在不能再编辑，也不能删除。",
+    "editLockedTooltip": "这条物品已经被领取过，不能再编辑或删除。",
     "homeLink": "返回首页",
     "kicker": "Donor 参考视图",
     "pageTitle": "你发布的物品"
