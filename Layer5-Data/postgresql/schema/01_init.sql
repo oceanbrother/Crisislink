@@ -77,6 +77,7 @@ CREATE TABLE food_listing (
     org_id             INT,
     claimed_by_org_id  INT,
     location_id        INT,
+    source_listing_id  VARCHAR(36),
     FOREIGN KEY (org_id)            REFERENCES organization(org_id),
     FOREIGN KEY (claimed_by_org_id) REFERENCES organization(org_id),
     FOREIGN KEY (location_id)       REFERENCES location(location_id)

@@ -456,3 +456,366 @@
   font-weight: 600;
   margin-top: 0.1rem;
 }
+
+
+.donor-role-page {
+  background:
+    radial-gradient(circle at top left, rgba(136, 82, 0, 0.08), transparent 22%),
+    linear-gradient(180deg, rgba(252, 248, 240, 0.94) 0%, var(--bg) 22%);
+}
+
+.donor-role-page .navbar {
+  background: rgba(255, 251, 244, 0.84);
+}
+
+.donor-role-page .nav-brand,
+.donor-role-page .board-title,
+.donor-role-page .nav-icon-btn,
+.donor-role-page .filter-chip.active,
+.donor-role-page .claim-btn,
+.donor-role-page .fab,
+.donor-role-page .nav-tab.active {
+  background: #885200;
+}
+
+.donor-role-page .nav-brand,
+.donor-role-page .board-title,
+.donor-role-page .nav-icon-btn {
+  background: transparent;
+  color: #885200;
+}
+
+.donor-role-page .food-card {
+  border: 1px solid rgba(136, 82, 0, 0.08);
+}
+
+.donor-role-page .food-icon-circle,
+.donor-role-page .food-qty-badge {
+  background: rgba(136, 82, 0, 0.12);
+  color: #885200;
+}
+
+.donor-role-page .claim-btn {
+  color: #ffffff;
+}
+
+.nav-back-btn {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 999px;
+  border: none;
+  background: var(--surface-low);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.nav-brand-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  flex: 1;
+  margin-left: 1rem;
+}
+
+.post-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  border: none;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--on-primary);
+  padding: 0.8rem 1.15rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.language-btn-wrapper {
+  position: relative;
+}
+
+.language-menu {
+  position: absolute;
+  top: calc(100% + 0.5rem);
+  right: 0;
+  background: white;
+  border: 1px solid var(--outline-variant);
+  border-radius: 0.9rem;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  min-width: 8rem;
+  overflow: hidden;
+}
+
+.language-menu button {
+  width: 100%;
+  border: none;
+  background: white;
+  padding: 0.85rem 1rem;
+  text-align: left;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.board-header-tight {
+  margin-bottom: 1.25rem;
+}
+
+.reference-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  background: #eef7f2;
+  border: 1px solid #d7eadf;
+  color: #1b5e46;
+  border-radius: 1rem;
+  padding: 0.95rem 1.1rem;
+  margin-bottom: 1.4rem;
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.donor-filter-section {
+  gap: 1rem;
+}
+
+.feed-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.feed-count {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--on-surface);
+}
+
+.board-error {
+  margin-bottom: 1rem;
+}
+
+.donor-food-grid {
+  gap: 1.4rem;
+}
+
+.food-card {
+  gap: 1rem;
+}
+
+.food-card-image {
+  width: 100%;
+  height: 220px;
+  object-fit: cover;
+  border-radius: 1rem;
+}
+
+.food-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.food-card-title {
+  margin: 0;
+  font-size: 1.45rem;
+  line-height: 1.2;
+}
+
+.food-card-source {
+  margin: 0.4rem 0 0;
+  color: var(--on-surface-variant);
+  font-size: 0.98rem;
+}
+
+.food-card-category {
+  padding: 0.45rem 0.8rem;
+  border-radius: 999px;
+  background: #f2efe7;
+  color: #73561f;
+  font-size: 0.88rem;
+  font-weight: 800;
+}
+
+.food-card-details {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+}
+
+.food-card-detail-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  color: var(--on-surface);
+  font-size: 1rem;
+}
+
+.food-card-detail-row .material-symbols-outlined {
+  font-size: 1.15rem;
+  color: var(--primary);
+}
+
+.tags-row-spaced {
+  margin-top: -0.2rem;
+}
+
+.donor-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.card-action-btn {
+  border: 1px solid var(--outline-variant);
+  background: white;
+  color: var(--on-surface);
+  border-radius: 999px;
+  min-height: 3rem;
+  padding: 0.8rem 1rem;
+  font-size: 0.98rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.card-action-btn.primary {
+  background: var(--primary);
+  color: var(--on-primary);
+  border-color: var(--primary);
+}
+
+.card-action-btn.disabled {
+  background: #f5f4ef;
+  color: #7c7b73;
+  border-color: #e4e2da;
+  cursor: not-allowed;
+}
+
+.own-listing-card {
+  border: 1px solid rgba(0, 105, 76, 0.16);
+  box-shadow: 0 12px 28px rgba(0, 105, 76, 0.08);
+}
+
+/* donor refresh */
+.donor-navbar-inner {
+  gap: 1rem;
+}
+
+.brand-home-btn {
+  display: flex;
+  align-items: center;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+}
+
+.brand-home-title {
+  font-family: var(--font-headline);
+  font-size: 1.4rem;
+  font-weight: 900;
+  color: var(--primary);
+}
+
+.donor-page-intro {
+  display: block;
+  margin-bottom: 1.25rem;
+  padding-top: 1rem;
+}
+
+.donor-page-heading {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.7rem;
+}
+
+.donor-page-title {
+  margin: 0;
+  font-size: 2.45rem;
+}
+
+.donor-page-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  font-size: 1.12rem;
+  font-weight: 600;
+  color: var(--on-surface);
+  margin-bottom: 0.35rem;
+}
+
+.donor-card {
+  padding: 1.45rem;
+}
+
+.donor-card-title {
+  font-size: 2.1rem;
+  line-height: 1.08;
+  margin-bottom: 0.35rem;
+}
+
+.donor-card-source,
+.donor-card-detail-row,
+.donor-reference-note {
+  font-size: 1.12rem;
+  line-height: 1.62;
+}
+
+.donor-card-detail-row .material-symbols-outlined {
+  font-size: 1.28rem;
+}
+
+.donor-card-category {
+  font-size: 1rem;
+  padding: 0.62rem 0.95rem;
+}
+
+.donor-tag-row .tag-chip {
+  font-size: 0.9rem;
+  padding: 0.45rem 0.9rem;
+}
+
+.donor-reference-note {
+  padding: 1rem 1.05rem;
+  border-radius: 1rem;
+  background: var(--surface-low);
+  color: var(--on-surface-variant);
+  font-weight: 600;
+}
+
+.donor-extra-notes {
+  margin-top: 1rem;
+  padding: 0.95rem 1rem;
+  border-radius: 1rem;
+  background: rgba(0, 105, 76, 0.05);
+  border: 1px solid rgba(0, 105, 76, 0.12);
+}
+
+.donor-extra-notes strong {
+  display: block;
+  margin-bottom: 0.35rem;
+  font-size: 0.92rem;
+  color: var(--primary);
+}
+
+.donor-extra-notes p {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.55;
+  color: var(--on-surface);
+  white-space: pre-wrap;
+}
+
+@media (max-width: 900px) {
+  .donor-page-intro {
+    margin-bottom: 1rem;
+  }
+
+  .donor-page-title {
+    font-size: 2rem;
+  }
+}

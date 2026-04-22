@@ -189,3 +189,14 @@
   color: var(--outline);
   line-height: 1.5;
 }
+
+.org-postcode-input {
+  font-size: 1.4rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+}
+
+.org-postcode-input::placeholder {
+  letter-spacing: 0.04em;
+  font-size: 0.95rem;
+}

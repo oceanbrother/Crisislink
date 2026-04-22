@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import '../styles/OrgCodeInputPage.css'
 
+const ORG_SESSION_KEY = 'crisislink-org-session'
+
 const OrgCodeInputPage = () => {
   const navigate = useNavigate()
   const { t } = useTranslation()
@@ -13,19 +15,23 @@ const OrgCodeInputPage = () => {
     document.getElementById('org-code-input')?.focus()
   }, [])
 
-  const handleInputChange = (e) => {
-    const value = e.target.value.toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 20)
+  const handleOrgCodeChange = (e) => {
+    const value = e.target.value.replace(/[^A-Za-z0-9 -]/g, '').slice(0, 40)
     setOrgCode(value)
     if (error) setError('')
   }
 
   const handleSubmit = (e) => {
     e.preventDefault()
-    if (orgCode.trim()) {
-      navigate('/org/dashboard', { state: { orgCode } })
-    } else {
+    const trimmed = orgCode.trim()
+    if (!trimmed) {
       setError(t('orgCode.example'))
+      return
     }
+
+    const orgSession = { orgCode: trimmed }
+    window.localStorage.setItem(ORG_SESSION_KEY, JSON.stringify(orgSession))
+    navigate('/org/dashboard', { state: orgSession })
   }
 
   return (
@@ -43,9 +49,7 @@ const OrgCodeInputPage = () => {
           <div className="org-code-brand">{t('appName')}</div>
 
           <h1 className="org-code-title">{t('orgCode.title')}</h1>
-          <p className="org-code-desc">
-            {t('orgCode.subtitle')}
-          </p>
+          <p className="org-code-desc">{t('orgCode.subtitle')}</p>
 
           <form onSubmit={handleSubmit} className="form-group">
             <input
@@ -53,10 +57,10 @@ const OrgCodeInputPage = () => {
               className="org-code-input"
               type="text"
               value={orgCode}
-              onChange={handleInputChange}
+              onChange={handleOrgCodeChange}
               placeholder={t('orgCode.placeholder')}
-              maxLength="20"
-              autoComplete="off"
+              maxLength="40"
+              autoComplete="organization"
             />
 
             {error && <div className="error-message">{error}</div>}
@@ -73,9 +77,7 @@ const OrgCodeInputPage = () => {
               {t('common.back')}
             </button>
 
-            <p className="privacy-note">
-              {t('common.secure')}
-            </p>
+            <p className="privacy-note">{t('common.secure')}</p>
           </form>
         </div>
       </main>

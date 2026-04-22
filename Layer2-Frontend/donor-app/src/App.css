@@ -2,3 +2,96 @@
   min-height: 100vh;
   background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
 }
+
+.site-gate-shell {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  background:
+    radial-gradient(circle at top, rgba(104, 219, 174, 0.16), transparent 30%),
+    linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%);
+}
+
+.site-gate-card {
+  width: min(100%, 28rem);
+  padding: 2rem;
+  border-radius: 1.5rem;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(109, 122, 115, 0.18);
+  box-shadow: 0 20px 60px rgba(28, 28, 23, 0.08);
+}
+
+.site-gate-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.35rem 0.85rem;
+  border-radius: 999px;
+  margin-bottom: 1rem;
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--primary);
+  background: rgba(104, 219, 174, 0.18);
+}
+
+.site-gate-card h1 {
+  font-family: var(--font-headline);
+  font-size: 2rem;
+  line-height: 1.1;
+  margin-bottom: 0.75rem;
+  color: var(--on-surface);
+}
+
+.site-gate-card p {
+  color: var(--on-surface-variant);
+  margin-bottom: 1.5rem;
+}
+
+.site-gate-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.site-gate-form label {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--on-surface);
+}
+
+.site-gate-form input {
+  width: 100%;
+  padding: 0.95rem 1rem;
+  border-radius: 0.9rem;
+  border: 1px solid rgba(109, 122, 115, 0.28);
+  background: #fff;
+  color: var(--on-surface);
+}
+
+.site-gate-form input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(0, 105, 76, 0.12);
+}
+
+.site-gate-error {
+  color: var(--error);
+  font-size: 0.92rem;
+  margin: 0;
+}
+
+.site-gate-form button {
+  width: 100%;
+  padding: 0.95rem 1rem;
+  border-radius: 999px;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-size: 1rem;
+  font-weight: 700;
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.site-gate-form button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 10px 24px rgba(0, 105, 76, 0.2);
+}

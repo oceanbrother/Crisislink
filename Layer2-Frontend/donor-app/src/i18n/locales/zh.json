@@ -1,7 +1,6 @@
 {
   "appName": "CrisisLink",
   "tagline": "食物救济资源协调平台",
-
   "home": {
     "question": "您今天如何使用 CrisisLink？",
     "donor": {
@@ -15,28 +14,40 @@
       "button": "查看物品板"
     }
   },
-
   "postcode": {
     "title": "输入您的邮编",
     "subtitle": "帮助我们找到您附近的食物",
     "placeholder": "例如 3000",
     "button": "继续",
-    "example": "例如 邮编 3000"
+    "example": "例如 邮编 3000",
+    "invalid": "请输入有效的 4 位邮编。"
   },
-
   "feed": {
     "title": "实时物品列表",
     "noListings": "您所在地区暂无物品列表",
-    "claimButton": "领取食物",    "claimedBy": "领取人",    "shareButton": "分享剩余",
+    "claimButton": "领取食物",
+    "claimedBy": "领取人",
+    "claimedPickupInfo": "领取后需直接与捐赠方协调取货。",
+    "shareButton": "发布剩余",
     "filter": "按类别筛选",
-    "search": "搜索物品"
+    "search": "搜索物品",
+    "subtitle": "管理你自己发布的物品。",
+    "referenceOnly": "真正的领取动作会在社区组织自己的物品板里完成。",
+    "postedByYou": "你发布的物品",
+    "availableForGroups": "仅供社区组织领取",
+    "loadError": "暂时无法加载物品列表。",
+    "removeError": "暂时无法删除这条物品。",
+    "referenceTitle": "这是 donor 参考视图。",
+    "groupClaimNote": "社区组织会在他们自己的物品板中领取这条物品。",
+    "homeLink": "返回首页",
+    "kicker": "Donor 参考视图",
+    "pageTitle": "你发布的物品"
   },
-
   "donation": {
-    "title": "分享剩余",
+    "title": "发布剩余",
     "subtitle": "让 AI 为您承担繁重工作。只需拍摄或上传您想分享的食物照片。",
     "aiTitle": "AI 辅助物品发布",
-    "orgTitle": "组织分享",
+    "orgTitle": "组织端发布",
     "takePhoto": "拍照或上传照片",
     "uploadSubtitle": "我们会帮您填入详情",
     "changePhoto": "更改照片",
@@ -45,55 +56,118 @@
     "foodName": "食物名称",
     "quantity": "估计数量",
     "category": "类别",
-    "postcode": "您的邮编",
-    "orgCode": "食物银行代码",
-    "postButton": "发布物品 - 耗时少于 60 秒",
+    "postcode": "你的邮编",
+    "postButton": "发布物品",
     "errors": {
       "foodType": "请输入食物类型",
       "quantity": "请输入有效数量（必须大于 0）",
       "postcode": "请输入邮编",
-      "orgCode": "请输入组织代码",
       "aiTimeout": "AI 识别失败或超时。您仍可以手动输入食物详情。",
-      "uploadFailed": "图片上传失败"
+      "uploadFailed": "图片上传失败",
+      "removeFailed": "暂时无法删除这条物品。",
+      "submitFailed": "暂时无法保存这条物品。",
+      "bestBefore": "请输入正确的最佳食用日期，格式为 DD/MM/YYYY"
     },
     "success": {
       "title": "已发布！",
       "donorMessage": "您的食物现在对当地食物银行可见。",
       "donorTag": "感谢您的分享。",
       "orgMessage": "您的剩余食物现在可供其他社区领取。",
-      "orgTag": "感谢您帮助网络。"
+      "orgTag": "感谢您帮助网络。",
+      "updatedTitle": "物品已更新"
+    },
+    "editTitle": "编辑物品",
+    "sizeCue": "大小或重量",
+    "sizeCuePlaceholder": "例如 小袋、中托盘、500g 瓶装",
+    "sizeCueHint": "请选择最接近的体量区间，让接收方更容易判断取货量。",
+    "dietary": "饮食标签",
+    "bestBefore": "最佳食用日期",
+    "extraNotes": "补充说明",
+    "extraNotesPlaceholder": "例如：下午 4 点后到前台取货，需要冷藏，请自备容器。",
+    "saveButton": "保存物品修改",
+    "actions": {
+      "backHome": "返回首页",
+      "backListings": "返回实时物品列表",
+      "backDashboard": "返回面板",
+      "editListing": "编辑这条物品",
+      "removeListing": "删除这条物品"
+    },
+    "reviewTitle": "发布前请再次确认 AI 识别结果。",
+    "reviewHintFood": "检查食物名称和分类是否正确。",
+    "reviewHintQuantity": "确认数量，以及大小或重量信息。",
+    "reviewHintDietary": "如果 AI 判断错了，请手动调整饮食标签。",
+    "bestBeforePlaceholder": "DD/MM/YYYY",
+    "sizeOptions": {
+      "none": "请选择",
+      "small": "小",
+      "medium": "中",
+      "large": "大",
+      "extraLarge": "特大",
+      "bulkHeavy": "大批量 / 较重"
     }
   },
-
   "orgCode": {
-    "title": "输入组织代码",
-    "subtitle": "向食物银行工作人员索取他们的组织代码",
-    "placeholder": "例如 HCFB-2841",
+    "title": "输入组织代码或名称",
+    "subtitle": "输入本次演示使用的组织代码，或直接输入组织名称。",
+    "placeholder": "例如 HCFB-2841 或 Helping Hands",
     "button": "访问物品板",
-    "example": "向食物银行工作人员索取代码"
+    "example": "请输入组织代码或名称后继续"
   },
-
   "dashboard": {
     "title": "实时物品板",
+    "serviceArea": "服务区域",
+    "orgCodeLabel": "组织代码",
+    "donorCodeLabel": "捐赠方代码",
     "noListings": "无法加载物品。请重试。",
     "sharing": "来自 {{orgName}} 的分享",
-    "shareButton": "分享剩余",
+    "shareButton": "发布剩余",
     "tabs": {
       "all": "全部",
       "bakery": "烘焙食品",
       "bakedGoods": "烘焙食品",
-      "produce": "农产品",
-      "dairy": "乳制品",
+      "produce": "水果与蔬菜",
+      "dairy": "乳制品、鸡蛋与冷藏",
       "prepared": "熟食",
       "preparedMeals": "预制餐点",
       "grocery": "杂货",
-      "expiringSoon": "即将过期"
+      "vegan": "纯素",
+      "vegetarian": "素食",
+      "expiringSoon": "即将过期",
+      "pantry": "日杂与调味",
+      "other": "其他"
+    },
+    "filterLabels": {
+      "category": "食物类别",
+      "allCategories": "全部类别",
+      "status": "物品状态"
+    },
+    "statusPills": {
+      "available": "可领取",
+      "posted": "我发布的",
+      "claimed": "我已领取：{{quantity}}份"
+    },
+    "statusTabs": {
+      "all": "全部物品",
+      "available": "可领取",
+      "posted": "我发布的",
+      "claimed": "我已领取"
+    },
+    "claimDialog": {
+      "title": "选择领取数量",
+      "available": "这条物品当前共有 {{quantity}} 可领取。",
+      "claimAll": "全部领取",
+      "confirm": "确认领取",
+      "invalidQuantity": "请输入有效的领取数量。",
+      "exceedsQuantity": "最多只能领取 {{quantity}}。",
+      "success": "已成功领取 {{quantity}}。",
+      "failed": "暂时无法领取这部分数量。"
     }
   },
-
   "listing": {
-    "itemsAvailable": "{{count}} 件物品可用",    "location": "位置：",
-    "expiresIn": "{{time}}内过期",    "from": "来自",
+    "itemsAvailable": "{{count}} 件物品可用",
+    "location": "位置：",
+    "expiresIn": "{{time}}内过期",
+    "from": "来自",
     "postcode": "邮编",
     "claimingButton": "领取中...",
     "claimThisButton": "领取",
@@ -101,12 +175,14 @@
     "minutesAgo": "{{count}} 分钟前",
     "hoursAgo": "{{count}} 小时前",
     "daysAgo": "{{count}} 天前",
+    "approxQuantity": "约 {{quantity}} {{unit}}",
     "dietary": {
       "vegetarian": "素食",
       "vegan": "纯素",
       "glutenFree": "无谷蛋白",
       "dairyFree": "无乳制品",
-      "nonVegetarian": "非素食"
+      "nonVegetarian": "非素食",
+      "none": "无饮食标签"
     },
     "units": {
       "portions": "份",
@@ -116,9 +192,9 @@
       "boxes": "盒",
       "dozen": "打",
       "litres": "升"
-    }
+    },
+    "bestBefore": "最佳食用日期"
   },
-
   "common": {
     "close": "关闭",
     "back": "返回",
@@ -127,10 +203,11 @@
     "submit": "提交",
     "loading": "加载中...",
     "error": "错误",
-    "success": "成功",    "alerts": "通知",
-    "profile": "我的",    "secure": "安全民众平台 • 数据已加密"
+    "success": "成功",
+    "alerts": "通知",
+    "profile": "我的",
+    "secure": "安全民众平台 • 数据已加密"
   },
-
   "lang": {
     "en": "English",
     "zh": "中文"

@@ -1,10 +1,87 @@
-import React, { useState, useRef } from 'react'
-import { useParams, useNavigate, useLocation } from 'react-router-dom'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { recognizeFoodFromImage, submitListing, uploadImage } from '../services/api'
+import {
+  deleteListing,
+  recognizeFoodFromImage,
+  submitListing,
+  updateListing,
+  uploadImage,
+} from '../services/api'
+import {
+  buildDietaryTags,
+  CATEGORY_OPTIONS,
+  DIETARY_OPTIONS,
+  getPrimaryDietaryChoice,
+  normalizeCategory,
+  SIZE_CUE_OPTIONS,
+} from '../constants/listings'
+import { forgetDonorListing, getOrCreateDonorCode, rememberDonorListing } from '../utils/donorIdentity'
 import '../styles/DonationForm.css'
 
-const CATEGORIES = ['Bakery & Grains', 'Fresh Produce', 'Dairy & Eggs', 'Canned Goods', 'Prepared Meals', 'Other']
+const DEFAULT_CATEGORY = 'Baked goods'
+
+function formatDateForDisplay(value) {
+  const raw = String(value || '').trim()
+  if (!raw) return ''
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(raw)) {
+    const [day, month, year] = raw.split('/')
+    return `${year}-${month}-${day}`
+  }
+  return raw
+}
+
+function parseQuantityValue(value) {
+  const parsed = Number.parseFloat(String(value ?? '').replace(',', '.').trim())
+  if (Number.isFinite(parsed) === false) return null
+  return parsed
+}
+
+function normalizeDateInput(value) {
+  const raw = String(value || '').trim()
+  if (!raw) return null
+
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(raw)) {
+    const [day, month, year] = raw.split('/')
+    return `${year}-${month}-${day}`
+  }
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) return raw
+
+  return null
+}
+
+function buildInitialState({ postcode, orgMode, initialOrgCode, listing }) {
+  if (listing) {
+    return {
+      foodType: listing.foodType || '',
+      quantity: listing.quantity ? String(listing.quantity) : '',
+      category: normalizeCategory(listing.category || listing.foodType || DEFAULT_CATEGORY),
+      postcode: listing.postcode || postcode || '',
+      orgCode: listing.orgCode || initialOrgCode || '',
+      photoUrl: listing.photoUrl || null,
+      sizeCue: listing.sizeCue || '',
+      expiryDate: formatDateForDisplay(listing.expiryDate),
+      dietaryChoice: getPrimaryDietaryChoice(listing.dietary_tags || []),
+      description: listing.description || '',
+      nameSuggestions: [],
+    }
+  }
+
+  return {
+    foodType: '',
+    quantity: '1',
+    category: DEFAULT_CATEGORY,
+    postcode: postcode || '',
+    orgCode: orgMode ? initialOrgCode || '' : getOrCreateDonorCode(),
+    photoUrl: null,
+    sizeCue: '',
+    expiryDate: '',
+    dietaryChoice: 'none',
+    description: '',
+    nameSuggestions: [],
+  }
+}
 
 const DonationForm = () => {
   const { postcode } = useParams()
@@ -12,146 +89,256 @@ const DonationForm = () => {
   const location = useLocation()
   const { t } = useTranslation()
   const fileInputRef = useRef(null)
-  const selectedFileRef = useRef(null)  // holds the actual File for upload on submit
+  const selectedFileRef = useRef(null)
 
-  // Get org mode from location state
   const orgMode = location.state?.orgMode || false
   const initialOrgCode = location.state?.orgCode || ''
   const orgName = location.state?.orgName || ''
-  const initialPostcode = location.state?.postcode || postcode || ''
+  const editingListing = location.state?.listing || null
+  const editMode = Boolean(location.state?.editMode && editingListing)
 
-  const [formData, setFormData] = useState({
-    foodType: '',
-    quantity: '',
-    category: 'Bakery & Grains',
-    postcode: initialPostcode,
-    orgCode: initialOrgCode,
-    photoUrl: null,
-    dietary_tags: [],
-    name_suggestions: [],
-  })
-
+  const [formData, setFormData] = useState(() =>
+    buildInitialState({ postcode, orgMode, initialOrgCode, listing: editingListing }),
+  )
   const [loading, setLoading] = useState(false)
-  const [error, setError] = useState(null)
-  const [success, setSuccess] = useState(false)
   const [aiProcessing, setAiProcessing] = useState(false)
+  const [error, setError] = useState('')
+  const [successListing, setSuccessListing] = useState(null)
 
-  const handleFileChange = async (e) => {
-    const file = e.target.files?.[0]
+  const pageTitle = useMemo(() => {
+    if (editMode) return t('donation.editTitle', 'Edit listing')
+    return t('donation.title')
+  }, [editMode, t])
+
+  const donorOrgCode = orgMode ? initialOrgCode : getOrCreateDonorCode()
+
+  useEffect(() => {
+    setFormData(buildInitialState({ postcode, orgMode, initialOrgCode, listing: editingListing }))
+    setError('')
+    setSuccessListing(null)
+    if (fileInputRef.current) {
+      fileInputRef.current.value = ''
+    }
+    selectedFileRef.current = null
+  }, [postcode, orgMode, initialOrgCode, editMode, editingListing?.id])
+
+  const handleQuantityAdjust = (delta) => {
+    setFormData((prev) => {
+      const current = parseQuantityValue(prev.quantity) ?? 0
+      const next = Math.max(0, Math.round((current + delta) * 100) / 100)
+      return {
+        ...prev,
+        quantity: next === 0 ? '' : String(next),
+      }
+    })
+  }
+
+  const handleBack = () => {
+    if (successListing) {
+      return
+    }
+    if (orgMode) {
+      navigate('/org/dashboard', { state: { orgCode: initialOrgCode } })
+      return
+    }
+    const targetPostcode = formData.postcode || postcode
+    if (targetPostcode) {
+      navigate('/feed/' + targetPostcode)
+      return
+    }
+    navigate('/')
+  }
+
+  const handleFileChange = async (event) => {
+    const file = event.target.files && event.target.files[0]
     if (!file) return
 
-    selectedFileRef.current = file  // keep a reference for upload on submit
+    selectedFileRef.current = file
     setAiProcessing(true)
-    setError(null)
+    setError('')
 
     try {
       const fd = new FormData()
       fd.append('image', file)
       const result = await recognizeFoodFromImage(fd)
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
-        foodType: result.name || 'Unknown Food',
-        quantity: result.quantity != null ? String(result.quantity) : '',
-        dietary_tags: result.dietary_tags || [],
-        name_suggestions: result.name_suggestions || [],
-        photoUrl: URL.createObjectURL(file)
+        foodType: result.name || prev.foodType,
+        quantity:
+          result.quantity !== null &&
+          result.quantity !== undefined &&
+          Number(result.quantity) > 0
+            ? String(result.quantity)
+            : prev.quantity || '1',
+        dietaryChoice: getPrimaryDietaryChoice(result.dietary_tags || prev.dietary_tags),
+        photoUrl: URL.createObjectURL(file),
+        nameSuggestions: result.name_suggestions || [],
       }))
     } catch (err) {
       console.error('AI recognition error:', err)
       setError(t('donation.errors.aiTimeout'))
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         photoUrl: URL.createObjectURL(file),
-        foodType: prev.foodType || ''
       }))
     } finally {
       setAiProcessing(false)
     }
   }
 
-  const handleSubmit = async (e) => {
-    e.preventDefault()
-    setLoading(true)
-    setError(null)
+  const handleChange = (field, value) => {
+    let nextValue = value
+    if (field === 'quantity') {
+      nextValue = String(value).replace(/[^0-9.]/g, '')
+    }
+    if (field === 'expiryDate') {
+      nextValue = String(value)
+    }
+    setFormData((prev) => ({ ...prev, [field]: nextValue }))
+  }
 
+  const handleRemoveListing = async (listing) => {
+    if (!listing) return
     try {
-      console.log('Form validation:', {
-        foodType: formData.foodType,
-        quantity: formData.quantity,
-        postcode: formData.postcode,
-        orgCode: formData.orgCode,
-      })
-      
-      if (!formData.foodType) throw new Error(t('donation.errors.foodType'))
-      if (!formData.quantity || Number(formData.quantity) <= 0) throw new Error(t('donation.errors.quantity'))
-      if (!formData.postcode) throw new Error(t('donation.errors.postcode'))
-      if (!formData.orgCode) throw new Error(t('donation.errors.orgCode'))
-      
-      // Upload the image first if we have one, to get a permanent URL
-      let permanentPhotoUrl = null
-      if (selectedFileRef.current) {
-        try {
-          console.log('Starting image upload...')
-          const uploadResult = await uploadImage(selectedFileRef.current)
-          permanentPhotoUrl = uploadResult.url
-          console.log('Image upload success:', permanentPhotoUrl)
-        } catch (err) {
-          // Image upload failed — post without photo rather than blocking submission
-          console.warn('Image upload failed, submitting without photo:', err)
-        }
+      setLoading(true)
+      await deleteListing(listing.id, listing.orgCode)
+      if (!orgMode) {
+        forgetDonorListing(listing.id)
       }
-
-      console.log('Submitting listing with data:', { ...formData, photoUrl: permanentPhotoUrl })
-      await submitListing({ ...formData, photoUrl: permanentPhotoUrl })
-      console.log('Listing submitted successfully')
-      
-      setSuccess(true)
-      setFormData({
-        foodType: '', quantity: '', category: 'Bakery & Grains',
-        postcode: initialPostcode, orgCode: initialOrgCode, photoUrl: null,
-        dietary_tags: [], name_suggestions: [],
-      })
-      
-      // Navigate back after 2 seconds
-      setTimeout(() => {
-        if (orgMode) {
-          // Return to org dashboard
-          navigate('/org/dashboard', { state: { orgCode: initialOrgCode } })
-        } else if (postcode) {
-          navigate(`/feed/${postcode}`)
-        } else if (formData.postcode) {
-          navigate(`/feed/${formData.postcode}`)
-        } else {
-          setSuccess(false)
-        }
-      }, 2000)
+      if (orgMode) {
+        navigate('/org/dashboard', { state: { orgCode: initialOrgCode } })
+      } else {
+        navigate('/feed/' + listing.postcode)
+      }
     } catch (err) {
-      console.error('Submit error:', err)
-      setError(err.message || 'Failed to submit listing. Please try again.')
+      console.error('Remove listing error:', err)
+      setError(t('donation.errors.removeFailed', 'Unable to remove this listing right now.'))
     } finally {
       setLoading(false)
     }
   }
 
-  if (success) {
+  const handleSubmit = async (event) => {
+    event.preventDefault()
+    setLoading(true)
+    setError('')
+
+    try {
+      const quantityValue = parseQuantityValue(formData.quantity)
+      const expiryDateValue = normalizeDateInput(formData.expiryDate)
+
+      if (String(formData.foodType).trim() === '') {
+        throw new Error(t('donation.errors.foodType'))
+      }
+      if (quantityValue === null || quantityValue <= 0) {
+        throw new Error(t('donation.errors.quantity'))
+      }
+      if (String(formData.postcode).trim() === '') {
+        throw new Error(t('donation.errors.postcode'))
+      }
+      if (String(formData.expiryDate || '').trim() !== '' && expiryDateValue === null) {
+        throw new Error(t('donation.errors.bestBefore', 'Please enter the best before date as YYYY/MM/DD'))
+      }
+
+      let permanentPhotoUrl = editingListing?.photoUrl || null
+      if (selectedFileRef.current) {
+        try {
+          const uploadResult = await uploadImage(selectedFileRef.current)
+          permanentPhotoUrl = uploadResult.url
+        } catch (uploadErr) {
+          console.warn('Image upload failed, continuing with existing image:', uploadErr)
+        }
+      }
+
+      const payload = {
+        foodType: formData.foodType.trim(),
+        category: normalizeCategory(formData.category),
+        quantity: quantityValue,
+        unit: 'portions',
+        postcode: String(formData.postcode).trim(),
+        orgCode: editMode && editingListing?.orgCode ? editingListing.orgCode : donorOrgCode,
+        dietary_tags: buildDietaryTags(formData.dietaryChoice),
+        description: String(formData.description || '').trim(),
+        photoUrl: permanentPhotoUrl,
+        sizeCue: String(formData.sizeCue || '').trim(),
+        expiryDate: expiryDateValue,
+      }
+
+      let savedListing = null
+      if (editMode && editingListing) {
+        savedListing = await updateListing(editingListing.id, payload)
+      } else {
+        savedListing = await submitListing(payload)
+      }
+      if (!orgMode && savedListing?.id) {
+        rememberDonorListing(savedListing.id)
+      }
+      setSuccessListing(savedListing)
+    } catch (err) {
+      console.error('Submit listing error:', err)
+      setError(err.message || t('donation.errors.submitFailed', 'Unable to save this listing right now.'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  if (successListing) {
     return (
       <div className="success-container">
-        <div className="success-card">
+        <div className="success-card success-card-wide">
           <div className="success-icon">
             <span className="material-symbols-outlined">check_circle</span>
           </div>
-          <h2>{t('donation.success.title')}</h2>
-          {orgMode ? (
-            <>
-              <p>{t('donation.success.orgMessage')}</p>
-              <p className="success-tag">{t('donation.success.orgTag')}</p>
-            </>
-          ) : (
-            <>
-              <p>{t('donation.success.donorMessage')}</p>
-              <p className="success-tag">{t('donation.success.donorTag')}</p>
-            </>
-          )}
+          <h2>{editMode ? t('donation.success.updatedTitle', 'Listing updated') : t('donation.success.title')}</h2>
+          <p>
+            {orgMode
+              ? t('donation.success.orgMessage')
+              : t('donation.success.donorMessage')}
+          </p>
+          <div className="success-action-stack">
+            <button type="button" className="success-action-btn" onClick={() => navigate('/')}>
+              {t('donation.actions.backHome', 'Back to home')}
+            </button>
+            <button
+              type="button"
+              className="success-action-btn primary"
+              onClick={() => {
+                if (orgMode) {
+                  navigate('/org/dashboard', { state: { orgCode: initialOrgCode } })
+                } else {
+                  navigate('/feed/' + successListing.postcode)
+                }
+              }}
+            >
+              {orgMode
+                ? t('donation.actions.backDashboard', 'Back to dashboard')
+                : t('donation.actions.backListings', 'Back to live listings')}
+            </button>
+            <button
+              type="button"
+              className="success-action-btn"
+              onClick={() =>
+                navigate('/form/' + successListing.postcode, {
+                  state: {
+                    editMode: true,
+                    listing: successListing,
+                    orgMode,
+                    orgCode: successListing.orgCode,
+                    orgName,
+                  },
+                })
+              }
+            >
+              {t('donation.actions.editListing', 'Edit this listing')}
+            </button>
+            <button
+              type="button"
+              className="success-action-btn danger"
+              onClick={() => handleRemoveListing(successListing)}
+            >
+              {t('donation.actions.removeListing', 'Remove this listing')}
+            </button>
+          </div>
         </div>
       </div>
     )
@@ -159,57 +346,46 @@ const DonationForm = () => {
 
   return (
     <div className="donation-form-container">
-      {/* Fixed Header */}
       <header className="form-header">
         <div className="form-header-inner">
-          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-            <button className="btn-back" onClick={() => {
-              if (orgMode) {
-                navigate('/org/dashboard', { state: { orgCode: initialOrgCode } })
-              } else if (postcode) {
-                navigate(`/feed/${postcode}`)
-              } else {
-                window.history.back()
-              }
-            }}>
-              <span className="material-symbols-outlined">close</span>
+          <div className="form-header-left">
+            <button className="btn-back" type="button" onClick={handleBack}>
+              <span className="material-symbols-outlined">arrow_back</span>
             </button>
             <span className="form-brand">{t('appName')}</span>
           </div>
           <div className="form-header-badge">
-            <span className="material-symbols-outlined">bolt</span>
+            <span className="material-symbols-outlined">auto_awesome</span>
             {orgMode ? t('donation.orgTitle') : t('donation.aiTitle')}
           </div>
         </div>
         <div className="form-header-divider" />
       </header>
 
-      {/* Main form */}
       <form onSubmit={handleSubmit}>
         <main className="form-content">
-          {/* Hero */}
           <header className="form-hero">
-            {orgMode ? (
-              <>
-                <h1>{t('donation.title')}</h1>
-                <p>{orgName ? t('dashboard.sharing', { orgName: orgName }) : t('donation.subtitle')}</p>
-              </>
-            ) : (
-              <>
-                <h1>{t('donation.title')}</h1>
-                <p>{t('donation.subtitle')}</p>
-              </>
-            )}
+            <h1>{pageTitle}</h1>
+            <p>
+              {orgMode
+                ? orgName
+                  ? t('dashboard.sharing', { orgName })
+                  : t('donation.subtitle')
+                : t('donation.subtitle')}
+            </p>
           </header>
 
-          {/* Upload / Preview */}
           {formData.photoUrl ? (
             <div className="photo-preview">
               <img src={formData.photoUrl} alt="Food" />
               <button
                 type="button"
                 className="btn-change-photo"
-                onClick={() => { setFormData(prev => ({ ...prev, photoUrl: null })); fileInputRef.current.value = '' }}
+                onClick={() => {
+                  selectedFileRef.current = null
+                  handleChange('photoUrl', null)
+                  if (fileInputRef.current) fileInputRef.current.value = ''
+                }}
               >
                 <span className="material-symbols-outlined">photo_camera</span>
                 {t('donation.changePhoto')}
@@ -232,135 +408,181 @@ const DonationForm = () => {
             </label>
           )}
 
-          {/* AI processing */}
-          {aiProcessing && (
-            <div className="ai-processing">
-              <span className="material-symbols-outlined spinner-icon">settings</span>
-              {t('donation.analyzing')}
-            </div>
-          )}
+          {aiProcessing ? <div className="ai-processing">{t('donation.analyzing')}</div> : null}
+          {error ? <div className="error-message">{error}</div> : null}
 
-          {/* AI Result Card */}
-          {formData.foodType && (
-            <div className="ai-result-card">
-              <div className="ai-result-bg-icon">
+          <section className="ai-result-card">
+            <div className="ai-result-label">
+              <div className="ai-label-icon">
                 <span className="material-symbols-outlined">auto_awesome</span>
               </div>
-              <div className="ai-result-label">
-                <div className="ai-label-icon">
-                  <span className="material-symbols-outlined">auto_awesome</span>
-                </div>
-                <span className="ai-label-text">{t('donation.aiDetails')}</span>
+              <span className="ai-label-text">{t('donation.aiDetails')}</span>
+            </div>
+
+            <div className="ai-review-note">
+              <p>{t('donation.reviewTitle', 'Please review the AI result before posting.')}</p>
+              <ul>
+                <li>{t('donation.reviewHintFood', 'Check the food name and category.')}</li>
+                <li>{t('donation.reviewHintQuantity', 'Confirm the quantity and size or weight.')}</li>
+                <li>{t('donation.reviewHintDietary', 'Update the dietary tag if the AI guessed incorrectly.')}</li>
+              </ul>
+            </div>
+
+            <div className="ai-fields-grid">
+              <div className="ai-field full">
+                <label className="field-label" htmlFor="foodType">{t('donation.foodName')}</label>
+                <input
+                  id="foodType"
+                  className="form-input"
+                  type="text"
+                  value={formData.foodType}
+                  onChange={(event) => handleChange('foodType', event.target.value)}
+                  placeholder={t('donation.foodName')}
+                />
+                {formData.nameSuggestions.length > 0 ? (
+                  <p className="field-hint strong">{formData.nameSuggestions.join(' / ')}</p>
+                ) : null}
               </div>
 
-              <div className="ai-fields-grid">
-                {/* Food name */}
-                <div className="ai-field full">
-                  <label className="field-label" htmlFor="foodType">{t('donation.foodName')}</label>
-                  <input
-                    id="foodType"
-                    className="form-input"
-                    type="text"
-                    placeholder={t('donation.foodName')}
-                    value={formData.foodType}
-                    onChange={e => setFormData(prev => ({ ...prev, foodType: e.target.value }))}
-                  />
-                </div>
-
-                {/* Quantity */}
-                <div className="ai-field">
-                  <label className="field-label" htmlFor="quantity">{t('donation.quantity')}</label>
+              <div className="ai-field">
+                <label className="field-label" htmlFor="quantity">{t('donation.quantity')}</label>
+                <div className="quantity-control">
+                  <button
+                    type="button"
+                    className="quantity-step-btn"
+                    onClick={() => handleQuantityAdjust(-1)}
+                    aria-label="Decrease quantity"
+                  >
+                    -
+                  </button>
                   <input
                     id="quantity"
-                    className="form-input"
-                    type="number"
-                    placeholder="0"
+                    className="form-input quantity-input"
+                    type="text"
+                    inputMode="decimal"
                     value={formData.quantity}
-                    onChange={e => setFormData(prev => ({ ...prev, quantity: e.target.value }))}
+                    onChange={(event) => handleChange('quantity', event.target.value)}
+                    placeholder="1"
                   />
-                </div>
-
-                {/* Category */}
-                <div className="ai-field">
-                  <label className="field-label" htmlFor="category">{t('donation.category')}</label>
-                  <div className="form-select-wrapper">
-                    <select
-                      id="category"
-                      className="form-select"
-                      value={formData.category}
-                      onChange={e => setFormData(prev => ({ ...prev, category: e.target.value }))}
-                    >
-                      {CATEGORIES.map(c => <option key={c}>{c}</option>)}
-                    </select>
-                    <span className="material-symbols-outlined select-arrow">expand_more</span>
-                  </div>
+                  <button
+                    type="button"
+                    className="quantity-step-btn"
+                    onClick={() => handleQuantityAdjust(1)}
+                    aria-label="Increase quantity"
+                  >
+                    +
+                  </button>
                 </div>
               </div>
 
-              {/* Dietary tags */}
-              {formData.dietary_tags.length > 0 && (
-                <div className="tags-row">
-                  {formData.dietary_tags.map(tag => (
-                    <span key={tag} className={`tag-chip tag-${tag.replace(/\s+/g, '-')}`}>{tag}</span>
-                  ))}
+              <div className="ai-field">
+                <label className="field-label" htmlFor="category">{t('donation.category')}</label>
+                <div className="form-select-wrapper">
+                  <select
+                    id="category"
+                    className="form-select"
+                    value={formData.category}
+                    onChange={(event) => handleChange('category', event.target.value)}
+                  >
+                    {CATEGORY_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {t('dashboard.tabs.' + option.key, option.value)}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="material-symbols-outlined select-arrow">expand_more</span>
                 </div>
-              )}
-            </div>
-          )}
+              </div>
 
-          {/* Error */}
-          {error && <div className="error-message">{error}</div>}
+              <div className="ai-field">
+                <label className="field-label" htmlFor="sizeCue">{t('donation.sizeCue', 'Size or weight')}</label>
+                <div className="form-select-wrapper">
+                  <select
+                    id="sizeCue"
+                    className="form-select"
+                    value={formData.sizeCue}
+                    onChange={(event) => handleChange('sizeCue', event.target.value)}
+                  >
+                    {SIZE_CUE_OPTIONS.map((option) => (
+                      <option key={option.key} value={option.value}>
+                        {t('donation.sizeOptions.' + option.key, option.value || 'Select one')}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="material-symbols-outlined select-arrow">expand_more</span>
+                </div>
+                <p className="field-hint strong">
+                  {t('donation.sizeCueHint', 'Choose the closest size or weight so community groups know what to expect at pickup.')}
+                </p>
+              </div>
 
-          {/* Manual fields */}
-          <div className="manual-fields">
-            {!orgMode && (
-              <div>
-                <label className="field-label muted" htmlFor="postcodeField">{t('donation.postcode')}</label>
+              <div className="ai-field">
+                <label className="field-label" htmlFor="dietaryChoice">{t('donation.dietary', 'Dietary tag')}</label>
+                <div className="form-select-wrapper">
+                  <select
+                    id="dietaryChoice"
+                    className="form-select"
+                    value={formData.dietaryChoice}
+                    onChange={(event) => handleChange('dietaryChoice', event.target.value)}
+                  >
+                    {DIETARY_OPTIONS.map((option) => (
+                      <option key={option.value} value={option.value}>
+                        {t('listing.dietary.' + option.key, option.value)}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="material-symbols-outlined select-arrow">expand_more</span>
+                </div>
+              </div>
+
+              <div className="ai-field">
+                <label className="field-label" htmlFor="expiryDate">{t('donation.bestBefore', 'Best before')}</label>
+                <input
+                  id="expiryDate"
+                  className="form-input"
+                  type="date"
+                  value={formData.expiryDate}
+                  onChange={(event) => handleChange('expiryDate', event.target.value)}
+                />
+              </div>
+
+              <div className="ai-field">
+                <label className="field-label" htmlFor="postcodeField">{t('donation.postcode')}</label>
                 <input
                   id="postcodeField"
-                  className="form-input muted-bg"
-                  style={{ maxWidth: '12rem' }}
+                  className="form-input"
                   type="text"
-                  placeholder={t('postcode.example')}
+                  inputMode="numeric"
+                  maxLength="4"
                   value={formData.postcode}
-                  onChange={e => setFormData(prev => ({ ...prev, postcode: e.target.value }))}
+                  onChange={(event) => handleChange('postcode', event.target.value)}
                 />
-                <span className="field-hint">Only shared with verified recipients once accepted.</span>
               </div>
-            )}
 
-            <div>
-              <label className="field-label muted" htmlFor="orgCode">
-                {orgMode ? t('donation.orgCode') : t('donation.orgCode')}
-              </label>
-              <input
-                id="orgCode"
-                className="form-input muted-bg"
-                style={{ maxWidth: '12rem' }}
-                type="text"
-                placeholder={orgMode ? 'Your org code' : 'e.g. FB001'}
-                maxLength="20"
-                value={formData.orgCode}
-                onChange={e => setFormData(prev => ({ ...prev, orgCode: e.target.value.toUpperCase() }))}
-                readOnly={orgMode}
-              />
-              <span className="field-hint">
-                {orgMode ? 'Your organization code for this surplus posting.' : 'Ask the food bank staff for their code.'}
-              </span>
+              <div className="ai-field full">
+                <label className="field-label" htmlFor="description">{t('donation.extraNotes', 'Extra notes')}</label>
+                <textarea
+                  id="description"
+                  className="form-textarea"
+                  rows="4"
+                  value={formData.description}
+                  onChange={(event) => handleChange('description', event.target.value)}
+                  placeholder={t('donation.extraNotesPlaceholder', 'Example: Pickup from front desk after 4pm. Keep refrigerated. Please bring a container.')}
+                />
+              </div>
             </div>
-          </div>
+          </section>
         </main>
 
-        {/* Fixed bottom action */}
         <footer className="form-footer">
           <div className="form-footer-inner">
-            <button
-              type="submit"
-              className="btn-submit"
-              disabled={loading || !formData.foodType || !formData.postcode || !formData.orgCode}
-            >
-              {loading ? (orgMode ? 'Publishing...' : 'Posting...') : t('donation.postButton')}
-              {!loading && <span className="material-symbols-outlined">arrow_forward</span>}
+            <button type="submit" className="btn-submit" disabled={loading || aiProcessing}>
+              {loading
+                ? t('common.loading')
+                : editMode
+                  ? t('donation.saveButton', 'Save listing changes')
+                  : t('donation.postButton')}
+              {loading ? null : <span className="material-symbols-outlined">arrow_forward</span>}
             </button>
             <p className="form-security-note">{t('common.secure')}</p>
           </div>

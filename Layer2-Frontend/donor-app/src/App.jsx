@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import './App.css'
 
@@ -12,29 +12,105 @@ import DonationFormPage from './pages/DonationFormPage'
 import OrgCodeInputPage from './pages/OrgCodeInputPage'
 import LiveListingBoard from './pages/LiveListingBoard'
 
-function App() {
+const ACCESS_STORAGE_KEY = 'crisislink-site-access-granted'
+
+function PasswordGate({ expectedPassword, children }) {
+  const [inputPassword, setInputPassword] = useState('')
+  const [error, setError] = useState('')
+  const [isUnlocked, setIsUnlocked] = useState(false)
+
+  useEffect(() => {
+    if (!expectedPassword) {
+      setIsUnlocked(true)
+      return
+    }
+
+    const savedAccess = window.localStorage.getItem(ACCESS_STORAGE_KEY)
+    if (savedAccess === 'true') {
+      setIsUnlocked(true)
+    }
+  }, [expectedPassword])
+
+  const handleSubmit = (event) => {
+    event.preventDefault()
+
+    if (inputPassword.trim() === expectedPassword) {
+      window.localStorage.setItem(ACCESS_STORAGE_KEY, 'true')
+      setIsUnlocked(true)
+      setError('')
+      return
+    }
+
+    setError('Incorrect password. Please try again.')
+  }
+
+  if (isUnlocked) {
+    return children
+  }
+
   return (
-    <BrowserRouter>
-      <Routes>
-        {/* Home page - role selection */}
-        <Route path="/" element={<HomePage />} />
+    <div className="site-gate-shell">
+      <div className="site-gate-card">
+        <div className="site-gate-badge">CrisisLink Access</div>
+        <h1>Protected Demo Site</h1>
+        <p>
+          This website is currently restricted for teaching, mentor review, and
+          project demonstration purposes.
+        </p>
 
-        {/* Donor flow: postcode -> feed -> form */}
-        <Route path="/postcode" element={<PostcodeInputPage />} />
-        <Route path="/feed/:postcode" element={<PostFeedPage />} />
+        <form className="site-gate-form" onSubmit={handleSubmit}>
+          <label htmlFor="site-password">Enter password</label>
+          <input
+            id="site-password"
+            type="password"
+            value={inputPassword}
+            onChange={(event) => setInputPassword(event.target.value)}
+            placeholder="Project access password"
+          />
+          {error ? <p className="site-gate-error">{error}</p> : null}
+          <button type="submit">Enter site</button>
+        </form>
+      </div>
+    </div>
+  )
+}
 
-        {/* Form with optional postcode param so we can redirect back to feed */}
-        <Route path="/form/:postcode" element={<DonationFormPage />} />
-        <Route path="/form" element={<DonationFormPage />} />
+function AppRoutes() {
+  return (
+    <Routes>
+      {/* Home page - role selection */}
+      <Route path="/" element={<HomePage />} />
 
-        {/* Organization flow: code -> dashboard */}
-        <Route path="/org/code" element={<OrgCodeInputPage />} />
-        <Route path="/org/dashboard" element={<LiveListingBoard />} />
+      {/* Donor flow: postcode -> feed -> form */}
+      <Route path="/postcode" element={<PostcodeInputPage />} />
+      <Route path="/feed/:postcode" element={<PostFeedPage />} />
 
-        {/* Catch all - redirect to home */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </BrowserRouter>
+      {/* Form with optional postcode param so we can redirect back to feed */}
+      <Route path="/form/:postcode" element={<DonationFormPage />} />
+      <Route path="/form" element={<DonationFormPage />} />
+
+      {/* Organization flow: code -> dashboard */}
+      <Route path="/org/code" element={<OrgCodeInputPage />} />
+      <Route path="/org/dashboard" element={<LiveListingBoard />} />
+
+      {/* Catch all - redirect to home */}
+      <Route path="*" element={<Navigate to="/" replace />} />
+    </Routes>
+  )
+}
+
+function App() {
+  const expectedPassword = useMemo(
+    () => import.meta.env.VITE_SITE_PASSWORD?.trim() || '',
+    [],
+  )
+
+  return (
+    <PasswordGate expectedPassword={expectedPassword}>
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
+    </PasswordGate>
   )
 }
 

@@ -1,7 +1,6 @@
 {
   "appName": "CrisisLink",
   "tagline": "Food relief resource coordination platform",
-
   "home": {
     "question": "How are you using CrisisLink today?",
     "donor": {
@@ -15,30 +14,40 @@
       "button": "View board"
     }
   },
-
   "postcode": {
     "title": "Enter your postcode",
     "subtitle": "Help us find food near you",
     "placeholder": "e.g., 3000",
     "button": "Continue",
-    "example": "e.g. Postcode 3000"
+    "example": "e.g. Postcode 3000",
+    "invalid": "Please enter a valid 4-digit postcode."
   },
-
   "feed": {
     "title": "Live Listings",
     "noListings": "No listings available in your area yet",
     "claimButton": "Claim food",
     "claimedBy": "Claimed by",
-    "shareButton": "Share Surplus",
+    "claimedPickupInfo": "Pickup is arranged directly with the donor after claiming.",
+    "shareButton": "Post surplus",
     "filter": "Filter by category",
-    "search": "Search listings"
+    "search": "Search listings",
+    "subtitle": "Edit or remove the items you have posted.",
+    "referenceOnly": "Community groups can claim these listings from their own board after contacting the donor.",
+    "postedByYou": "Posted by you",
+    "availableForGroups": "Available to community groups",
+    "loadError": "Unable to load listings right now.",
+    "removeError": "Unable to remove this listing right now.",
+    "referenceTitle": "Donor view only.",
+    "groupClaimNote": "Community groups can claim this item from their board.",
+    "homeLink": "Back to home",
+    "kicker": "Donor preview",
+    "pageTitle": "Your donor listings"
   },
-
   "donation": {
-    "title": "Share Surplus",
+    "title": "Post Surplus",
     "subtitle": "Let AI do the heavy lifting. Just snap a photo of the food you'd like to share.",
     "aiTitle": "AI Assisted Listing",
-    "orgTitle": "Organization Sharing",
+    "orgTitle": "Organization Posting",
     "takePhoto": "Take a photo or upload one",
     "uploadSubtitle": "we will fill in the details",
     "changePhoto": "Change photo",
@@ -48,53 +57,114 @@
     "quantity": "Estimated Quantity",
     "category": "Category",
     "postcode": "Your postcode",
-    "orgCode": "Food Bank Code",
-    "postButton": "Post listing - takes under 60 seconds",
+    "postButton": "Post listing",
     "errors": {
       "foodType": "Please enter a food type",
       "quantity": "Please enter a valid quantity (must be greater than 0)",
       "postcode": "Please enter a postcode",
-      "orgCode": "Please enter an organization code",
       "aiTimeout": "AI recognition failed or timed out. You can still manually enter the food details.",
-      "uploadFailed": "Image upload failed"
+      "uploadFailed": "Image upload failed",
+      "removeFailed": "Unable to remove this listing right now.",
+      "submitFailed": "Unable to save this listing right now.",
+      "bestBefore": "Please enter the best before date as DD/MM/YYYY"
     },
     "success": {
       "title": "Posted!",
       "donorMessage": "Your food is now visible to local food banks.",
       "donorTag": "Thank you for sharing.",
       "orgMessage": "Your surplus food is now available for other communities to claim.",
-      "orgTag": "Thank you for helping the network."
+      "orgTag": "Thank you for helping the network.",
+      "updatedTitle": "Listing updated"
+    },
+    "editTitle": "Edit listing",
+    "sizeCue": "Size or weight",
+    "sizeCuePlaceholder": "e.g. small bag, medium tray, 500g bottle",
+    "sizeCueHint": "Pick the closest size range so recipients can judge pickup volume more easily.",
+    "dietary": "Dietary tag",
+    "bestBefore": "Best before",
+    "extraNotes": "Extra notes",
+    "extraNotesPlaceholder": "Example: Pickup from front desk after 4pm. Keep refrigerated. Please bring a container.",
+    "saveButton": "Save listing changes",
+    "actions": {
+      "backHome": "Back to home",
+      "backListings": "Back to live listings",
+      "backDashboard": "Back to dashboard",
+      "editListing": "Edit this listing",
+      "removeListing": "Remove this listing"
+    },
+    "reviewTitle": "Please review the AI result before posting.",
+    "reviewHintFood": "Check the food name and category.",
+    "reviewHintQuantity": "Confirm the quantity and the size or weight.",
+    "reviewHintDietary": "Update the dietary tag if the AI guessed incorrectly.",
+    "bestBeforePlaceholder": "DD/MM/YYYY",
+    "sizeOptions": {
+      "none": "Select one",
+      "small": "Small",
+      "medium": "Medium",
+      "large": "Large",
+      "extraLarge": "Extra large",
+      "bulkHeavy": "Bulk / heavy"
     }
   },
-
   "orgCode": {
-    "title": "Enter Organization Code",
-    "subtitle": "Ask your food bank staff for their organization code",
-    "placeholder": "e.g., HCFB-2841",
+    "title": "Enter organization code or name",
+    "subtitle": "Enter the organization code or organization name for this demo.",
+    "placeholder": "e.g., HCFB-2841 or Helping Hands",
     "button": "Access Board",
-    "example": "Ask the food bank staff for their code"
+    "example": "Enter an organization code or name to continue"
   },
-
   "dashboard": {
     "title": "Live Listing Board",
+    "serviceArea": "Service area",
+    "orgCodeLabel": "Org code",
+    "donorCodeLabel": "Donor code",
     "noListings": "Failed to load listings. Please try again.",
     "sharing": "Sharing excess from {{orgName}}",
-    "shareButton": "Share Excess",
+    "shareButton": "Post surplus",
     "tabs": {
       "all": "All",
       "bakery": "Bakery",
       "bakedGoods": "Baked goods",
-      "produce": "Produce",
+      "produce": "Fruit & veg",
       "dairy": "Dairy",
       "prepared": "Prepared",
       "preparedMeals": "Prepared meals",
       "grocery": "Grocery",
-      "expiringSoon": "Expiring soon"
+      "vegan": "Vegan",
+      "vegetarian": "Vegetarian",
+      "expiringSoon": "Expiring soon",
+      "pantry": "Pantry",
+      "other": "Other"
+    },
+    "filterLabels": {
+      "category": "Food category",
+      "allCategories": "All categories",
+      "status": "Listing status"
+    },
+    "statusPills": {
+      "available": "Available to claim",
+      "posted": "Posted by us",
+      "claimed": "Claimed by us: {{quantity}}"
+    },
+    "statusTabs": {
+      "all": "All listings",
+      "available": "Available to claim",
+      "posted": "Posted by us",
+      "claimed": "Claimed by us"
+    },
+    "claimDialog": {
+      "title": "Choose claim quantity",
+      "available": "This listing currently has {{quantity}} available.",
+      "claimAll": "Claim all",
+      "confirm": "Confirm claim",
+      "invalidQuantity": "Enter a valid quantity to claim.",
+      "exceedsQuantity": "You can claim up to {{quantity}}.",
+      "success": "Claimed {{quantity}} successfully.",
+      "failed": "Unable to claim this quantity right now."
     }
   },
-
   "listing": {
-    "itemsAvailable": "{{count}} item{{count !== 1 ? 's' : ''}} available",
+    "itemsAvailable": "{{count}} items available",
     "location": "Location: ",
     "expiresIn": "Expires in {{time}}",
     "from": "From",
@@ -105,12 +175,14 @@
     "minutesAgo": "{{count}}m ago",
     "hoursAgo": "{{count}}h ago",
     "daysAgo": "{{count}}d ago",
+    "approxQuantity": "About {{quantity}} {{unit}}",
     "dietary": {
       "vegetarian": "Vegetarian",
       "vegan": "Vegan",
       "glutenFree": "Gluten Free",
       "dairyFree": "Dairy Free",
-      "nonVegetarian": "Non-vegetarian"
+      "nonVegetarian": "Non-vegetarian",
+      "none": "No dietary tag"
     },
     "units": {
       "portions": "portions",
@@ -120,9 +192,9 @@
       "boxes": "boxes",
       "dozen": "dozen",
       "litres": "litres"
-    }
+    },
+    "bestBefore": "Best before"
   },
-
   "common": {
     "close": "Close",
     "back": "Back",
@@ -136,7 +208,6 @@
     "profile": "Profile",
     "secure": "SECURE CIVIC PLATFORM • DATA ENCRYPTED"
   },
-
   "lang": {
     "en": "English",
     "zh": "中文"

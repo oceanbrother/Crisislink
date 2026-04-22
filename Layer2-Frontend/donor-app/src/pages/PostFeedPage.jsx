@@ -1,53 +1,74 @@
-import React, { useState, useEffect } from 'react'
-import { useParams, useNavigate } from 'react-router-dom'
+import React, { useEffect, useMemo, useState } from 'react'
+import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import axios from 'axios'
+import { deleteListing, getAvailableListings } from '../services/api'
+import { FILTER_OPTIONS, formatBestBeforeLabel, normalizeCategory } from '../constants/listings'
+import { forgetDonorListing, getOrCreateDonorCode, isRememberedDonorListing } from '../utils/donorIdentity'
 import '../styles/PostFeedPage.css'
 
-const ICON_MAP = {
-  bread: 'bakery_dining', bakery: 'bakery_dining', sourdough: 'bakery_dining',
-  curry: 'restaurant', meal: 'restaurant', food: 'restaurant',
-  egg: 'egg', eggs: 'egg',
-  veg: 'nutrition', vegetable: 'nutrition', produce: 'nutrition', salad: 'salad',
-  fruit: 'nutrition', rice: 'restaurant', soup: 'soup_kitchen',
-  yogurt: 'icecream', dairy: 'icecream', milk: 'icecream',
-  sandwich: 'lunch_dining', burger: 'lunch_dining',
-  pizza: 'local_pizza',
+function getDietaryClass(tag) {
+  if (!tag) return ''
+  return String(tag).toLowerCase().replace(/\s+/g, '-')
 }
 
-const getIcon = (name = '') => {
-  const lower = name.toLowerCase()
-  for (const [key, val] of Object.entries(ICON_MAP)) {
-    if (lower.includes(key)) return val
-  }
-  return 'restaurant'
-}
-
-const FILTER_CATEGORIES = ['All', 'Baked goods', 'Produce', 'Dairy', 'Prepared meals', 'Expiring soon']
-
-const getRelativeTime = (createdAt, t) => {
-  if (!createdAt) return t('listing.justNow')
-  const created = new Date(createdAt)
-  const diff = Date.now() - created.getTime()
-  const minutes = Math.floor(diff / 60000)
-  const hours = Math.floor(diff / 3600000)
-  const days = Math.floor(diff / 86400000)
-  
-  if (minutes < 1) return t('listing.justNow')
-  if (minutes < 60) return t('listing.minutesAgo', { count: minutes })
-  if (hours < 24) return t('listing.hoursAgo', { count: hours })
-  return t('listing.daysAgo', { count: days })
+function isLegacyDonorListing(listing, currentPostcode) {
+  const listingOrgCode = String(listing?.orgCode || '').trim().toUpperCase()
+  const postcode = String(currentPostcode || '').trim()
+  return postcode !== '' && listingOrgCode === ('DONOR-' + postcode).toUpperCase()
 }
 
 const PostFeedPage = () => {
   const { postcode } = useParams()
   const navigate = useNavigate()
   const { t, i18n } = useTranslation()
+
   const [activeFilter, setActiveFilter] = useState('All')
   const [search, setSearch] = useState('')
   const [listings, setListings] = useState([])
   const [loading, setLoading] = useState(true)
+  const [error, setError] = useState('')
   const [showLanguageMenu, setShowLanguageMenu] = useState(false)
+
+  const donorCode = useMemo(() => getOrCreateDonorCode(), [])
+
+  const fetchListings = async () => {
+    try {
+      setLoading(true)
+      const data = await getAvailableListings({ postcode, status: 'available' })
+      setListings(Array.isArray(data) ? data : [])
+      setError('')
+    } catch (err) {
+      console.error('Fetch donor listings error:', err)
+      setListings([])
+      setError(t('feed.loadError', 'Unable to load listings right now.'))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchListings()
+  }, [postcode])
+
+  const filteredListings = useMemo(() => {
+    const term = search.trim().toLowerCase()
+    return listings.filter((listing) => {
+      const category = normalizeCategory(listing.category || listing.foodType)
+      const ownListing =
+        listing.orgCode === donorCode ||
+        isRememberedDonorListing(listing.id) ||
+        isLegacyDonorListing(listing, postcode)
+
+      if (!ownListing) return false
+
+      const matchesFilter = activeFilter === 'All' || category === activeFilter
+      if (!matchesFilter) return false
+
+      if (term === '') return true
+      const haystacks = [listing.foodType, listing.category, listing.description, listing.sizeCue]
+      return haystacks.some((value) => String(value || '').toLowerCase().includes(term))
+    })
+  }, [activeFilter, listings, search])
 
   const handleLanguageChange = (lang) => {
     i18n.changeLanguage(lang)
@@ -55,329 +76,193 @@ const PostFeedPage = () => {
     setShowLanguageMenu(false)
   }
 
-  useEffect(() => {
-    const fetchListings = async () => {
-      try {
-        const res = await axios.get('/api/listings', {
-          params: { postcode, status: 'available' }
-        })
-        setListings(res.data)
-      } catch {
-        // Fallback sample data
-        setListings([
-          {
-            id: '1', foodType: 'Artisan Sourdough Loaves', orgCode: 'The Golden Crust Bakery',
-            quantity: 40, unit: 'portions', postcode, status: 'available',
-            expiresIn: '3 hrs', location: 'Surry Hills (0.8km)',
-            createdAt: new Date().toISOString(), dietary_tags: []
-          },
-          {
-            id: '2', foodType: 'Vegetable Curry & Rice', orgCode: 'Spice Route Bistro',
-            quantity: 15, unit: 'meals', postcode, status: 'available',
-            expiresIn: '2 hrs', location: 'Chippendale (1.2km)',
-            createdAt: new Date().toISOString(), dietary_tags: ['vegetarian']
-          },
-          {
-            id: '3', foodType: 'Farm Fresh Eggs', orgCode: 'Locals Market',
-            quantity: 10, unit: 'portions', postcode, status: 'claimed',
-            claimedBy: "St. Jude's", location: 'Redfern (2.1km)',
-            createdAt: new Date().toISOString(), dietary_tags: ['vegetarian']
-          },
-          {
-            id: '4', foodType: 'Seasonal Produce Box', orgCode: 'Urban Harvest Co.',
-            quantity: 20, unit: 'kg', postcode, status: 'available',
-            expiresIn: '6 hrs', location: 'Pyrmont (2.5km)',
-            createdAt: new Date().toISOString(), dietary_tags: ['vegan']
-          },
-          {
-            id: '5', foodType: 'Assorted Organic Yogurts', orgCode: 'Green Grocer Metro',
-            quantity: 12, unit: 'units', postcode, status: 'available',
-            expiresIn: '4 hrs', location: 'Darlington (1.5km)',
-            createdAt: new Date().toISOString(), dietary_tags: []
-          },
-          {
-            id: '6', foodType: 'Premium Deli Sandwiches', orgCode: 'The Lunch Spot',
-            quantity: 8, unit: 'boxes', postcode, status: 'claimed',
-            claimedBy: 'Hope House', location: 'Newtown (3.0km)',
-            createdAt: new Date().toISOString(), dietary_tags: []
-          }
-        ])
-      } finally {
-        setLoading(false)
-      }
-    }
-    fetchListings()
-  }, [postcode])
+  const handleEdit = (listing) => {
+    navigate('/form/' + listing.postcode, {
+      state: {
+        editMode: true,
+        listing,
+        orgMode: false,
+      },
+    })
+  }
 
-  const handleClaim = async (listingId) => {
+  const handleRemove = async (listing) => {
     try {
-      await axios.post(`/api/listings/${listingId}/claim`, {
-        orgId: 'FB-GUEST', orgName: 'Guest Food Bank'
-      })
-      setListings(prev =>
-        prev.map(l => l.id === listingId ? { ...l, status: 'claimed', claimedBy: 'You' } : l)
-      )
-    } catch {
-      alert('Unable to claim this listing. Please try again.')
+      await deleteListing(listing.id, listing.orgCode || donorCode)
+      forgetDonorListing(listing.id)
+      await fetchListings()
+    } catch (err) {
+      console.error('Remove donor listing error:', err)
+      setError(t('feed.removeError', 'Unable to remove this listing right now.'))
     }
   }
 
-  const filtered = listings.filter(l => {
-    const nameMatch = (l.foodType || '').toLowerCase().includes(search.toLowerCase())
-    if (!nameMatch) return false
-    if (activeFilter === 'All') return true
-    return true // Category filter would need backend category field
-  })
-
   return (
-    <div className="post-feed-page">
-      {/* Top Navbar */}
-      <header className="navbar">
-        <div className="navbar-inner">
-          <div className="nav-brand">{t('appName')}</div>
-          <div className="nav-center">{t('listing.location', 'Location:')} {postcode}</div>
-          <div className="nav-actions">
-            <div className="language-btn-wrapper" style={{ position: 'relative' }}>
-              <button 
-                className="nav-icon-btn" 
-                title="Change language"
-                onClick={() => setShowLanguageMenu(!showLanguageMenu)}
-              >
+    <div className="post-feed-page donor-role-page">
+      <header className="navbar donor-navbar">
+        <div className="navbar-inner donor-navbar-inner">
+          <button className="brand-home-btn" type="button" onClick={() => navigate('/')}>
+            <span className="brand-home-title">{t('appName')}</span>
+          </button>
+
+          <div className="nav-actions donor-nav-actions">
+            <button className="post-action-btn" type="button" onClick={() => navigate('/form/' + postcode)}>
+              <span className="material-symbols-outlined">add</span>
+              {t('feed.shareButton', 'Post surplus')}
+            </button>
+            <div className="language-btn-wrapper">
+              <button className="nav-icon-btn" type="button" onClick={() => setShowLanguageMenu((prev) => !prev)}>
                 <span className="material-symbols-outlined">language</span>
               </button>
-              {showLanguageMenu && (
-                <div style={{
-                  position: 'absolute',
-                  top: '100%',
-                  right: 0,
-                  backgroundColor: 'white',
-                  border: '1px solid #ddd',
-                  borderRadius: '8px',
-                  minWidth: '120px',
-                  marginTop: '8px',
-                  boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
-                  zIndex: 1000
-                }}>
-                  <button 
-                    style={{
-                      display: 'block',
-                      width: '100%',
-                      padding: '12px 16px',
-                      border: 'none',
-                      background: i18n.language === 'en' ? '#f0f0f0' : 'white',
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      fontWeight: i18n.language === 'en' ? '600' : '400',
-                      color: i18n.language === 'en' ? '#006B4C' : '#333',
-                      borderBottom: '1px solid #eee'
-                    }}
-                    onClick={() => handleLanguageChange('en')}
-                  >
-                    English
-                  </button>
-                  <button 
-                    style={{
-                      display: 'block',
-                      width: '100%',
-                      padding: '12px 16px',
-                      border: 'none',
-                      background: i18n.language === 'zh' ? '#f0f0f0' : 'white',
-                      textAlign: 'left',
-                      cursor: 'pointer',
-                      fontSize: '14px',
-                      fontWeight: i18n.language === 'zh' ? '600' : '400',
-                      color: i18n.language === 'zh' ? '#006B4C' : '#333'
-                    }}
-                    onClick={() => handleLanguageChange('zh')}
-                  >
-                    中文
-                  </button>
+              {showLanguageMenu ? (
+                <div className="language-menu">
+                  <button type="button" onClick={() => handleLanguageChange('en')}>English</button>
+                  <button type="button" onClick={() => handleLanguageChange('zh')}>中文</button>
                 </div>
-              )}
+              ) : null}
             </div>
           </div>
         </div>
         <div className="navbar-divider" />
       </header>
 
-      <main className="feed-content">
-        {/* Board heading */}
-        <div className="board-header">
-          <h1 className="board-title">{t('feed.title')}</h1>
-          <p className="board-subtitle">
-            {t('postcode.subtitle')}
-          </p>
-        </div>
+      <main className="feed-content donor-feed-content">
+        <section className="donor-page-intro">
+          <div className="donor-page-heading">
+            <h1 className="board-title donor-page-title">{t('feed.pageTitle', 'Your donor listings')}</h1>
+            <div className="donor-page-meta">
+              <span className="material-symbols-outlined">location_on</span>
+              <span>{t('listing.postcode', 'Postcode')} {postcode}</span>
+            </div>
+          </div>
+        </section>
 
-        {/* Filters */}
-        <section className="filter-section">
-          <div className="search-wrapper">
+        <section className="filter-section donor-filter-section">
+          <div className="search-wrapper donor-search-wrapper">
             <span className="material-symbols-outlined search-icon">search</span>
             <input
               className="search-input"
               type="text"
-              placeholder={t('feed.search')}
+              placeholder={t('feed.search', 'Search listings')}
               value={search}
-              onChange={e => setSearch(e.target.value)}
+              onChange={(event) => setSearch(event.target.value)}
             />
           </div>
-          <div className="filter-chips">
-            {FILTER_CATEGORIES.map(f => {
-              // Convert category filter to a key for translation
-              const filterKeyMap = {
-                'All': 'all',
-                'Baked goods': 'bakedGoods',
-                'Produce': 'produce',
-                'Dairy': 'dairy',
-                'Prepared meals': 'preparedMeals',
-                'Expiring soon': 'expiringSoon'
-              };
-              const transKey = filterKeyMap[f] || f;
-              return (
-                <button
-                  key={f}
-                  className={`filter-chip${activeFilter === f ? ' active' : ''}${f === 'Expiring soon' ? ' expiring' : ''}`}
-                  onClick={() => setActiveFilter(f)}
-                >
-                  {t(`dashboard.tabs.${transKey}`, f)}
-                </button>
-              );
-            })}
+          <div className="filter-chips donor-filter-chips">
+            {FILTER_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                className={activeFilter === option.value ? 'filter-chip active' : 'filter-chip'}
+                onClick={() => setActiveFilter(option.value)}
+              >
+                {t('dashboard.tabs.' + option.key, option.value)}
+              </button>
+            ))}
+          </div>
+          <div className="feed-meta-row">
+            <span className="feed-count">{t('listing.itemsAvailable', { count: filteredListings.length })}</span>
           </div>
         </section>
 
-        {/* Cards grid */}
-        <div className="food-grid">
-          {loading ? (
-            <div className="empty-state">
-              <div className="empty-state-icon">⏳</div>
-              <p>{t('common.loading')}</p>
-            </div>
-          ) : filtered.length === 0 ? (
-            <div className="empty-state">
-              <div className="empty-state-icon">🍽️</div>
-              <h3>{t('feed.noListings')}</h3>
-              <p>Be the first to post surplus food in {postcode}.</p>
-            </div>
-          ) : (
-            filtered.map(l => {
-              const isClaimed = l.status === 'claimed'
+        {error ? <div className="error-message board-error">{error}</div> : null}
+
+        {loading ? (
+          <div className="empty-state"><p>{t('common.loading')}</p></div>
+        ) : filteredListings.length === 0 ? (
+          <div className="empty-state">
+            <p>{t('feed.noListings', 'No listings available in your area yet')}</p>
+          </div>
+        ) : (
+          <div className="food-grid donor-food-grid">
+            {filteredListings.map((listing) => {
+              const ownListing =
+                listing.orgCode === donorCode ||
+                isRememberedDonorListing(listing.id) ||
+                isLegacyDonorListing(listing, postcode)
+              const dietaryTag = Array.isArray(listing.dietary_tags) && listing.dietary_tags.length > 0 ? listing.dietary_tags[0] : ''
+              const bestBefore = formatBestBeforeLabel(listing.expiryDate, i18n.language === 'zh' ? 'zh-CN' : 'en-AU')
+              const category = normalizeCategory(listing.category || listing.foodType)
+              const categoryOption = FILTER_OPTIONS.find((option) => option.value === category)
+
               return (
-                <div
-                  key={l.id}
-                  className={[
-                    'food-card',
-                    isClaimed ? 'food-card--claimed' : '',
-                    l.photoUrl ? 'food-card--has-photo' : '',
-                  ].join(' ')}
-                >
-                  {l.photoUrl ? (
-                    /* ── Hero photo layout ─────────────────────────── */
-                    <div className="food-card-hero">
-                      <img
-                        src={l.photoUrl}
-                        alt={l.foodType}
-                        className="food-card-hero-img"
-                      />
-                      {/* Frosted glass blur fade transitioning into card body */}
-                      <div className="food-card-hero-fade" />
-                      {/* Qty badge pinned to top-right of image */}
-                      <span className={`food-qty-badge food-qty-badge--on-hero${isClaimed ? ' claimed' : ''}`}>
-                        ~{l.quantity} {t(`listing.units.${l.unit}`, l.unit)}
-                      </span>
-                      {/* Category icon bottom-left of image */}
-                      <div className="food-card-hero-icon">
-                        <span className="material-symbols-outlined">{getIcon(l.foodType)}</span>
-                      </div>
-                    </div>
-                  ) : (
-                    /* ── No photo: classic top row ─────────────────── */
-                    <div className="food-card-top">
-                      <div className={`food-icon-circle${isClaimed ? ' claimed' : ''}`}>
-                        <span className="material-symbols-outlined">{getIcon(l.foodType)}</span>
-                      </div>
-                      <span className={`food-qty-badge${isClaimed ? ' claimed' : ''}`}>
-                        ~{l.quantity} {t(`listing.units.${l.unit}`, l.unit)}
-                      </span>
-                    </div>
-                  )}
+                <article key={listing.id} className={ownListing ? 'food-card own-listing-card donor-card' : 'food-card donor-card'}>
+                  {listing.photoUrl ? <img className="food-card-image" src={listing.photoUrl} alt={listing.foodType} /> : null}
 
-                  {/* ── Card body ───────────────────────────────────── */}
-                  <div className="food-card-body">
-                    <h3 className={`food-card-name${isClaimed ? ' claimed' : ''}`}>
-                      {l.foodType}
-                    </h3>
-                    <p className={`food-card-source${isClaimed ? ' claimed' : ''}`}>
-                      {l.orgCode}
-                    </p>
-
-                    <div className="food-card-meta">
-                      {isClaimed ? (
-                        <div className="food-meta-row claimed-by">
-                          <span className="material-symbols-outlined">check_circle</span>
-                          {t('feed.claimedBy', 'Claimed')}{l.claimedBy ? ` ${l.claimedBy}` : ''}
-                        </div>
-                      ) : (
-                        <div className="food-meta-row expiry">
-                          <span className="material-symbols-outlined">schedule</span>
-                          {t('listing.expiresIn', { time: l.expiresIn || '–' })}
-                        </div>
-                      )}
-                      <div className="food-meta-row location">
-                        <span className="material-symbols-outlined">location_on</span>
-                        {l.location || l.postcode}
-                      </div>
+                  <div className="food-card-header donor-card-header">
+                    <div>
+                      <h3 className="food-card-title donor-card-title">{listing.foodType}</h3>
+                      <p className="food-card-source donor-card-source">
+                        {ownListing
+                          ? t('feed.postedByYou', 'Posted by you')
+                          : t('feed.availableForGroups', 'Available to community groups')}
+                      </p>
                     </div>
+                    <span className="food-card-category donor-card-category">
+                      {t('dashboard.tabs.' + (categoryOption?.key || 'other'), category)}
+                    </span>
                   </div>
 
-                  {/* ── Claim button ─────────────────────────────────── */}
-                  <div className="food-card-actions">
-                    {isClaimed ? (
-                      <button className="claim-btn claim-btn--disabled" disabled>
-                        {t('common.success')}
-                      </button>
+                  <div className="food-card-details donor-card-details">
+                    <div className="food-card-detail-row donor-card-detail-row">
+                      <span className="material-symbols-outlined">inventory_2</span>
+                      <span>{t('listing.approxQuantity', { quantity: listing.quantity, unit: t('listing.units.portions', 'portions') })}</span>
+                    </div>
+                    {listing.sizeCue ? (
+                      <div className="food-card-detail-row donor-card-detail-row">
+                        <span className="material-symbols-outlined">straighten</span>
+                        <span>{listing.sizeCue}</span>
+                      </div>
+                    ) : null}
+                    <div className="food-card-detail-row donor-card-detail-row">
+                      <span className="material-symbols-outlined">location_on</span>
+                      <span>{t('listing.postcode', 'Postcode')} {listing.postcode}</span>
+                    </div>
+                    {bestBefore ? (
+                      <div className="food-card-detail-row donor-card-detail-row">
+                        <span className="material-symbols-outlined">schedule</span>
+                        <span>{t('listing.bestBefore', 'Best before')} {bestBefore}</span>
+                      </div>
+                    ) : null}
+                  </div>
+
+                  {dietaryTag ? (
+                    <div className="tags-row tags-row-spaced donor-tag-row">
+                      <span className={'tag-chip tag-' + getDietaryClass(dietaryTag)}>
+                        {t('listing.dietary.' + getDietaryClass(dietaryTag), dietaryTag)}
+                      </span>
+                    </div>
+                  ) : null}
+
+                  {listing.description ? (
+                    <div className="donor-extra-notes">
+                      <strong>{t('donation.extraNotes', 'Extra notes')}</strong>
+                      <p>{listing.description}</p>
+                    </div>
+                  ) : null}
+
+                  <div className="food-card-actions donor-card-actions">
+                    {ownListing ? (
+                      <>
+                        <button type="button" className="card-action-btn primary" onClick={() => handleEdit(listing)}>
+                          {t('donation.actions.editListing', 'Edit this listing')}
+                        </button>
+                        <button type="button" className="card-action-btn" onClick={() => handleRemove(listing)}>
+                          {t('donation.actions.removeListing', 'Remove this listing')}
+                        </button>
+                      </>
                     ) : (
-                      <button
-                        className="claim-btn"
-                        onClick={() => handleClaim(l.id)}
-                      >
-                        {t('feed.claimButton')}
-                      </button>
+                      <div className="donor-reference-note">
+                        {t('feed.groupClaimNote', 'Community groups can claim this item from their board.')}
+                      </div>
                     )}
                   </div>
-                </div>
+                </article>
               )
-            })
-          )}
-        </div>
+            })}
+          </div>
+        )}
       </main>
-
-      {/* FAB — Post surplus */}
-      <button className="fab" onClick={() => navigate(`/form/${postcode}`)} aria-label="Post food">
-        <span className="material-symbols-outlined">add</span>
-      </button>
-
-      {/* Bottom Nav */}
-      <nav className="bottom-nav">
-        <button className="nav-tab active">
-          <span className="material-symbols-outlined"
-            style={{ fontVariationSettings: "'FILL' 1" }}>grid_view</span>
-          <span className="nav-tab-label">{t('feed.title')}</span>
-        </button>
-        <button className="nav-tab" onClick={() => navigate(`/form/${postcode}`)}>
-          <span className="material-symbols-outlined">add_circle</span>
-          <span className="nav-tab-label">{t('home.donor.button')}</span>
-        </button>
-        <button className="nav-tab">
-          <span className="material-symbols-outlined">notifications</span>
-          <span className="nav-tab-label">{t('common.alerts', 'Alerts')}</span>
-        </button>
-        <button className="nav-tab">
-          <span className="material-symbols-outlined">person</span>
-          <span className="nav-tab-label">{t('common.profile', 'Profile')}</span>
-        </button>
-      </nav>
     </div>
   )
 }

@@ -12,17 +12,21 @@ const resources = {
 }
 
 i18n
-  // Detect user language
   .use(LanguageDetector)
-  // Pass i18n instance to react-i18next
   .use(initReactI18next)
-  // Initialize i18next
   .init({
     resources,
     fallbackLng: 'en',
+    lng: 'en',
+    supportedLngs: ['en', 'zh'],
     defaultNS: 'translation',
+    detection: {
+      order: ['localStorage'],
+      lookupLocalStorage: 'preferredLanguage',
+      caches: ['localStorage']
+    },
     interpolation: {
-      escapeValue: false // React already escapes values
+      escapeValue: false
     }
   })
 
