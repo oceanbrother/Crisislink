@@ -53,7 +53,7 @@
     "showingMatches": "Showing {{count}} matching listings",
     "emptyTitle": "No donor listings yet",
     "emptyHint": "Once you post surplus food from this postcode, it will appear here for you to manage.",
-    "emptySearchTitle": "No matching donor listings",
+    "emptySearchTitle": "No matching listings",
     "emptySearchHint": "Try another search term or clear the active category filter to see all of your listings again."
   },
   "donation": {
@@ -167,13 +167,13 @@
     },
     "statusTabs": {
       "all": "All listings",
-      "available": "Available",
+      "available": "Available listings",
       "posted": "Posted by us",
       "claimed": "Claimed by us"
     },
     "claimDialog": {
       "title": "Choose claim quantity",
-      "available": "This listing currently has {{quantity}} available.",
+      "available": "This listing currently has {{quantity}} {{unit}} available.",
       "claimAll": "Claim all",
       "confirm": "Confirm claim",
       "invalidQuantity": "Enter a valid quantity to claim.",

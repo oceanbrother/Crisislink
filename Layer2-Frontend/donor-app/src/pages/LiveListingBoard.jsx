@@ -5,9 +5,10 @@ import { getAvailableListings, claimListing, unclaimListing, deleteListing } fro
 import { FILTER_OPTIONS, formatBestBeforeLabel, resolveListingCategory } from '../constants/listings'
 import '../styles/LiveListingBoard.css'
 
-const getTranslatedCategory = (category, t) => {
-  const option = FILTER_OPTIONS.find((item) => item.value === category)
-  return t(`dashboard.tabs.${option?.key || 'other'}`, category)
+const getTranslatedCategory = (category, foodType, t) => {
+  const resolvedCategory = resolveListingCategory(category, foodType)
+  const option = FILTER_OPTIONS.find((item) => item.value === resolvedCategory)
+  return t(`dashboard.tabs.${option?.key || 'other'}`, resolvedCategory)
 }
 
 const getRelativeTime = (createdAt, t) => {
@@ -554,7 +555,7 @@ const LiveListingBoard = () => {
                     </div>
                     <div className="org-card-category-row">
                       <span className="food-card-category org-card-category">
-                        {getTranslatedCategory(listing.category, t)}
+                        {getTranslatedCategory(listing.category, listing.foodType, t)}
                       </span>
                     </div>
                   </div>
@@ -670,7 +671,10 @@ const LiveListingBoard = () => {
                 <button type="button" className="claim-dialog-close" onClick={closeClaimDialog}>×</button>
               </div>
               <p className="claim-dialog-subtitle">
-                {t('dashboard.claimDialog.available', { quantity: formatQuantityValue(claimDialogListing.quantity) })}
+                {t('dashboard.claimDialog.available', {
+                  quantity: formatQuantityValue(claimDialogListing.quantity),
+                  unit: t(`listing.units.${claimDialogListing.unit || 'portions'}`, claimDialogListing.unit || 'portions'),
+                })}
               </p>
               <div className="claim-dialog-card">
                 <strong>{claimDialogListing.foodType}</strong>

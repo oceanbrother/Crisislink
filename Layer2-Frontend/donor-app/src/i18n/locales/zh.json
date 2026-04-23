@@ -53,7 +53,7 @@
     "showingMatches": "当前显示 {{count}} 条匹配物品",
     "emptyTitle": "还没有 donor 发布的物品",
     "emptyHint": "当你从这个邮编发布剩余食物后，它会出现在这里，供你后续管理。",
-    "emptySearchTitle": "没有匹配的 donor 物品",
+    "emptySearchTitle": "没有匹配的物品",
     "emptySearchHint": "试试别的关键词，或者清除当前类别筛选后再看全部物品。"
   },
   "donation": {
@@ -161,19 +161,19 @@
       "status": "物品状态"
     },
     "statusPills": {
-      "available": "可领取",
+      "available": "可领取物品",
       "posted": "我发布的",
       "claimed": "我已领取：{{quantity}}份"
     },
     "statusTabs": {
       "all": "全部物品",
-      "available": "可领取",
+      "available": "可领取物品",
       "posted": "我发布的",
       "claimed": "我已领取"
     },
     "claimDialog": {
       "title": "选择领取数量",
-      "available": "这条物品当前共有 {{quantity}} 可领取。",
+      "available": "这条物品当前共有 {{quantity}} {{unit}} 可领取。",
       "claimAll": "全部领取",
       "confirm": "确认领取",
       "invalidQuantity": "请输入有效的领取数量。",
