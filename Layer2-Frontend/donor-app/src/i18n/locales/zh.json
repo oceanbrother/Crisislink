@@ -2,17 +2,19 @@
   "appName": "CrisisLink",
   "tagline": "食物救济资源协调平台",
   "home": {
-    "question": "您今天如何使用 CrisisLink？",
+    "question": "请选择您今天要完成的事情",
     "donor": {
-      "title": "我有剩余食物要分享",
-      "description": "为您社区发布剩余食物",
-      "button": "发布剩余"
+      "title": "我想捐赠食物",
+      "description": "把多余食物分享给附近的社区组织",
+      "button": "发布食物"
     },
     "organization": {
-      "title": "我运营一个社区组织",
-      "description": "查看您附近有什么",
-      "button": "查看物品板"
-    }
+      "title": "我管理一个社区组织",
+      "description": "浏览可领取的食物，或代表组织发布剩余食物",
+      "button": "以组织身份继续"
+    },
+    "eyebrow": "本地食物共享",
+    "support": "为您的社区发布剩余食物，或浏览附近可领取的食物。"
   },
   "postcode": {
     "title": "输入您的邮编",
@@ -28,7 +30,7 @@
     "claimButton": "领取食物",
     "claimedBy": "领取人",
     "claimedPickupInfo": "领取后需直接与捐赠方协调取货。",
-    "shareButton": "发布剩余",
+    "shareButton": "发布食物",
     "filter": "按类别筛选",
     "search": "搜索物品",
     "subtitle": "管理你自己发布的物品。",
@@ -43,7 +45,16 @@
     "editLockedTooltip": "这条物品已经被领取过，不能再编辑或删除。",
     "homeLink": "返回首页",
     "kicker": "Donor 参考视图",
-    "pageTitle": "你发布的物品"
+    "pageTitle": "你发布的物品",
+    "filterHint": "可按食物名称、备注、大小或邮编搜索。",
+    "searchingFor": "正在搜索",
+    "filteringCategory": "类别",
+    "clearFilters": "清除筛选",
+    "showingMatches": "当前显示 {{count}} 条匹配物品",
+    "emptyTitle": "还没有 donor 发布的物品",
+    "emptyHint": "当你从这个邮编发布剩余食物后，它会出现在这里，供你后续管理。",
+    "emptySearchTitle": "没有匹配的 donor 物品",
+    "emptySearchHint": "试试别的关键词，或者清除当前类别筛选后再看全部物品。"
   },
   "donation": {
     "title": "发布剩余",
@@ -54,7 +65,7 @@
     "uploadSubtitle": "我们会帮您填入详情",
     "changePhoto": "更改照片",
     "analyzing": "正在分析食物...",
-    "aiDetails": "AI 生成的详情",
+    "aiDetails": "建议填写内容",
     "foodName": "食物名称",
     "quantity": "估计数量",
     "category": "类别",
@@ -84,6 +95,7 @@
     "sizeCueHint": "请选择最接近的体量区间，让接收方更容易判断取货量。",
     "dietary": "饮食标签",
     "bestBefore": "最佳食用日期",
+    "openDatePicker": "打开日历",
     "extraNotes": "补充说明",
     "extraNotesPlaceholder": "例如：下午 4 点后到前台取货，需要冷藏，请自备容器。",
     "saveButton": "保存物品修改",
@@ -94,10 +106,11 @@
       "editListing": "编辑这条物品",
       "removeListing": "删除这条物品"
     },
-    "reviewTitle": "发布前请再次确认 AI 识别结果。",
+    "reviewTitle": "以下是建议填写内容，发布前请再次确认。",
     "reviewHintFood": "检查食物名称和分类是否正确。",
     "reviewHintQuantity": "确认数量，以及大小或重量信息。",
     "reviewHintDietary": "如果 AI 判断错了，请手动调整饮食标签。",
+    "quantityWarning": "AI 建议了 {{count}} 份，这个数量看起来偏高。发布前请手动确认。",
     "bestBeforePlaceholder": "DD/MM/YYYY",
     "sizeOptions": {
       "none": "请选择",
@@ -109,20 +122,24 @@
     }
   },
   "orgCode": {
-    "title": "输入组织代码或名称",
-    "subtitle": "输入本次演示使用的组织代码，或直接输入组织名称。",
+    "title": "查找你的组织",
+    "subtitle": "输入组织代码或名称后继续。",
+    "label": "组织代码或名称",
     "placeholder": "例如 HCFB-2841 或 Helping Hands",
-    "button": "访问物品板",
-    "example": "请输入组织代码或名称后继续"
+    "button": "继续",
+    "example": "请输入组织代码或名称后继续",
+    "note": "只有通过验证的社区组织才能访问实时物品列表。"
   },
   "dashboard": {
-    "title": "实时物品板",
+    "title": "食物列表",
     "serviceArea": "服务区域",
-    "orgCodeLabel": "组织代码",
+    "orgCodeLabel": "机构代码",
+    "signedInAs": "当前组织：{{orgCode}}",
     "donorCodeLabel": "捐赠方代码",
+    "communityFallback": "社区",
     "noListings": "无法加载物品。请重试。",
     "sharing": "来自 {{orgName}} 的分享",
-    "shareButton": "发布剩余",
+    "shareButton": "发布食物",
     "tabs": {
       "all": "全部",
       "bakery": "烘焙食品",
@@ -163,16 +180,29 @@
       "exceedsQuantity": "最多只能领取 {{quantity}}。",
       "success": "已成功领取 {{quantity}}。",
       "failed": "暂时无法领取这部分数量。"
-    }
+    },
+    "filterHint": "可按食物名称、备注、来源代码或邮编搜索。",
+    "searchingFor": "正在搜索",
+    "filteringCategory": "类别",
+    "filteringStatus": "状态",
+    "clearFilters": "清除筛选",
+    "showingMatches": "当前显示 {{count}} 条匹配物品",
+    "emptyTitle": "还没有物品",
+    "emptyHint": "只要 donor 或 organization 发布了物品，它们就会出现在这里。",
+    "emptySearchTitle": "没有匹配的物品",
+    "emptySearchHint": "试试别的关键词，或者清除当前类别和状态筛选。"
   },
   "listing": {
     "itemsAvailable": "{{count}} 件物品可用",
     "location": "位置：",
     "expiresIn": "{{time}}内过期",
     "from": "来自",
+    "fromCode": "来自 {{code}}",
+    "fromDonorCode": "来自捐赠方",
+    "fromOrganizationCode": "来自机构",
     "postcode": "邮编",
     "claimingButton": "领取中...",
-    "claimThisButton": "领取",
+    "claimThisButton": "领取食物",
     "justNow": "刚才",
     "minutesAgo": "{{count}} 分钟前",
     "hoursAgo": "{{count}} 小时前",

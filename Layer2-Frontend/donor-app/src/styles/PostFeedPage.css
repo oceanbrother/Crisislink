@@ -78,7 +78,7 @@
   padding-bottom: 7rem;
   padding-left: 1.5rem;
   padding-right: 1.5rem;
-  max-width: 1400px;
+  max-width: 1520px;
   margin: 0 auto;
 }
 
@@ -117,8 +117,16 @@
 
 .search-wrapper {
   position: relative;
-  max-width: 480px;
+  max-width: 620px;
   box-sizing: border-box;
+}
+
+.donor-search-wrapper {
+  transition: transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.donor-search-wrapper--active {
+  transform: translateY(-1px);
 }
 
 .search-icon {
@@ -133,12 +141,13 @@
 
 .search-wrapper .search-input {
   width: 100%;
-  padding: 1rem 1rem 1rem 3rem;
+  padding: 1.1rem 1.1rem 1.1rem 3.1rem;
   background: var(--surface-container-high);
   border: none;
   border-radius: var(--radius);
   font-family: var(--font-body);
-  font-size: 1rem;
+  font-size: 1.08rem;
+  font-weight: 600;
   color: var(--on-surface);
   transition: box-shadow 0.2s;
   box-sizing: border-box;
@@ -150,6 +159,31 @@
 }
 
 .search-wrapper .search-input::placeholder { color: var(--outline); }
+
+.search-clear-btn {
+  position: absolute;
+  top: 50%;
+  right: 0.9rem;
+  transform: translateY(-50%);
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: rgba(136, 82, 0, 0.08);
+  color: #885200;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.18s ease, transform 0.18s ease;
+}
+
+.search-clear-btn:hover {
+  background: rgba(136, 82, 0, 0.14);
+  transform: translateY(-50%) scale(1.03);
+}
+
+.search-clear-btn .material-symbols-outlined {
+  font-size: 1rem;
+}
 
 .filter-chips {
   display: flex;
@@ -370,12 +404,14 @@
   grid-column: 1 / -1;
   text-align: center;
   padding: 4rem 1.5rem;
-  color: var(--on-surface-variant);
+  color: var(--on-surface);
 }
 
 .empty-state-icon {
   font-size: 3.5rem;
   margin-bottom: 1rem;
+  color: var(--outline);
+  opacity: 0.8;
 }
 
 /* ── FAB ──────────────────────────────────────────────────── */
@@ -588,9 +624,13 @@
 }
 
 .feed-count {
-  font-size: 1rem;
+  font-size: 1.18rem;
   font-weight: 700;
   color: var(--on-surface);
+}
+
+.feed-count--filtered {
+  color: #885200;
 }
 
 .board-error {
@@ -599,6 +639,7 @@
 
 .donor-food-grid {
   gap: 1.4rem;
+  grid-template-columns: repeat(auto-fit, minmax(330px, 410px));
 }
 
 .food-card {
@@ -607,8 +648,10 @@
 
 .food-card-image {
   width: 100%;
-  height: 220px;
+  aspect-ratio: 4 / 3;
+  height: auto;
   object-fit: cover;
+  object-position: center 58%;
   border-radius: 1rem;
 }
 
@@ -627,8 +670,9 @@
 
 .food-card-source {
   margin: 0.4rem 0 0;
-  color: var(--on-surface-variant);
-  font-size: 0.98rem;
+  color: #495a53;
+  font-size: 1.08rem;
+  font-weight: 700;
 }
 
 .food-card-category {
@@ -636,27 +680,35 @@
   border-radius: 999px;
   background: #f2efe7;
   color: #73561f;
-  font-size: 0.88rem;
+  font-size: 0.94rem;
   font-weight: 800;
+  white-space: nowrap;
 }
 
 .food-card-details {
   display: flex;
   flex-direction: column;
-  gap: 0.7rem;
+  gap: 0.72rem;
+  margin-top: 0.35rem;
+  padding-top: 1rem;
+  border-top: 1px solid rgba(15, 65, 50, 0.08);
 }
 
 .food-card-detail-row {
   display: flex;
   align-items: center;
-  gap: 0.6rem;
+  gap: 0.78rem;
   color: var(--on-surface);
-  font-size: 1rem;
+  font-size: 1.1rem;
+  line-height: 1.45;
+  font-weight: 600;
+  padding: 0.08rem 0;
 }
 
 .food-card-detail-row .material-symbols-outlined {
   font-size: 1.15rem;
   color: var(--primary);
+  flex-shrink: 0;
 }
 
 .tags-row-spaced {
@@ -729,28 +781,109 @@
   display: block;
   margin-bottom: 1.25rem;
   padding-top: 1rem;
+  max-width: 980px;
 }
 
 .donor-page-heading {
   display: inline-flex;
   flex-direction: column;
   align-items: flex-start;
-  gap: 0.7rem;
+  gap: 0.9rem;
+  width: fit-content;
+  max-width: 100%;
 }
 
 .donor-page-title {
   margin: 0;
   font-size: 2.45rem;
+  letter-spacing: -0.06em;
+  line-height: 0.94;
 }
 
 .donor-page-meta {
   display: inline-flex;
   align-items: center;
   gap: 0.55rem;
-  font-size: 1.12rem;
-  font-weight: 600;
+  font-size: 1.2rem;
+  font-weight: 700;
   color: var(--on-surface);
   margin-bottom: 0.35rem;
+}
+
+.donor-page-meta .material-symbols-outlined {
+  font-size: 1.35rem;
+  color: #885200;
+}
+
+.donor-page-location-card {
+  display: grid;
+  grid-template-columns: 5rem 1fr;
+  align-items: center;
+  gap: 1rem;
+  width: min(17.5rem, 100%);
+  min-height: 8.6rem;
+  padding: 1.15rem 1.3rem;
+  border-radius: 1.6rem;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(136, 82, 0, 0.12);
+  box-shadow: 0 12px 30px rgba(35, 27, 8, 0.05);
+}
+
+.donor-page-location-badge {
+  width: 4.2rem;
+  height: 4.2rem;
+  border-radius: 999px;
+  background: rgba(136, 82, 0, 0.09);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.donor-page-location-icon {
+  color: #885200;
+  font-size: 1.55rem;
+}
+
+.donor-page-location-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.28rem;
+  min-width: 0;
+}
+
+.donor-page-location-label {
+  font-size: 0.72rem;
+  font-weight: 800;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: #8f7b57;
+}
+
+.donor-page-location-value {
+  font-size: 2.15rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  color: var(--on-surface);
+  line-height: 1;
+}
+
+.donor-card-header {
+  display: block;
+}
+
+.donor-card-heading-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.donor-card-meta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
 }
 
 .donor-card {
@@ -758,9 +891,14 @@
 }
 
 .donor-card-title {
-  font-size: 2.1rem;
+  font-size: 1.85rem;
   line-height: 1.08;
-  margin-bottom: 0.35rem;
+  margin-bottom: 0.1rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: calc(1.08em * 2);
 }
 
 .donor-card-source,
@@ -770,13 +908,45 @@
   line-height: 1.62;
 }
 
+.donor-card-time {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.28rem 0.62rem;
+  border-radius: 999px;
+  background: rgba(15, 65, 50, 0.06);
+  border: 1px solid rgba(15, 65, 50, 0.08);
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #5d7068;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
 .donor-card-detail-row .material-symbols-outlined {
   font-size: 1.28rem;
 }
 
 .donor-card-category {
-  font-size: 1rem;
-  padding: 0.62rem 0.95rem;
+  font-size: 0.9rem;
+  padding: 0.58rem 0.92rem;
+  line-height: 1;
+  white-space: nowrap;
+  background: rgba(115, 86, 31, 0.08);
+  color: #73561f;
+}
+
+.donor-card-category-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+}
+
+.donor-card-details {
+  border-top-color: rgba(136, 82, 0, 0.08);
+}
+
+.donor-card-detail-row {
+  font-size: 1.12rem;
 }
 
 .donor-tag-row .tag-chip {
@@ -788,7 +958,7 @@
   padding: 1rem 1.05rem;
   border-radius: 1rem;
   background: var(--surface-low);
-  color: var(--on-surface-variant);
+  color: var(--on-surface);
   font-weight: 600;
 }
 
@@ -803,16 +973,28 @@
 .donor-extra-notes strong {
   display: block;
   margin-bottom: 0.35rem;
-  font-size: 0.92rem;
+  font-size: 1rem;
+  font-weight: 800;
   color: var(--primary);
 }
 
 .donor-extra-notes p {
   margin: 0;
-  font-size: 1rem;
-  line-height: 1.55;
+  font-size: 1.08rem;
+  line-height: 1.6;
   color: var(--on-surface);
   white-space: pre-wrap;
+}
+
+@media (max-width: 720px) {
+  .donor-card-title-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .donor-card-meta-row {
+    align-items: flex-start;
+  }
 }
 
 .donor-edit-lock-note {
@@ -833,5 +1015,178 @@
 
   .donor-page-title {
     font-size: 2rem;
+  }
+}
+
+
+.donor-page-meta-pill {
+  padding: 0.75rem 1rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(136, 82, 0, 0.14);
+  box-shadow: 0 8px 22px rgba(35, 27, 8, 0.05);
+}
+
+.search-input--active {
+  box-shadow: 0 0 0 2px rgba(136, 82, 0, 0.2), 0 18px 36px rgba(136, 82, 0, 0.08) !important;
+  background: rgba(255, 255, 255, 0.98) !important;
+}
+
+.filter-feedback-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.85rem;
+  flex-wrap: wrap;
+}
+
+.filter-feedback-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.filter-feedback-pill {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.45rem 0.85rem;
+  border-radius: 999px;
+  background: rgba(136, 82, 0, 0.08);
+  color: var(--secondary);
+  font-size: 0.88rem;
+  font-weight: 700;
+}
+
+.filter-feedback-pill--query {
+  gap: 0.45rem;
+}
+
+.filter-feedback-pill--query .material-symbols-outlined {
+  font-size: 1rem;
+}
+
+.filter-clear-btn {
+  border: none;
+  background: transparent;
+  color: var(--primary);
+  font-weight: 700;
+  cursor: pointer;
+  padding: 0.45rem 0;
+}
+
+.filter-clear-btn:hover {
+  color: #885200;
+}
+
+.filter-feedback-hint {
+  margin: -0.15rem 0 0;
+  color: var(--on-surface-variant);
+  font-size: 0.95rem;
+}
+
+.empty-state--rich {
+  min-height: 280px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  text-align: center;
+  gap: 0.75rem;
+  padding: 2.25rem 1.5rem;
+  border: 1px dashed rgba(136, 82, 0, 0.16);
+  border-radius: 1.5rem;
+  background: rgba(255, 255, 255, 0.72);
+}
+
+@media (min-width: 1400px) {
+  .donor-food-grid {
+    grid-template-columns: repeat(3, minmax(320px, 390px));
+  }
+}
+
+.empty-state-title {
+  margin: 0;
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--on-surface);
+}
+
+.empty-state-subtitle {
+  margin: 0;
+  max-width: 480px;
+  font-size: 1rem;
+  line-height: 1.65;
+  color: var(--on-surface-variant);
+}
+
+.empty-state-action {
+  border: none;
+  border-radius: 999px;
+  padding: 0.8rem 1.2rem;
+  background: var(--primary);
+  color: var(--on-primary);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.card-supporting-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 0.9rem;
+  margin-top: 1rem;
+}
+
+.supporting-panel {
+  border: 1px solid rgba(0, 107, 76, 0.1);
+  border-radius: 1.15rem;
+  background: rgba(239, 247, 243, 0.76);
+  padding: 0.95rem 1rem;
+}
+
+.supporting-panel-label {
+  display: block;
+  margin-bottom: 0.45rem;
+  font-size: 0.76rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+
+.supporting-tag-list {
+  margin-top: 0;
+}
+
+.donor-extra-notes p,
+.supporting-panel p {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--on-surface);
+}
+
+@media (max-width: 720px) {
+  .donor-page-title {
+    font-size: 2.8rem;
+  }
+
+  .donor-page-location-card {
+    width: 100%;
+    grid-template-columns: 4.3rem 1fr;
+    min-height: 7.6rem;
+    padding: 1rem 1.05rem;
+  }
+
+  .donor-page-location-value {
+    font-size: 1.7rem;
+  }
+
+  .donor-card-title-row {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .donor-card-meta-row {
+    align-items: flex-start;
   }
 }

@@ -64,14 +64,6 @@ const PostcodeInputPage = () => {
               {t('postcode.button')} →
             </button>
 
-            <button
-              type="button"
-              className="secondary-link"
-              onClick={() => navigate('/form')}
-            >
-              {t('home.donor.button')}
-            </button>
-
             <p className="privacy-note">{t('common.secure')}</p>
           </form>
         </div>

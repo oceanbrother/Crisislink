@@ -12,21 +12,49 @@ import {
   buildDietaryTags,
   CATEGORY_OPTIONS,
   DIETARY_OPTIONS,
+  inferDietaryChoiceFromFoodName,
   getPrimaryDietaryChoice,
   normalizeCategory,
+  resolveListingCategory,
   SIZE_CUE_OPTIONS,
 } from '../constants/listings'
 import { forgetDonorListing, getOrCreateDonorCode, rememberDonorListing } from '../utils/donorIdentity'
 import '../styles/DonationForm.css'
 
 const DEFAULT_CATEGORY = 'Baked goods'
+const MAX_CONFIDENT_AI_QUANTITY = 30
+
+function getSuggestedQuantity(resultQuantity, fallbackQuantity) {
+  const parsed = parseQuantityValue(resultQuantity)
+  if (parsed === null || parsed <= 0) {
+    return {
+      value: fallbackQuantity || '1',
+      warning: '',
+    }
+  }
+
+  if (parsed > MAX_CONFIDENT_AI_QUANTITY) {
+    return {
+      value: fallbackQuantity || '1',
+      warning: 'high',
+    }
+  }
+
+  return {
+    value: String(parsed),
+    warning: '',
+  }
+}
 
 function formatDateForDisplay(value) {
   const raw = String(value || '').trim()
   if (!raw) return ''
   if (/^\d{2}\/\d{2}\/\d{4}$/.test(raw)) {
-    const [day, month, year] = raw.split('/')
-    return `${year}-${month}-${day}`
+    return raw
+  }
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    const [year, month, day] = raw.split('-')
+    return `${day}/${month}/${year}`
   }
   return raw
 }
@@ -51,18 +79,38 @@ function normalizeDateInput(value) {
   return null
 }
 
+function formatDateForPicker(value) {
+  const normalized = normalizeDateInput(value)
+  return normalized || ''
+}
+
+function formatDateForTextInput(value) {
+  const raw = String(value || '').trim()
+  if (!raw) return ''
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    const [year, month, day] = raw.split('-')
+    return `${day}/${month}/${year}`
+  }
+
+  return raw
+}
+
 function buildInitialState({ postcode, orgMode, initialOrgCode, listing }) {
   if (listing) {
     return {
       foodType: listing.foodType || '',
       quantity: listing.quantity ? String(listing.quantity) : '',
-      category: normalizeCategory(listing.category || listing.foodType || DEFAULT_CATEGORY),
+      category: resolveListingCategory(listing.category || DEFAULT_CATEGORY, listing.foodType || DEFAULT_CATEGORY),
       postcode: listing.postcode || postcode || '',
-      orgCode: listing.orgCode || initialOrgCode || '',
+      orgCode: (listing.orgCode || initialOrgCode || '').toUpperCase(),
       photoUrl: listing.photoUrl || null,
       sizeCue: listing.sizeCue || '',
       expiryDate: formatDateForDisplay(listing.expiryDate),
-      dietaryChoice: getPrimaryDietaryChoice(listing.dietary_tags || []),
+      dietaryChoice:
+        getPrimaryDietaryChoice(listing.dietary_tags || []) !== 'none'
+          ? getPrimaryDietaryChoice(listing.dietary_tags || [])
+          : inferDietaryChoiceFromFoodName(listing.foodType),
       description: listing.description || '',
       nameSuggestions: [],
     }
@@ -73,7 +121,7 @@ function buildInitialState({ postcode, orgMode, initialOrgCode, listing }) {
     quantity: '1',
     category: DEFAULT_CATEGORY,
     postcode: postcode || '',
-    orgCode: orgMode ? initialOrgCode || '' : getOrCreateDonorCode(),
+    orgCode: orgMode ? String(initialOrgCode || '').toUpperCase() : getOrCreateDonorCode(),
     photoUrl: null,
     sizeCue: '',
     expiryDate: '',
@@ -89,6 +137,7 @@ const DonationForm = () => {
   const location = useLocation()
   const { t } = useTranslation()
   const fileInputRef = useRef(null)
+  const dateInputRef = useRef(null)
   const selectedFileRef = useRef(null)
 
   const orgMode = location.state?.orgMode || false
@@ -103,6 +152,7 @@ const DonationForm = () => {
   const [loading, setLoading] = useState(false)
   const [aiProcessing, setAiProcessing] = useState(false)
   const [error, setError] = useState('')
+  const [aiWarning, setAiWarning] = useState('')
   const [successListing, setSuccessListing] = useState(null)
 
   const pageTitle = useMemo(() => {
@@ -110,11 +160,12 @@ const DonationForm = () => {
     return t('donation.title')
   }, [editMode, t])
 
-  const donorOrgCode = orgMode ? initialOrgCode : getOrCreateDonorCode()
+  const donorOrgCode = orgMode ? String(initialOrgCode || '').toUpperCase() : getOrCreateDonorCode()
 
   useEffect(() => {
     setFormData(buildInitialState({ postcode, orgMode, initialOrgCode, listing: editingListing }))
     setError('')
+    setAiWarning('')
     setSuccessListing(null)
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
@@ -156,21 +207,30 @@ const DonationForm = () => {
     selectedFileRef.current = file
     setAiProcessing(true)
     setError('')
+    setAiWarning('')
 
     try {
       const fd = new FormData()
       fd.append('image', file)
       const result = await recognizeFoodFromImage(fd)
+      const nextFoodType = result.name || ''
+      const suggestedQuantity = getSuggestedQuantity(result.quantity, formData.quantity || '1')
+      const suggestedCategory = resolveListingCategory(result.category || DEFAULT_CATEGORY, nextFoodType)
+      const suggestedDietary =
+        getPrimaryDietaryChoice(result.dietary_tags || []) !== 'none'
+          ? getPrimaryDietaryChoice(result.dietary_tags || [])
+          : inferDietaryChoiceFromFoodName(nextFoodType)
+
+      if (suggestedQuantity.warning === 'high') {
+        setAiWarning(t('donation.quantityWarning', { count: Number(result.quantity) }))
+      }
+
       setFormData((prev) => ({
         ...prev,
-        foodType: result.name || prev.foodType,
-        quantity:
-          result.quantity !== null &&
-          result.quantity !== undefined &&
-          Number(result.quantity) > 0
-            ? String(result.quantity)
-            : prev.quantity || '1',
-        dietaryChoice: getPrimaryDietaryChoice(result.dietary_tags || prev.dietary_tags),
+        foodType: nextFoodType || prev.foodType,
+        quantity: suggestedQuantity.value,
+        category: suggestedCategory,
+        dietaryChoice: suggestedDietary,
         photoUrl: URL.createObjectURL(file),
         nameSuggestions: result.name_suggestions || [],
       }))
@@ -190,12 +250,18 @@ const DonationForm = () => {
     let nextValue = value
     if (field === 'quantity') {
       nextValue = String(value).replace(/[^0-9.]/g, '')
+      if (aiWarning) {
+        setAiWarning('')
+      }
     }
     if (field === 'expiryDate') {
       nextValue = String(value)
     }
     setFormData((prev) => ({ ...prev, [field]: nextValue }))
   }
+
+  const quantityValue = parseQuantityValue(formData.quantity)
+  const showQuantityWarning = quantityValue !== null && quantityValue > MAX_CONFIDENT_AI_QUANTITY
 
   const handleRemoveListing = async (listing) => {
     if (!listing) return
@@ -237,7 +303,7 @@ const DonationForm = () => {
         throw new Error(t('donation.errors.postcode'))
       }
       if (String(formData.expiryDate || '').trim() !== '' && expiryDateValue === null) {
-        throw new Error(t('donation.errors.bestBefore', 'Please enter the best before date as YYYY/MM/DD'))
+        throw new Error(t('donation.errors.bestBefore', 'Please enter the best before date as DD/MM/YYYY'))
       }
 
       let permanentPhotoUrl = editingListing?.photoUrl || null
@@ -296,9 +362,6 @@ const DonationForm = () => {
               : t('donation.success.donorMessage')}
           </p>
           <div className="success-action-stack">
-            <button type="button" className="success-action-btn" onClick={() => navigate('/')}>
-              {t('donation.actions.backHome', 'Back to home')}
-            </button>
             <button
               type="button"
               className="success-action-btn primary"
@@ -331,9 +394,12 @@ const DonationForm = () => {
             >
               {t('donation.actions.editListing', 'Edit this listing')}
             </button>
+            <button type="button" className="success-action-btn" onClick={() => navigate('/')}>
+              {t('donation.actions.backHome', 'Back to home')}
+            </button>
             <button
               type="button"
-              className="success-action-btn danger"
+              className="success-action-btn text-danger"
               onClick={() => handleRemoveListing(successListing)}
             >
               {t('donation.actions.removeListing', 'Remove this listing')}
@@ -420,7 +486,7 @@ const DonationForm = () => {
             </div>
 
             <div className="ai-review-note">
-              <p>{t('donation.reviewTitle', 'Please review the AI result before posting.')}</p>
+              <p>{t('donation.reviewTitle', 'Suggested details — please review before posting.')}</p>
               <ul>
                 <li>{t('donation.reviewHintFood', 'Check the food name and category.')}</li>
                 <li>{t('donation.reviewHintQuantity', 'Confirm the quantity and size or weight.')}</li>
@@ -537,13 +603,45 @@ const DonationForm = () => {
 
               <div className="ai-field">
                 <label className="field-label" htmlFor="expiryDate">{t('donation.bestBefore', 'Best before')}</label>
-                <input
-                  id="expiryDate"
-                  className="form-input"
-                  type="date"
-                  value={formData.expiryDate}
-                  onChange={(event) => handleChange('expiryDate', event.target.value)}
-                />
+                <div className="date-input-wrapper">
+                  <input
+                    id="expiryDate"
+                    className="form-input"
+                    type="text"
+                    inputMode="numeric"
+                    placeholder={t('donation.bestBeforePlaceholder', 'DD/MM/YYYY')}
+                    value={formatDateForTextInput(formData.expiryDate)}
+                    onChange={(event) => handleChange('expiryDate', event.target.value)}
+                  />
+                  <button
+                    type="button"
+                    className="date-picker-trigger"
+                    aria-label={t('donation.openDatePicker', 'Open calendar')}
+                    onClick={() => {
+                      if (dateInputRef.current?.showPicker) {
+                        dateInputRef.current.showPicker()
+                      } else {
+                        dateInputRef.current?.click()
+                      }
+                    }}
+                  >
+                    <span className="material-symbols-outlined">calendar_month</span>
+                  </button>
+                  <input
+                    ref={dateInputRef}
+                    className="date-picker-native"
+                    type="date"
+                    tabIndex="-1"
+                    aria-hidden="true"
+                    value={formatDateForPicker(formData.expiryDate)}
+                    onChange={(event) => handleChange('expiryDate', formatDateForDisplay(event.target.value))}
+                  />
+                </div>
+                {showQuantityWarning || aiWarning ? (
+                  <p className="field-warning">
+                    {aiWarning || t('donation.quantityWarning', { count: quantityValue })}
+                  </p>
+                ) : null}
               </div>
 
               <div className="ai-field">

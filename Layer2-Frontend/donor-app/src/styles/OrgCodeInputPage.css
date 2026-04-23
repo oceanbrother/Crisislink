@@ -44,6 +44,7 @@
   border-radius: var(--radius-xl);
   padding: 3rem 2rem;
   box-shadow: var(--shadow-card);
+  border: 1px solid rgba(0, 107, 76, 0.08);
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -103,31 +104,42 @@
   margin-top: 0.5rem;
 }
 
+.org-code-label {
+  font-size: 0.82rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #5f746b;
+  text-align: left;
+}
+
 .org-code-input {
   width: 100%;
-  background: var(--surface-container-high);
-  border: none;
+  background: #ffffff;
+  border: 1px solid rgba(15, 65, 50, 0.12);
   border-radius: var(--radius);
   padding: 1.1rem 1.25rem;
   font-family: var(--font-headline);
-  font-size: 1.2rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-align: center;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+  text-align: left;
   color: var(--on-surface);
-  transition: box-shadow 0.2s;
+  transition: box-shadow 0.2s, border-color 0.2s, background 0.2s;
 }
 
 .org-code-input::placeholder {
-  color: var(--outline);
-  font-weight: 400;
-  letter-spacing: 0.05em;
-  font-size: 0.9rem;
+  color: #7a8a84;
+  font-weight: 500;
+  letter-spacing: 0;
+  font-size: 0.98rem;
 }
 
 .org-code-input:focus {
   outline: none;
-  box-shadow: 0 0 0 2px rgba(0, 105, 76, 0.3);
+  border-color: rgba(0, 105, 76, 0.44);
+  box-shadow: 0 0 0 3px rgba(0, 105, 76, 0.14);
+  background: #fcfffd;
 }
 
 .submit-btn {
@@ -167,26 +179,28 @@
 
 /* ── Secondary link ────────────────────────────────────────── */
 .secondary-link {
-  background: none;
-  border: none;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(15, 65, 50, 0.08);
   color: var(--on-surface-variant);
   font-family: var(--font-body);
-  font-size: 0.875rem;
-  font-weight: 500;
+  font-size: 0.92rem;
+  font-weight: 700;
   cursor: pointer;
-  text-decoration: underline;
-  text-underline-offset: 3px;
-  transition: color 0.15s;
+  border-radius: 999px;
+  min-height: 48px;
+  transition: color 0.15s, border-color 0.15s, background 0.15s;
 }
 
 .secondary-link:hover {
   color: var(--primary);
+  border-color: rgba(0, 105, 76, 0.16);
+  background: rgba(0, 105, 76, 0.04);
 }
 
 /* ── Privacy note ──────────────────────────────────────────── */
 .privacy-note {
-  font-size: 0.75rem;
-  color: var(--outline);
+  font-size: 0.82rem;
+  color: #6c7d77;
   line-height: 1.5;
 }
 

@@ -2,17 +2,19 @@
   "appName": "CrisisLink",
   "tagline": "Food relief resource coordination platform",
   "home": {
-    "question": "How are you using CrisisLink today?",
+    "question": "Choose what you need to do today",
     "donor": {
-      "title": "I have food to give",
-      "description": "Post surplus food for your community",
-      "button": "Post surplus"
+      "title": "I want to donate food",
+      "description": "Share surplus food with nearby community groups",
+      "button": "Post food"
     },
     "organization": {
-      "title": "I run a community group",
-      "description": "See what is available near you",
-      "button": "View board"
-    }
+      "title": "I manage a community group",
+      "description": "Browse available food or post surplus from your organization",
+      "button": "Continue as organization"
+    },
+    "eyebrow": "Local food sharing",
+    "support": "Post surplus food for your community, or browse available food to claim."
   },
   "postcode": {
     "title": "Enter your postcode",
@@ -28,7 +30,7 @@
     "claimButton": "Claim food",
     "claimedBy": "Claimed by",
     "claimedPickupInfo": "Pickup is arranged directly with the donor after claiming.",
-    "shareButton": "Post surplus",
+    "shareButton": "Post food",
     "filter": "Filter by category",
     "search": "Search listings",
     "subtitle": "Edit or remove the items you have posted.",
@@ -43,7 +45,16 @@
     "editLockedTooltip": "This listing has already been claimed and can no longer be edited or removed.",
     "homeLink": "Back to home",
     "kicker": "Donor preview",
-    "pageTitle": "Your donor listings"
+    "pageTitle": "Your donor listings",
+    "filterHint": "Search by food name, notes, size, or postcode.",
+    "searchingFor": "Searching for",
+    "filteringCategory": "Category",
+    "clearFilters": "Clear filters",
+    "showingMatches": "Showing {{count}} matching listings",
+    "emptyTitle": "No donor listings yet",
+    "emptyHint": "Once you post surplus food from this postcode, it will appear here for you to manage.",
+    "emptySearchTitle": "No matching donor listings",
+    "emptySearchHint": "Try another search term or clear the active category filter to see all of your listings again."
   },
   "donation": {
     "title": "Post Surplus",
@@ -54,7 +65,7 @@
     "uploadSubtitle": "we will fill in the details",
     "changePhoto": "Change photo",
     "analyzing": "Analysing food...",
-    "aiDetails": "AI Generated Details",
+    "aiDetails": "Suggested details",
     "foodName": "Food Name",
     "quantity": "Estimated Quantity",
     "category": "Category",
@@ -84,6 +95,7 @@
     "sizeCueHint": "Pick the closest size range so recipients can judge pickup volume more easily.",
     "dietary": "Dietary tag",
     "bestBefore": "Best before",
+    "openDatePicker": "Open calendar",
     "extraNotes": "Extra notes",
     "extraNotesPlaceholder": "Example: Pickup from front desk after 4pm. Keep refrigerated. Please bring a container.",
     "saveButton": "Save listing changes",
@@ -94,10 +106,11 @@
       "editListing": "Edit this listing",
       "removeListing": "Remove this listing"
     },
-    "reviewTitle": "Please review the AI result before posting.",
+    "reviewTitle": "Suggested details — please review before posting.",
     "reviewHintFood": "Check the food name and category.",
     "reviewHintQuantity": "Confirm the quantity and the size or weight.",
     "reviewHintDietary": "Update the dietary tag if the AI guessed incorrectly.",
+    "quantityWarning": "The AI suggested {{count}} portions, which seems unusually high. Please confirm the quantity before posting.",
     "bestBeforePlaceholder": "DD/MM/YYYY",
     "sizeOptions": {
       "none": "Select one",
@@ -109,20 +122,24 @@
     }
   },
   "orgCode": {
-    "title": "Enter organization code or name",
-    "subtitle": "Enter the organization code or organization name for this demo.",
+    "title": "Find your organization",
+    "subtitle": "Enter your organization code or name to continue.",
+    "label": "Organization code or name",
     "placeholder": "e.g., HCFB-2841 or Helping Hands",
-    "button": "Access Board",
-    "example": "Enter an organization code or name to continue"
+    "button": "Continue",
+    "example": "Enter an organization code or name to continue",
+    "note": "Only approved community groups can access live listings."
   },
   "dashboard": {
-    "title": "Live Listing Board",
+    "title": "Food listings",
     "serviceArea": "Service area",
-    "orgCodeLabel": "Org code",
+    "orgCodeLabel": "Organization code",
+    "signedInAs": "Signed in as {{orgCode}}",
     "donorCodeLabel": "Donor code",
+    "communityFallback": "Community",
     "noListings": "Failed to load listings. Please try again.",
     "sharing": "Sharing excess from {{orgName}}",
-    "shareButton": "Post surplus",
+    "shareButton": "Post food",
     "tabs": {
       "all": "All",
       "bakery": "Bakery",
@@ -150,7 +167,7 @@
     },
     "statusTabs": {
       "all": "All listings",
-      "available": "Available to claim",
+      "available": "Available",
       "posted": "Posted by us",
       "claimed": "Claimed by us"
     },
@@ -163,16 +180,29 @@
       "exceedsQuantity": "You can claim up to {{quantity}}.",
       "success": "Claimed {{quantity}} successfully.",
       "failed": "Unable to claim this quantity right now."
-    }
+    },
+    "filterHint": "Search by food name, notes, source code, or postcode.",
+    "searchingFor": "Searching for",
+    "filteringCategory": "Category",
+    "filteringStatus": "Status",
+    "clearFilters": "Clear filters",
+    "showingMatches": "Showing {{count}} matching listings",
+    "emptyTitle": "No listings yet",
+    "emptyHint": "Listings from donors and organizations will appear here as soon as they are posted.",
+    "emptySearchTitle": "No matching listings",
+    "emptySearchHint": "Try another search term or clear the active category and status filters."
   },
   "listing": {
     "itemsAvailable": "{{count}} items available",
     "location": "Location: ",
     "expiresIn": "Expires in {{time}}",
     "from": "From",
+    "fromCode": "From {{code}}",
+    "fromDonorCode": "From donor",
+    "fromOrganizationCode": "From organization",
     "postcode": "Postcode",
     "claimingButton": "Claiming...",
-    "claimThisButton": "Claim This",
+    "claimThisButton": "Claim food",
     "justNow": "Just now",
     "minutesAgo": "{{count}}m ago",
     "hoursAgo": "{{count}}h ago",

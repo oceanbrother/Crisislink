@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { deleteListing, getAvailableListings } from '../services/api'
-import { FILTER_OPTIONS, formatBestBeforeLabel, normalizeCategory } from '../constants/listings'
+import { FILTER_OPTIONS, formatBestBeforeLabel, resolveListingCategory } from '../constants/listings'
 import { forgetDonorListing, getOrCreateDonorCode, isRememberedDonorListing } from '../utils/donorIdentity'
 import '../styles/PostFeedPage.css'
 
@@ -15,6 +15,65 @@ function isLegacyDonorListing(listing, currentPostcode) {
   const listingOrgCode = String(listing?.orgCode || '').trim().toUpperCase()
   const postcode = String(currentPostcode || '').trim()
   return postcode !== '' && listingOrgCode === ('DONOR-' + postcode).toUpperCase()
+}
+
+function getRelativeTime(createdAt, t) {
+  if (!createdAt) return t('listing.justNow')
+  const created = new Date(createdAt)
+  const diff = Date.now() - created.getTime()
+  const minutes = Math.floor(diff / 60000)
+  const hours = Math.floor(diff / 3600000)
+  const days = Math.floor(diff / 86400000)
+
+  if (minutes < 1) return t('listing.justNow')
+  if (minutes < 60) return t('listing.minutesAgo', { count: minutes })
+  if (hours < 24) return t('listing.hoursAgo', { count: hours })
+  return t('listing.daysAgo', { count: days })
+}
+
+function tokenizeSearch(value) {
+  return String(value || '')
+    .toLowerCase()
+    .split(/[^\p{L}\p{N}]+/gu)
+    .filter(Boolean)
+}
+
+function matchesSearchFields(fields, term) {
+  const normalizedTerm = String(term || '').trim().toLowerCase()
+  if (!normalizedTerm) return true
+
+  return fields.some((value) => {
+    const text = String(value || '').toLowerCase().trim()
+    if (!text) return false
+    const tokens = tokenizeSearch(text)
+
+    if (normalizedTerm.length === 1) {
+      return tokens.some((token) => token.startsWith(normalizedTerm))
+    }
+
+    return text.includes(normalizedTerm) || tokens.some((token) => token.startsWith(normalizedTerm))
+  })
+}
+
+function getSearchableFields(listing, term) {
+  const normalizedTerm = String(term || '').trim().toLowerCase()
+  const primaryFields = [listing.foodType, listing.description]
+
+  if (!normalizedTerm) {
+    return primaryFields
+  }
+
+  const secondaryFields = []
+
+  if (normalizedTerm.length >= 2) {
+    secondaryFields.push(listing.sizeCue)
+  }
+
+  if (/\d/.test(normalizedTerm)) {
+    secondaryFields.push(listing.postcode)
+  }
+
+  return [...primaryFields, ...secondaryFields]
 }
 
 const PostFeedPage = () => {
@@ -53,7 +112,7 @@ const PostFeedPage = () => {
   const filteredListings = useMemo(() => {
     const term = search.trim().toLowerCase()
     return listings.filter((listing) => {
-      const category = normalizeCategory(listing.category || listing.foodType)
+      const category = resolveListingCategory(listing.category, listing.foodType)
       const ownListing =
         listing.orgCode === donorCode ||
         isRememberedDonorListing(listing.id) ||
@@ -64,11 +123,20 @@ const PostFeedPage = () => {
       const matchesFilter = activeFilter === 'All' || category === activeFilter
       if (!matchesFilter) return false
 
-      if (term === '') return true
-      const haystacks = [listing.foodType, listing.category, listing.description, listing.sizeCue]
-      return haystacks.some((value) => String(value || '').toLowerCase().includes(term))
+      return matchesSearchFields(getSearchableFields(listing, term), term)
     })
-  }, [activeFilter, listings, search])
+  }, [activeFilter, donorCode, listings, postcode, search])
+
+  const hasActiveSearch = search.trim() !== ''
+  const hasActiveFilter = activeFilter !== 'All'
+  const hasActiveControls = hasActiveSearch || hasActiveFilter
+  const isBaseEmpty = listings.length === 0
+  const isFilteredEmpty = !loading && !isBaseEmpty && filteredListings.length === 0
+
+  const clearFilters = () => {
+    setSearch('')
+    setActiveFilter('All')
+  }
 
   const handleLanguageChange = (lang) => {
     i18n.changeLanguage(lang)
@@ -130,23 +198,38 @@ const PostFeedPage = () => {
         <section className="donor-page-intro">
           <div className="donor-page-heading">
             <h1 className="board-title donor-page-title">{t('feed.pageTitle', 'Your donor listings')}</h1>
-            <div className="donor-page-meta">
-              <span className="material-symbols-outlined">location_on</span>
-              <span>{t('listing.postcode', 'Postcode')} {postcode}</span>
+            <div className="donor-page-location-card" role="group" aria-label={t('listing.postcode', 'Postcode')}>
+              <div className="donor-page-location-badge">
+                <span className="material-symbols-outlined donor-page-location-icon">location_on</span>
+              </div>
+              <div className="donor-page-location-copy">
+                <span className="donor-page-location-label">{t('listing.postcode', 'Postcode')}</span>
+                <span className="donor-page-location-value">{postcode}</span>
+              </div>
             </div>
           </div>
         </section>
 
         <section className="filter-section donor-filter-section">
-          <div className="search-wrapper donor-search-wrapper">
+          <div className={hasActiveSearch ? 'search-wrapper donor-search-wrapper donor-search-wrapper--active' : 'search-wrapper donor-search-wrapper'}>
             <span className="material-symbols-outlined search-icon">search</span>
             <input
-              className="search-input"
+              className={hasActiveSearch ? 'search-input search-input--active' : 'search-input'}
               type="text"
               placeholder={t('feed.search', 'Search listings')}
               value={search}
               onChange={(event) => setSearch(event.target.value)}
             />
+            {hasActiveSearch ? (
+              <button
+                type="button"
+                className="search-clear-btn"
+                onClick={() => setSearch('')}
+                aria-label={t('feed.clearSearch', 'Clear search')}
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            ) : null}
           </div>
           <div className="filter-chips donor-filter-chips">
             {FILTER_OPTIONS.map((option) => (
@@ -160,18 +243,57 @@ const PostFeedPage = () => {
               </button>
             ))}
           </div>
-          <div className="feed-meta-row">
-            <span className="feed-count">{t('listing.itemsAvailable', { count: filteredListings.length })}</span>
-          </div>
+
+          {hasActiveControls ? (
+            <div className="filter-feedback-row" aria-live="polite">
+              <div className="filter-feedback-pills">
+                {hasActiveSearch ? (
+                  <span className="filter-feedback-pill filter-feedback-pill--query">
+                    <span className="material-symbols-outlined">search</span>
+                    {t('feed.searchingFor', 'Searching for')} “{search.trim()}”
+                  </span>
+                ) : null}
+                {hasActiveFilter ? (
+                  <span className="filter-feedback-pill">
+                    {t('feed.filteringCategory', 'Category')} · {t('dashboard.tabs.' + (FILTER_OPTIONS.find((option) => option.value === activeFilter)?.key || 'all'), activeFilter)}
+                  </span>
+                ) : null}
+              </div>
+              <button type="button" className="filter-clear-btn" onClick={clearFilters}>
+                {t('feed.clearFilters', 'Clear filters')}
+              </button>
+            </div>
+          ) : (
+            <p className="filter-feedback-hint">{t('feed.filterHint', 'Search by food name, notes, size, or postcode.')}</p>
+          )}
+
+          {isFilteredEmpty ? null : (
+            <div className="feed-meta-row">
+              <span className={hasActiveControls ? 'feed-count feed-count--filtered' : 'feed-count'}>
+                {hasActiveControls
+                  ? t('feed.showingMatches', { count: filteredListings.length, defaultValue: `Showing ${filteredListings.length} matching listings` })
+                  : t('listing.itemsAvailable', { count: filteredListings.length })}
+              </span>
+            </div>
+          )}
         </section>
 
         {error ? <div className="error-message board-error">{error}</div> : null}
 
         {loading ? (
-          <div className="empty-state"><p>{t('common.loading')}</p></div>
-        ) : filteredListings.length === 0 ? (
-          <div className="empty-state">
-            <p>{t('feed.noListings', 'No listings available in your area yet')}</p>
+          <div className="empty-state empty-state--rich"><p>{t('common.loading')}</p></div>
+        ) : isBaseEmpty ? (
+          <div className="empty-state empty-state--rich">
+            <span className="material-symbols-outlined empty-state-icon">inventory_2</span>
+            <h3 className="empty-state-title">{t('feed.emptyTitle', 'No donor listings yet')}</h3>
+            <p className="empty-state-subtitle">{t('feed.emptyHint', 'Once you post surplus food from this postcode, it will appear here for you to manage.')}</p>
+          </div>
+        ) : isFilteredEmpty ? (
+          <div className="empty-state empty-state--rich">
+            <span className="material-symbols-outlined empty-state-icon">search_off</span>
+            <h3 className="empty-state-title">{t('feed.emptySearchTitle', 'No matching donor listings')}</h3>
+            <p className="empty-state-subtitle">{t('feed.emptySearchHint', 'Try another search term or clear the active category filter to see all of your listings again.')}</p>
+            <button type="button" className="empty-state-action" onClick={clearFilters}>{t('feed.clearFilters', 'Clear filters')}</button>
           </div>
         ) : (
           <div className="food-grid donor-food-grid">
@@ -182,26 +304,32 @@ const PostFeedPage = () => {
                 isLegacyDonorListing(listing, postcode)
               const dietaryTag = Array.isArray(listing.dietary_tags) && listing.dietary_tags.length > 0 ? listing.dietary_tags[0] : ''
               const bestBefore = formatBestBeforeLabel(listing.expiryDate, i18n.language === 'zh' ? 'zh-CN' : 'en-AU')
-              const category = normalizeCategory(listing.category || listing.foodType)
+              const category = resolveListingCategory(listing.category, listing.foodType)
               const categoryOption = FILTER_OPTIONS.find((option) => option.value === category)
               const listingLocked = ownListing && listing.hasClaims
+              const relativeTime = getRelativeTime(listing.createdAt, t)
 
               return (
                 <article key={listing.id} className={ownListing ? 'food-card own-listing-card donor-card' : 'food-card donor-card'}>
                   {listing.photoUrl ? <img className="food-card-image" src={listing.photoUrl} alt={listing.foodType} /> : null}
 
                   <div className="food-card-header donor-card-header">
-                    <div>
+                    <div className="donor-card-heading-stack">
                       <h3 className="food-card-title donor-card-title">{listing.foodType}</h3>
-                      <p className="food-card-source donor-card-source">
-                        {ownListing
-                          ? t('feed.postedByYou', 'Posted by you')
-                          : t('feed.availableForGroups', 'Available to community groups')}
-                      </p>
+                      <div className="donor-card-meta-row">
+                        <p className="food-card-source donor-card-source">
+                          {ownListing
+                            ? t('feed.postedByYou', 'Posted by you')
+                            : t('feed.availableForGroups', 'Available to community groups')}
+                        </p>
+                        <span className="donor-card-time">{relativeTime}</span>
+                      </div>
+                      <div className="donor-card-category-row">
+                        <span className="food-card-category donor-card-category">
+                          {t('dashboard.tabs.' + (categoryOption?.key || 'other'), category)}
+                        </span>
+                      </div>
                     </div>
-                    <span className="food-card-category donor-card-category">
-                      {t('dashboard.tabs.' + (categoryOption?.key || 'other'), category)}
-                    </span>
                   </div>
 
                   <div className="food-card-details donor-card-details">
@@ -227,18 +355,25 @@ const PostFeedPage = () => {
                     ) : null}
                   </div>
 
-                  {dietaryTag ? (
-                    <div className="tags-row tags-row-spaced donor-tag-row">
-                      <span className={'tag-chip tag-' + getDietaryClass(dietaryTag)}>
-                        {t('listing.dietary.' + getDietaryClass(dietaryTag), dietaryTag)}
-                      </span>
-                    </div>
-                  ) : null}
+                  {(dietaryTag || listing.description) ? (
+                    <div className="card-supporting-stack donor-supporting-stack">
+                      {dietaryTag ? (
+                        <div className="supporting-panel donor-dietary-panel">
+                          <strong className="supporting-panel-label">{t('donation.dietary', 'Dietary tag')}</strong>
+                          <div className="tags-row tags-row-spaced donor-tag-row supporting-tag-list">
+                            <span className={'tag-chip tag-' + getDietaryClass(dietaryTag)}>
+                              {t('listing.dietary.' + getDietaryClass(dietaryTag), dietaryTag)}
+                            </span>
+                          </div>
+                        </div>
+                      ) : null}
 
-                  {listing.description ? (
-                    <div className="donor-extra-notes">
-                      <strong>{t('donation.extraNotes', 'Extra notes')}</strong>
-                      <p>{listing.description}</p>
+                      {listing.description ? (
+                        <div className="donor-extra-notes supporting-panel">
+                          <strong className="supporting-panel-label">{t('donation.extraNotes', 'Extra notes')}</strong>
+                          <p>{listing.description}</p>
+                        </div>
+                      ) : null}
                     </div>
                   ) : null}
 
