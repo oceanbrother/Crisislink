@@ -1,0 +1,58 @@
+export const SUPPLY_GAP_DATA_SOURCE = 'sample'
+
+export const SUPPLY_GAP_ZONE_SAMPLES = [
+  {
+    postcode: '3004',
+    suburb: 'Southbank & Domain',
+    council: 'City of Melbourne',
+    pressureScore: 91,
+    seifaScore: 911,
+    estimatedPopulationInNeed: 1760,
+    nearestSupplyDistanceKm: 4.2,
+  },
+  {
+    postcode: '3051',
+    suburb: 'North Melbourne',
+    council: 'City of Melbourne',
+    pressureScore: 88,
+    seifaScore: 948,
+    estimatedPopulationInNeed: 1690,
+    nearestSupplyDistanceKm: 3.4,
+  },
+  {
+    postcode: '3182',
+    suburb: 'St Kilda East',
+    council: 'Port Phillip',
+    pressureScore: 86,
+    seifaScore: 923,
+    estimatedPopulationInNeed: 1490,
+    nearestSupplyDistanceKm: 5.1,
+  },
+  {
+    postcode: '3001',
+    suburb: 'West Melbourne',
+    council: 'City of Melbourne',
+    pressureScore: 84,
+    seifaScore: 955,
+    estimatedPopulationInNeed: 1540,
+    nearestSupplyDistanceKm: 2.8,
+  },
+  {
+    postcode: '3072',
+    suburb: 'Preston South',
+    council: 'Darebin',
+    pressureScore: 79,
+    seifaScore: 967,
+    estimatedPopulationInNeed: 1320,
+    nearestSupplyDistanceKm: 6.4,
+  },
+  {
+    postcode: '3163',
+    suburb: 'Carnegie',
+    council: 'Glen Eira',
+    pressureScore: 67,
+    seifaScore: 1004,
+    estimatedPopulationInNeed: 940,
+    nearestSupplyDistanceKm: 1.7,
+  },
+]

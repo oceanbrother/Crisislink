@@ -208,7 +208,46 @@
     "emptyTitle": "No listings yet",
     "emptyHint": "Listings from donors and organizations will appear here as soon as they are posted.",
     "emptySearchTitle": "No matching listings",
-    "emptySearchHint": "Try another search term or clear the active category and status filters."
+    "emptySearchHint": "Try another search term or clear the active category and status filters.",
+    "coverageInsights": {
+      "title": "Supply coverage watch",
+      "kicker": "Coverage",
+      "subtitle": "Identify high-need postcodes with low or zero active food supply.",
+      "sampleNote": "Sample postcode profiles are shown until the live coverage map feed is connected.",
+      "summary": {
+        "zeroSupply": "zero-supply hotspots",
+        "atRisk": "postcodes at risk",
+        "tracked": "tracked postcodes"
+      },
+      "hotspotsTitle": "High-need areas with no active supply",
+      "hotspotsHint": "These postcodes currently have no available listings in the live board.",
+      "watchTitle": "Coverage watchlist",
+      "watchHint": "Postcodes where current active portions are likely to run short.",
+      "allCovered": "Every tracked hotspot postcode currently has active supply.",
+      "noWatch": "No extra watchlist postcodes are flagged right now.",
+      "detailTitle": "Postcode detail panel",
+      "detailHint": "Use this panel to plan redistribution decisions for a priority postcode.",
+      "fields": {
+        "seifa": "SEIFA score",
+        "activeListings": "Active listing count",
+        "population": "Estimated population in need",
+        "nearestSupply": "Nearest active supply point"
+      },
+      "badges": {
+        "zeroSupply": "Zero supply"
+      },
+      "coverage": {
+        "none": "No cover",
+        "low": "Low cover",
+        "watch": "Watch",
+        "healthy": "Healthy"
+      },
+      "respondAction": "Respond to this postcode",
+      "noDataTitle": "No coverage data yet",
+      "noDataHint": "Coverage hotspots will appear here once enough listing data is available.",
+      "loadErrorTitle": "Unable to load coverage insights",
+      "loadErrorHint": "We could not load listing data required for postcode coverage analysis. Please try again."
+    }
   },
   "listing": {
     "itemsAvailable": "{{count}} items available",
