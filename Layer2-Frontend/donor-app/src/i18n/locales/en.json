@@ -208,7 +208,29 @@
     "emptyTitle": "No listings yet",
     "emptyHint": "Listings from donors and organizations will appear here as soon as they are posted.",
     "emptySearchTitle": "No matching listings",
-    "emptySearchHint": "Try another search term or clear the active category and status filters."
+    "emptySearchHint": "Try another search term or clear the active category and status filters.",
+    "intelligence": {
+      "title": "Demand intelligence",
+      "subtitle": "Preview upcoming demand spikes in your nearby service postcodes.",
+      "sampleNote": "Sample demand indicators are shown until the forecasting data feed is connected.",
+      "respondAction": "Respond to this need",
+      "primaryLabel": "Demand spike alert",
+      "primaryHeadline": "{{suburb}} ({{postcode}}) may need extra support soon",
+      "metrics": {
+        "demandLift": "Demand lift",
+        "activePortions": "Active portions",
+        "households": "Households at risk"
+      },
+      "fields": {
+        "predictedWindow": "Predicted window",
+        "confidence": "Forecast confidence",
+        "factors": "Contributing factors"
+      },
+      "noDataTitle": "No alerts data yet",
+      "noDataHint": "Demand alerts will appear here once forecasting data is available.",
+      "loadErrorTitle": "Unable to load alerts",
+      "loadErrorHint": "We could not load listings required for this alerts view. Please try again."
+    }
   },
   "listing": {
     "itemsAvailable": "{{count}} items available",

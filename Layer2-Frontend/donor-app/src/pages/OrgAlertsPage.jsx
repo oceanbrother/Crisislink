@@ -1,7 +1,8 @@
-import React, { useEffect, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { getAvailableListings } from '../services/api'
+import { buildDemandInsights } from '../constants/demandInsights'
 import OrgFeatureNav from '../components/OrgFeatureNav'
 import '../styles/LiveListingBoard.css'
 
@@ -44,6 +45,20 @@ const OrgAlertsPage = () => {
     }
   }
 
+  const demandInsights = useMemo(() => buildDemandInsights(listings), [listings])
+  const topAlert = demandInsights.topAlert || demandInsights.fallbackTopAlert
+
+  const handleRespondToNeed = (zone) => {
+    navigate('/form', {
+      state: {
+        orgMode: true,
+        orgCode,
+        orgName: `Organization ${orgCode}`,
+        focusPostcode: zone?.postcode || '',
+      },
+    })
+  }
+
   return (
     <div className="live-listing-board org-role-board">
       <header className="navbar org-navbar">
@@ -64,12 +79,7 @@ const OrgAlertsPage = () => {
           <div className="org-page-heading-row">
             <div className="org-page-heading">
               <h1 className="board-title org-page-title">{t('common.alerts')}</h1>
-              <p className="org-page-subtitle">
-                {t(
-                  'dashboard.intelligence.subtitle',
-                  'View upcoming alerts and supply-gap indicators for your service area.',
-                )}
-              </p>
+              <p className="org-page-subtitle">{t('dashboard.intelligence.subtitle')}</p>
               <div className="org-page-meta org-page-meta-pill">
                 <span className="material-symbols-outlined">domain</span>
                 <span>{t('dashboard.signedInAs', { orgCode })}</span>
@@ -85,36 +95,78 @@ const OrgAlertsPage = () => {
         ) : error ? (
           <section className="empty-state empty-state--rich" aria-live="polite">
             <span className="material-symbols-outlined empty-state-icon">warning</span>
-            <h2 className="empty-state-title">
-              {t('dashboard.intelligence.loadErrorTitle', 'Unable to load alerts')}
-            </h2>
-            <p className="empty-state-subtitle">
-              {t(
-                'dashboard.intelligence.loadErrorHint',
-                'We could not load listing data for the alerts workspace. Please try again shortly.',
-              )}
-            </p>
+            <h2 className="empty-state-title">{t('dashboard.intelligence.loadErrorTitle')}</h2>
+            <p className="empty-state-subtitle">{t('dashboard.intelligence.loadErrorHint')}</p>
           </section>
-        ) : listings.length === 0 ? (
+        ) : !topAlert ? (
           <section className="empty-state empty-state--rich" aria-live="polite">
             <span className="material-symbols-outlined empty-state-icon">notifications_off</span>
-            <h2 className="empty-state-title">{t('dashboard.intelligence.noDataTitle', 'No alerts yet')}</h2>
-            <p className="empty-state-subtitle">
-              {t(
-                'dashboard.intelligence.noDataHint',
-                'Forecast and coverage modules will appear here once listings and forecasting data are available.',
-              )}
-            </p>
+            <h2 className="empty-state-title">{t('dashboard.intelligence.noDataTitle')}</h2>
+            <p className="empty-state-subtitle">{t('dashboard.intelligence.noDataHint')}</p>
           </section>
         ) : (
-          <section className="org-filter-panel" aria-live="polite">
-            <p className="filter-feedback-hint">
-              {t(
-                'dashboard.intelligence.shellReady',
-                'Alerts workspace is ready. Forecast and supply-gap panels will be added in the next user-story branches.',
-              )}
-            </p>
-            <p className="feed-count">{t('listing.itemsAvailable', { count: listings.length })}</p>
+          <section className="org-demand-section" aria-labelledby="org-demand-intelligence">
+            <div className="org-demand-heading">
+              <span className="org-demand-kicker">{t('common.alerts')}</span>
+              <h2 id="org-demand-intelligence">{t('dashboard.intelligence.title')}</h2>
+              <p>{t('dashboard.intelligence.subtitle')}</p>
+              {demandInsights.source === 'sample' ? (
+                <p className="org-demand-data-note">{t('dashboard.intelligence.sampleNote')}</p>
+              ) : null}
+            </div>
+
+            <article className="org-demand-primary-card">
+              <div className="org-demand-primary-topline">
+                <span className="material-symbols-outlined">notifications_active</span>
+                <span>{t('dashboard.intelligence.primaryLabel')}</span>
+              </div>
+
+              <h3>
+                {t('dashboard.intelligence.primaryHeadline', {
+                  suburb: topAlert.suburb,
+                  postcode: topAlert.postcode,
+                })}
+              </h3>
+              <p>{topAlert.alertReason}</p>
+
+              <div className="org-demand-evidence">
+                <div className="org-demand-evidence-row">
+                  <span>{t('dashboard.intelligence.fields.predictedWindow')}</span>
+                  <strong>{topAlert.predictedWindow || '-'}</strong>
+                </div>
+                <div className="org-demand-evidence-row">
+                  <span>{t('dashboard.intelligence.fields.confidence')}</span>
+                  <strong>{topAlert.confidence}%</strong>
+                </div>
+                <div className="org-demand-evidence-row">
+                  <span>{t('dashboard.intelligence.fields.factors')}</span>
+                  <strong>{(topAlert.contributingFactors || []).join(', ')}</strong>
+                </div>
+              </div>
+
+              <div className="org-demand-metrics">
+                <div className="org-demand-metric">
+                  <span>{t('dashboard.intelligence.metrics.demandLift')}</span>
+                  <strong>+{topAlert.demandLift}%</strong>
+                </div>
+                <div className="org-demand-metric">
+                  <span>{t('dashboard.intelligence.metrics.activePortions')}</span>
+                  <strong>{topAlert.activePortions}</strong>
+                </div>
+                <div className="org-demand-metric">
+                  <span>{t('dashboard.intelligence.metrics.households')}</span>
+                  <strong>{topAlert.householdsAtRisk}</strong>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                className="org-demand-respond-btn"
+                onClick={() => handleRespondToNeed(topAlert)}
+              >
+                {t('dashboard.intelligence.respondAction')}
+              </button>
+            </article>
           </section>
         )}
       </main>

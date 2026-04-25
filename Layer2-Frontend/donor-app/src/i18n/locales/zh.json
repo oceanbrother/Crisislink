@@ -208,7 +208,29 @@
     "emptyTitle": "还没有物品",
     "emptyHint": "只要 donor 或 organization 发布了物品，它们就会出现在这里。",
     "emptySearchTitle": "没有匹配的物品",
-    "emptySearchHint": "试试别的关键词，或者清除当前类别和状态筛选。"
+    "emptySearchHint": "试试别的关键词，或者清除当前类别和状态筛选。",
+    "intelligence": {
+      "title": "需求洞察",
+      "subtitle": "提前查看你服务区域附近即将出现的需求峰值。",
+      "sampleNote": "当前展示的是临时需求样例数据，待 forecasting 数据源接入后会替换。",
+      "respondAction": "响应这条需求",
+      "primaryLabel": "需求峰值预警",
+      "primaryHeadline": "{{suburb}}（{{postcode}}）可能很快需要更多支持",
+      "metrics": {
+        "demandLift": "需求增幅",
+        "activePortions": "当前可用份数",
+        "households": "高风险家庭"
+      },
+      "fields": {
+        "predictedWindow": "预测时间窗口",
+        "confidence": "预测置信度",
+        "factors": "影响因素"
+      },
+      "noDataTitle": "目前还没有需求预警数据",
+      "noDataHint": "等 forecasting 数据源接入后，这里会显示需求预警。",
+      "loadErrorTitle": "无法加载预警页面",
+      "loadErrorHint": "当前无法读取该预警视图所需的实时列表数据，请稍后再试。"
+    }
   },
   "listing": {
     "itemsAvailable": "{{count}} 件物品可用",
