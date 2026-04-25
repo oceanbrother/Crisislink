@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
+import { useTranslation } from 'react-i18next'
 import './App.css'
 
 // Pages - Donor Flow
@@ -13,21 +14,15 @@ import OrgCodeInputPage from './pages/OrgCodeInputPage'
 import LiveListingBoard from './pages/LiveListingBoard'
 import OrgAlertsPage from './pages/OrgAlertsPage'
 
-const ACCESS_STORAGE_KEY = 'crisislink-site-access-granted'
-
 function PasswordGate({ expectedPassword, children }) {
+  const { t } = useTranslation()
   const [inputPassword, setInputPassword] = useState('')
   const [error, setError] = useState('')
   const [isUnlocked, setIsUnlocked] = useState(false)
+  const navigate = useNavigate()
 
   useEffect(() => {
     if (!expectedPassword) {
-      setIsUnlocked(true)
-      return
-    }
-
-    const savedAccess = window.localStorage.getItem(ACCESS_STORAGE_KEY)
-    if (savedAccess === 'true') {
       setIsUnlocked(true)
     }
   }, [expectedPassword])
@@ -36,13 +31,13 @@ function PasswordGate({ expectedPassword, children }) {
     event.preventDefault()
 
     if (inputPassword.trim() === expectedPassword) {
-      window.localStorage.setItem(ACCESS_STORAGE_KEY, 'true')
       setIsUnlocked(true)
       setError('')
+      navigate('/', { replace: true })
       return
     }
 
-    setError('Incorrect password. Please try again.')
+    setError(t('accessGate.error'))
   }
 
   if (isUnlocked) {
@@ -51,26 +46,47 @@ function PasswordGate({ expectedPassword, children }) {
 
   return (
     <div className="site-gate-shell">
-      <div className="site-gate-card">
-        <div className="site-gate-badge">CrisisLink Access</div>
-        <h1>Protected Demo Site</h1>
-        <p>
-          This website is currently restricted for teaching, mentor review, and
-          project demonstration purposes.
-        </p>
+      <div className="site-gate-layout">
+        <section className="site-gate-intro">
+          <h1>{t('accessGate.heroTitle')}</h1>
+          <p className="site-gate-intro-copy">
+            {t('accessGate.heroCopy')}
+          </p>
 
-        <form className="site-gate-form" onSubmit={handleSubmit}>
-          <label htmlFor="site-password">Enter password</label>
-          <input
-            id="site-password"
-            type="password"
-            value={inputPassword}
-            onChange={(event) => setInputPassword(event.target.value)}
-            placeholder="Project access password"
-          />
-          {error ? <p className="site-gate-error">{error}</p> : null}
-          <button type="submit">Enter site</button>
-        </form>
+          <ul className="site-gate-value-list" aria-label={t('accessGate.highlightsLabel')}>
+            <li>{t('accessGate.bullets.post')}</li>
+            <li>{t('accessGate.bullets.coordinate')}</li>
+            <li>{t('accessGate.bullets.spot')}</li>
+          </ul>
+
+          <p className="site-gate-trust">{t('accessGate.trust')}</p>
+        </section>
+
+        <div className="site-gate-card">
+          <div className="site-gate-badge">{t('accessGate.badge')}</div>
+          <h2>{t('accessGate.title')}</h2>
+          <p>{t('accessGate.subtitle')}</p>
+
+          <form className="site-gate-form" onSubmit={handleSubmit}>
+            <label htmlFor="site-password">{t('accessGate.label')}</label>
+            <input
+              id="site-password"
+              type="password"
+              value={inputPassword}
+              onChange={(event) => {
+                setInputPassword(event.target.value)
+                if (error) {
+                  setError('')
+                }
+              }}
+              placeholder={t('accessGate.placeholder')}
+              aria-invalid={error ? 'true' : 'false'}
+              aria-describedby={error ? 'site-password-error' : undefined}
+            />
+            {error ? <p id="site-password-error" className="site-gate-error">{error}</p> : null}
+            <button type="submit" disabled={!inputPassword.trim()}>{t('accessGate.button')}</button>
+          </form>
+        </div>
       </div>
     </div>
   )
@@ -108,11 +124,11 @@ function App() {
   )
 
   return (
-    <PasswordGate expectedPassword={expectedPassword}>
-      <BrowserRouter>
+    <BrowserRouter>
+      <PasswordGate expectedPassword={expectedPassword}>
         <AppRoutes />
-      </BrowserRouter>
-    </PasswordGate>
+      </PasswordGate>
+    </BrowserRouter>
   )
 }
 

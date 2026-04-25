@@ -130,6 +130,24 @@
     "example": "请输入组织代码或名称后继续",
     "note": "只有通过验证的社区组织才能访问实时物品列表。"
   },
+  "accessGate": {
+    "badge": "受限访问",
+    "title": "进入 CrisisLink",
+    "subtitle": "适用于社区组织与食物合作伙伴。",
+    "label": "输入密码",
+    "placeholder": "访问密码",
+    "button": "继续",
+    "error": "密码错误，请重试。",
+    "heroTitle": "分享食物，支持你的社区。",
+    "heroCopy": "实时协调本地食物供给，并响应需求变化。",
+    "highlightsLabel": "CrisisLink 亮点",
+    "bullets": {
+      "post": "发布剩余食物",
+      "coordinate": "与社区组织协作",
+      "spot": "及早发现需求"
+    },
+    "trust": "安全的公益平台 · 仅限已批准用户访问"
+  },
   "dashboard": {
     "title": "食物列表",
     "serviceArea": "服务区域",

@@ -130,6 +130,24 @@
     "example": "Enter an organization code or name to continue",
     "note": "Only approved community groups can access live listings."
   },
+  "accessGate": {
+    "badge": "Restricted access",
+    "title": "Access CrisisLink",
+    "subtitle": "For community groups and food partners.",
+    "label": "Enter password",
+    "placeholder": "Access password",
+    "button": "Continue",
+    "error": "Incorrect password. Please try again.",
+    "heroTitle": "Share food. Support your community.",
+    "heroCopy": "Coordinate local food supply and respond to demand in real time.",
+    "highlightsLabel": "CrisisLink highlights",
+    "bullets": {
+      "post": "Post surplus food",
+      "coordinate": "Coordinate with community groups",
+      "spot": "Spot demand early"
+    },
+    "trust": "Secure civic platform · Access restricted to approved users"
+  },
   "dashboard": {
     "title": "Food listings",
     "serviceArea": "Service area",
