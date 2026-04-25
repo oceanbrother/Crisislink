@@ -1353,3 +1353,373 @@
     grid-template-columns: 1fr;
   }
 }
+
+.org-coverage-map-card {
+  border-radius: 1.3rem;
+  border: 1px solid rgba(0, 107, 76, 0.08);
+  background: rgba(255, 255, 255, 0.95);
+  padding: 1rem;
+}
+
+.org-coverage-legend {
+  margin-top: 0.8rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.org-coverage-postcode-grid {
+  margin-top: 0.85rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+}
+
+.org-coverage-postcode-tile {
+  border-radius: 1rem;
+  border: 1px solid rgba(0, 107, 76, 0.12);
+  background: rgba(248, 252, 250, 0.94);
+  padding: 0.75rem;
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  transition: transform 0.14s ease, box-shadow 0.14s ease, border-color 0.14s ease;
+}
+
+.org-coverage-postcode-tile:hover {
+  transform: translateY(-1px);
+}
+
+.org-coverage-postcode-tile.is-selected {
+  box-shadow: 0 10px 24px rgba(18, 50, 39, 0.12);
+  border-color: rgba(15, 107, 76, 0.34);
+}
+
+.org-coverage-postcode-tile--none {
+  background: rgba(254, 243, 242, 0.95);
+  border-color: rgba(179, 38, 30, 0.26);
+}
+
+.org-coverage-postcode-tile--low {
+  background: rgba(255, 248, 234, 0.95);
+  border-color: rgba(154, 99, 0, 0.24);
+}
+
+.org-coverage-postcode-tile--watch {
+  background: rgba(241, 249, 245, 0.95);
+  border-color: rgba(15, 107, 76, 0.2);
+}
+
+.org-coverage-postcode-tile--healthy {
+  background: rgba(240, 247, 251, 0.95);
+  border-color: rgba(54, 95, 114, 0.2);
+}
+
+.org-coverage-postcode-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.org-coverage-postcode-top strong {
+  font-size: 1.05rem;
+  color: #163f33;
+}
+
+.org-coverage-postcode-top span {
+  font-size: 0.78rem;
+  font-weight: 800;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #5f736b;
+}
+
+.org-coverage-postcode-tile p {
+  margin: 0;
+  font-size: 0.92rem;
+  line-height: 1.45;
+  color: #425c53;
+}
+
+.org-coverage-postcode-meta {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.org-coverage-postcode-meta small {
+  font-size: 0.8rem;
+  color: #5a7369;
+  font-weight: 700;
+}
+
+.org-coverage-flag-pill {
+  margin-top: 0.1rem;
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  border-radius: 999px;
+  padding: 0.25rem 0.56rem;
+  font-size: 0.74rem;
+  font-weight: 800;
+  background: rgba(179, 38, 30, 0.12);
+  color: #9f221c;
+}
+
+.org-coverage-click-hint {
+  margin: 0.78rem 0 0;
+  font-size: 0.9rem;
+  color: #577168;
+  font-weight: 600;
+}
+
+.org-coverage-detail-placeholder {
+  margin-top: 0.95rem;
+  border-radius: 1rem;
+  border: 1px dashed rgba(0, 107, 76, 0.16);
+  background: rgba(246, 250, 248, 0.9);
+  padding: 0.9rem;
+  color: #5b7269;
+  font-size: 0.95rem;
+  line-height: 1.55;
+}
+
+.org-coverage-detail-grid .org-coverage-detail-grid--wide {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 900px) {
+  .org-coverage-postcode-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.org-demand-section {
+  margin: 1.15rem 0;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.95) 0%, rgba(246, 250, 248, 0.94) 100%);
+  border: 1px solid rgba(0, 107, 76, 0.08);
+  border-radius: 1.7rem;
+  padding: 1.15rem 1.2rem;
+  box-shadow: 0 16px 38px rgba(18, 50, 39, 0.05);
+}
+
+.org-demand-heading {
+  max-width: 760px;
+}
+
+.org-demand-kicker {
+  display: inline-block;
+  margin-bottom: 0.3rem;
+  font-size: 0.8rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #0f6b4c;
+}
+
+.org-demand-heading h2 {
+  margin: 0;
+  font-size: 1.55rem;
+  line-height: 1.02;
+  letter-spacing: -0.04em;
+  color: #0d5a43;
+}
+
+.org-demand-heading p {
+  margin: 0.4rem 0 0;
+  font-size: 1rem;
+  line-height: 1.55;
+  color: #50665d;
+}
+
+.org-demand-data-note {
+  margin: 0.45rem 0 0;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  color: #5a7268;
+  font-weight: 600;
+}
+
+.org-demand-primary-card {
+  margin-top: 1rem;
+  border-radius: 1.3rem;
+  border: 1px solid rgba(0, 107, 76, 0.08);
+  background:
+    radial-gradient(circle at top right, rgba(54, 173, 123, 0.12), transparent 28%),
+    linear-gradient(180deg, rgba(239, 251, 246, 0.98) 0%, rgba(250, 253, 251, 0.98) 100%);
+  padding: 1.15rem;
+}
+
+.org-demand-primary-topline {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: #0f6b4c;
+  font-size: 0.9rem;
+  font-weight: 800;
+}
+
+.org-demand-primary-topline .material-symbols-outlined {
+  font-size: 1.2rem;
+}
+
+.org-demand-primary-card h3 {
+  margin: 0.75rem 0 0;
+  font-size: 1.45rem;
+  line-height: 1.08;
+  letter-spacing: -0.04em;
+  color: #113e31;
+}
+
+.org-demand-primary-card p {
+  margin: 0.55rem 0 0;
+  font-size: 0.98rem;
+  line-height: 1.62;
+  color: #4f655d;
+}
+
+.org-demand-evidence {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 1rem;
+  padding: 0.95rem 1rem;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 107, 76, 0.08);
+  border-radius: 1rem;
+}
+
+.org-demand-evidence-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.org-demand-evidence-row span {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #658177;
+}
+
+.org-demand-evidence-row strong {
+  flex: 1;
+  text-align: right;
+  font-size: 0.94rem;
+  color: #163f33;
+}
+
+.org-demand-metrics {
+  margin-top: 1rem;
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.7rem;
+}
+
+.org-demand-metric {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(0, 107, 76, 0.08);
+  border-radius: 1rem;
+  padding: 0.8rem 0.85rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+}
+
+.org-demand-metric span {
+  font-size: 0.78rem;
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+  color: #6b7d76;
+}
+
+.org-demand-metric strong {
+  font-size: 1.25rem;
+  color: #0d5a43;
+}
+
+.org-demand-respond-btn {
+  margin-top: 1rem;
+  align-self: flex-start;
+  background: rgba(15, 107, 76, 0.1);
+  color: #0f6b4c;
+  border: 1px solid rgba(15, 107, 76, 0.14);
+  border-radius: 999px;
+  padding: 0.72rem 1.15rem;
+  font-family: var(--font-headline);
+  font-size: 0.94rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.org-demand-priority-row {
+  margin-top: 0.72rem;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.52rem;
+}
+
+.org-demand-priority-badge {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.34rem 0.72rem;
+  background: rgba(179, 38, 30, 0.12);
+  border: 1px solid rgba(179, 38, 30, 0.24);
+  color: #9f221c;
+  font-size: 0.84rem;
+  font-weight: 800;
+}
+
+.org-demand-trigger-note {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  padding: 0.34rem 0.72rem;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(0, 107, 76, 0.16);
+  color: #1b4a3b;
+  font-size: 0.84rem;
+  font-weight: 700;
+}
+
+.org-demand-triage {
+  margin-top: 0.85rem;
+}
+
+.org-demand-triage-title {
+  margin: 0 0 0.25rem;
+  font-size: 0.85rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #5a7268;
+}
+
+@media (max-width: 900px) {
+  .org-demand-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .org-demand-evidence-row {
+    flex-direction: column;
+  }
+
+  .org-demand-evidence-row strong {
+    text-align: left;
+  }
+}
+
+@media (max-width: 640px) {
+  .org-demand-section {
+    padding: 1rem;
+    border-radius: 1.25rem;
+  }
+
+  .org-demand-primary-card {
+    padding: 1rem;
+    border-radius: 1.1rem;
+  }
+}
