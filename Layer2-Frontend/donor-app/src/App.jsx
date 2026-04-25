@@ -92,7 +92,6 @@ function AppRoutes() {
 
       {/* Organization flow: code -> listings + alerts */}
       <Route path="/org/code" element={<OrgCodeInputPage />} />
-      <Route path="/org/dashboard" element={<LiveListingBoard />} />
       <Route path="/org/listings" element={<LiveListingBoard />} />
       <Route path="/org/alerts" element={<OrgAlertsPage />} />
 
