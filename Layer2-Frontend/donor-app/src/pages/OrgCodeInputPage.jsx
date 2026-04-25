@@ -31,7 +31,7 @@ const OrgCodeInputPage = () => {
 
     const orgSession = { orgCode: trimmed.toUpperCase() }
     window.localStorage.setItem(ORG_SESSION_KEY, JSON.stringify(orgSession))
-    navigate('/org/dashboard', { state: orgSession })
+    navigate('/org/listings', { state: orgSession })
   }
 
   return (

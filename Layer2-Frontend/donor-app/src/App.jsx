@@ -11,6 +11,7 @@ import DonationFormPage from './pages/DonationFormPage'
 // Pages - Organization Flow
 import OrgCodeInputPage from './pages/OrgCodeInputPage'
 import LiveListingBoard from './pages/LiveListingBoard'
+import OrgAlertsPage from './pages/OrgAlertsPage'
 
 const ACCESS_STORAGE_KEY = 'crisislink-site-access-granted'
 
@@ -89,9 +90,11 @@ function AppRoutes() {
       <Route path="/form/:postcode" element={<DonationFormPage />} />
       <Route path="/form" element={<DonationFormPage />} />
 
-      {/* Organization flow: code -> dashboard */}
+      {/* Organization flow: code -> listings + alerts */}
       <Route path="/org/code" element={<OrgCodeInputPage />} />
       <Route path="/org/dashboard" element={<LiveListingBoard />} />
+      <Route path="/org/listings" element={<LiveListingBoard />} />
+      <Route path="/org/alerts" element={<OrgAlertsPage />} />
 
       {/* Catch all - redirect to home */}
       <Route path="*" element={<Navigate to="/" replace />} />

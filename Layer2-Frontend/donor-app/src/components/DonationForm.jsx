@@ -189,7 +189,7 @@ const DonationForm = () => {
       return
     }
     if (orgMode) {
-      navigate('/org/dashboard', { state: { orgCode: initialOrgCode } })
+      navigate('/org/listings', { state: { orgCode: initialOrgCode } })
       return
     }
     const targetPostcode = formData.postcode || postcode
@@ -272,7 +272,7 @@ const DonationForm = () => {
         forgetDonorListing(listing.id)
       }
       if (orgMode) {
-        navigate('/org/dashboard', { state: { orgCode: initialOrgCode } })
+        navigate('/org/listings', { state: { orgCode: initialOrgCode } })
       } else {
         navigate('/feed/' + listing.postcode)
       }
@@ -367,7 +367,7 @@ const DonationForm = () => {
               className="success-action-btn primary"
               onClick={() => {
                 if (orgMode) {
-                  navigate('/org/dashboard', { state: { orgCode: initialOrgCode } })
+                  navigate('/org/listings', { state: { orgCode: initialOrgCode } })
                 } else {
                   navigate('/feed/' + successListing.postcode)
                 }

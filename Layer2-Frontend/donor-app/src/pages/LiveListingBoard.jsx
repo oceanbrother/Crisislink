@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { getAvailableListings, claimListing, unclaimListing, deleteListing } from '../services/api'
 import { FILTER_OPTIONS, formatBestBeforeLabel, resolveListingCategory } from '../constants/listings'
+import OrgFeatureNav from '../components/OrgFeatureNav'
 import '../styles/LiveListingBoard.css'
 
 const getTranslatedCategory = (category, foodType, t) => {
@@ -406,6 +407,10 @@ const LiveListingBoard = () => {
       </header>
 
       <main className="feed-content org-feed-content">
+        <div className="org-area-nav-row">
+          <OrgFeatureNav active="listings" orgCode={orgCode} />
+        </div>
+
         <section className="org-page-intro org-hero-card">
           <div className="org-page-heading-row">
             <div className="org-page-heading">
