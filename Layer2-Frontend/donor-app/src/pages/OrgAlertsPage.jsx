@@ -6,6 +6,8 @@ import { buildDemandInsights } from '../constants/demandInsights'
 import OrgFeatureNav from '../components/OrgFeatureNav'
 import '../styles/LiveListingBoard.css'
 
+const DEMAND_SPIKE_THRESHOLD = 20
+
 const OrgAlertsPage = () => {
   const navigate = useNavigate()
   const location = useLocation()
@@ -58,6 +60,12 @@ const OrgAlertsPage = () => {
       },
     })
   }
+
+  const priorityLabel = Number(topAlert?.demandLift || 0) >= 30
+    ? t('dashboard.intelligence.priorityHigh', 'High priority')
+    : t('dashboard.intelligence.priorityRisk', 'Demand spike risk')
+
+  const responseWindowLabel = topAlert?.predictedWindow || 'next 3-5 days'
 
   return (
     <div className="live-listing-board org-role-board">
@@ -121,6 +129,17 @@ const OrgAlertsPage = () => {
                 <span>{t('dashboard.intelligence.primaryLabel')}</span>
               </div>
 
+              <div className="org-demand-priority-row" aria-label={t('dashboard.intelligence.priorityCue', 'Alert priority and trigger')}>
+                <span className="org-demand-priority-badge">{priorityLabel}</span>
+                <span className="org-demand-trigger-note">
+                  {t('dashboard.intelligence.triggerRule', {
+                    demandLift: topAlert.demandLift,
+                    threshold: DEMAND_SPIKE_THRESHOLD,
+                    defaultValue: 'Alert triggered: +{{demandLift}}% demand lift (threshold: >{{threshold}}%)',
+                  })}
+                </span>
+              </div>
+
               <h3>
                 {t('dashboard.intelligence.primaryHeadline', {
                   suburb: topAlert.suburb,
@@ -141,6 +160,28 @@ const OrgAlertsPage = () => {
                 <div className="org-demand-evidence-row">
                   <span>{t('dashboard.intelligence.fields.factors')}</span>
                   <strong>{(topAlert.contributingFactors || []).join(', ')}</strong>
+                </div>
+              </div>
+
+              <div className="org-demand-evidence org-demand-triage">
+                <p className="org-demand-triage-title">{t('dashboard.intelligence.triageTitle', 'Triage guidance')}</p>
+                <div className="org-demand-evidence-row">
+                  <span>{t('dashboard.intelligence.recommendedActionLabel', 'Recommended action')}</span>
+                  <strong>
+                    {t('dashboard.intelligence.recommendedActionValue', {
+                      postcode: topAlert.postcode,
+                      defaultValue: 'Source extra food for postcode {{postcode}}',
+                    })}
+                  </strong>
+                </div>
+                <div className="org-demand-evidence-row">
+                  <span>{t('dashboard.intelligence.responseTimingLabel', 'Response timing')}</span>
+                  <strong>
+                    {t('dashboard.intelligence.responseTimingValue', {
+                      window: responseWindowLabel,
+                      defaultValue: 'Within the predicted window ({{window}})',
+                    })}
+                  </strong>
                 </div>
               </div>
 
