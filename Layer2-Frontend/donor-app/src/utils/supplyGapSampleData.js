@@ -22,8 +22,8 @@ export const SUPPLY_GAP_ZONE_SAMPLES = [
     estimatedPopulationInNeed: 1690,
     nearestSupplyPoint: 'Queen Victoria Pantry',
     nearestSupplyDistanceKm: 3.4,
-    baselineActiveListings: 1,
-    baselineActivePortions: 14,
+    baselineActiveListings: 3,
+    baselineActivePortions: 248,
   },
   {
     postcode: '3182',
@@ -34,8 +34,8 @@ export const SUPPLY_GAP_ZONE_SAMPLES = [
     estimatedPopulationInNeed: 1490,
     nearestSupplyPoint: 'Balaclava Community Store',
     nearestSupplyDistanceKm: 5.1,
-    baselineActiveListings: 1,
-    baselineActivePortions: 26,
+    baselineActiveListings: 3,
+    baselineActivePortions: 226,
   },
   {
     postcode: '3001',
@@ -58,8 +58,8 @@ export const SUPPLY_GAP_ZONE_SAMPLES = [
     estimatedPopulationInNeed: 1320,
     nearestSupplyPoint: 'Preston Market Pickup',
     nearestSupplyDistanceKm: 6.4,
-    baselineActiveListings: 2,
-    baselineActivePortions: 38,
+    baselineActiveListings: 4,
+    baselineActivePortions: 302,
   },
   {
     postcode: '3163',
@@ -70,7 +70,7 @@ export const SUPPLY_GAP_ZONE_SAMPLES = [
     estimatedPopulationInNeed: 940,
     nearestSupplyPoint: 'Carnegie Central Pantry',
     nearestSupplyDistanceKm: 1.7,
-    baselineActiveListings: 3,
-    baselineActivePortions: 54,
+    baselineActiveListings: 5,
+    baselineActivePortions: 270,
   },
 ]

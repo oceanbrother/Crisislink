@@ -18,10 +18,16 @@ const buildResourceRequirementScore = (zone) => {
   return Math.round(pressure + seifaPenalty)
 }
 
-const formatCoverageLevel = ({ listingCount, gapScore }) => {
-  if ((listingCount <= 0 && gapScore >= 55) || gapScore >= 75) return 'none'
-  if (gapScore >= 45) return 'low'
-  if (gapScore >= 20) return 'watch'
+const buildEstimatedDemand = (zone) => {
+  const pressure = getNumericValue(zone?.pressureScore)
+  const population = getNumericValue(zone?.estimatedPopulationInNeed)
+  return Math.max(60, Math.round(population * 0.22 + pressure * 1.9))
+}
+
+const formatCoverageLevel = ({ listingCount, coverageRatePercent, shortfallPortions }) => {
+  if (listingCount <= 0 || coverageRatePercent < 35 || shortfallPortions >= 180) return 'none'
+  if (coverageRatePercent < 60 || shortfallPortions >= 110) return 'low'
+  if (coverageRatePercent < 85 || shortfallPortions >= 40) return 'watch'
   return 'healthy'
 }
 
@@ -47,16 +53,25 @@ export const buildSupplyGapInsights = (listings) => {
   const zones = SUPPLY_GAP_ZONE_SAMPLES.map((profile) => {
     const supply = supplyByPostcode[profile.postcode] || { listingCount: 0, quantity: 0 }
     const listingCount = supply.listingCount + getNumericValue(profile.baselineActiveListings)
-    const activePortions = supply.quantity + getNumericValue(profile.baselineActivePortions)
+    const availableSupply = supply.quantity + getNumericValue(profile.baselineActivePortions)
+    const estimatedDemand = buildEstimatedDemand(profile)
+    const shortfallPortions = Math.max(0, estimatedDemand - availableSupply)
+    const coverageRatePercent = estimatedDemand > 0
+      ? Math.max(0, Math.min(999, Math.round((availableSupply / estimatedDemand) * 100)))
+      : 0
     const requirementScore = buildResourceRequirementScore(profile)
-    const supplyStrength = activePortions + listingCount * 10
-    const gapScore = Math.max(0, requirementScore - supplyStrength)
-    const coverageLevel = formatCoverageLevel({ listingCount, gapScore })
+    const supplyStrength = availableSupply + listingCount * 10
+    const gapScore = Math.max(0, requirementScore - supplyStrength) + shortfallPortions
+    const coverageLevel = formatCoverageLevel({ listingCount, coverageRatePercent, shortfallPortions })
 
     return {
       ...profile,
       listingCount,
-      activePortions,
+      availableSupply,
+      activePortions: availableSupply,
+      estimatedDemand,
+      shortfallPortions,
+      coverageRatePercent,
       requirementScore,
       supplyStrength,
       gapScore,
@@ -88,6 +103,9 @@ export const buildSupplyGapInsights = (listings) => {
       zeroSupply: zones.filter((zone) => zone.coverageLevel === 'none').length,
       atRisk: zones.filter((zone) => zone.coverageLevel !== 'healthy').length,
       tracked: zones.length,
+      averageCoverage: zones.length > 0
+        ? Math.round(zones.reduce((sum, zone) => sum + zone.coverageRatePercent, 0) / zones.length)
+        : 0,
     },
   }
 }
