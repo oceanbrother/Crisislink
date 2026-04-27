@@ -16,6 +16,101 @@
     "eyebrow": "本地食物共享",
     "support": "为您的社区发布剩余食物，或浏览附近可领取的食物。"
   },
+  "donorNav": {
+    "post": "发布食物",
+    "listings": "我的物品",
+    "hotspots": "热点短缺"
+  },
+  "donorWorkspace": {
+    "eyebrow": "捐赠者工作区",
+    "title": "选择你的下一步 donor 任务",
+    "subtitle": "继续发布食物、查看短缺热点，或管理你已经分享过的物品。",
+    "currentPostcodeAria": "当前 donor 邮编",
+    "currentPostcodeLabel": "当前邮编",
+    "currentPostcodeFallback": "发布食物时再填写",
+    "actionsAria": "Donor 工作区操作",
+    "cards": {
+      "post": {
+        "eyebrow": "发布食物",
+        "title": "发布剩余食物",
+        "description": "分享你现在可提供的食物。",
+        "button": "打开发布表单"
+      },
+      "hotspots": {
+        "eyebrow": "决策支持",
+        "title": "查看食物短缺热点",
+        "description": "找到最需要食物的区域。",
+        "button": "查看热点地图"
+      },
+      "listings": {
+        "eyebrow": "我的动态",
+        "title": "管理我的物品",
+        "description": "查看或编辑你发过的内容。",
+        "button": "打开我的物品"
+      }
+    }
+  },
+  "hotspots": {
+    "ariaLabel": "热点优先级地图",
+    "referencePostcode": "参考邮编：{{postcode}}",
+    "referenceStatewide": "全州视图",
+    "eyebrow": "热点地图",
+    "title": "食物短缺热点",
+    "subtitle": "热点按区域分组展示，方便你像看简化地图一样快速扫描附近需求。",
+    "helper": "先从区域簇开始看，再打开具体邮编卡片查看短缺详情。",
+    "chips": {
+      "all": "全部热点",
+      "criticalTitle": "显示最紧急的短缺热点",
+      "critical": "严重短缺 · {{count}}",
+      "highTitle": "显示高需求热点",
+      "highEmptyTitle": "当前没有高需求热点",
+      "high": "高需求 · {{count}}",
+      "watchTitle": "显示需要继续观察的风险热点",
+      "watch": "观察风险 · {{count}}"
+    },
+    "controls": {
+      "view": "查看范围",
+      "allRegions": "全部区域（全州）",
+      "distance": "距离",
+      "anyDistance": "任意距离",
+      "within10": "10 公里内",
+      "within25": "25 公里内",
+      "within50": "50 公里内",
+      "sort": "排序",
+      "sortPriority": "按优先级（最需要优先）",
+      "sortDistance": "按距离（最近优先）"
+    },
+    "legendCopy": "严重短缺 = 需要立刻行动。高需求 = 短缺明显。观察风险 = 建议持续关注。",
+    "sampleNote": "当前为样本数据。接通数据库后会显示真实热点评分。",
+    "emptyTitle": "没有热点符合当前筛选条件。",
+    "emptyHint": "试试查看全部区域，或放宽距离范围。",
+    "regionCount": "{{count}} 个热点",
+    "clusterClosest": "最近 {{distance}} 公里",
+    "clusterPriority": "最高优先级 {{score}}",
+    "clusterShortfall": "短缺 {{count}} 份",
+    "priorityBands": {
+      "critical": "严重热点",
+      "high": "高需求热点",
+      "watch": "观察热点"
+    },
+    "metrics": {
+      "needScore": "需求分数 {{count}}",
+      "activeListings": "活跃物品 {{count}}",
+      "priority": "优先级 {{count}}",
+      "distanceAway": "距离 {{distance}} 公里"
+    },
+    "detailTitle": "热点详情 · {{postcode}}",
+    "detailHint": "这里只显示当前仍然短缺的类别。",
+    "detailStats": {
+      "shortfall": "当前短缺",
+      "distance": "大致距离",
+      "nearestSupply": "最近供给点"
+    },
+    "portions": "{{count}} 份",
+    "kilometres": "{{distance}} 公里",
+    "nearestHub": "{{name}}（{{distance}} 公里）",
+    "shortageAmount": "短缺 {{count}} 份"
+  },
   "postcode": {
     "title": "输入您的邮编",
     "subtitle": "帮助我们找到您附近的食物",

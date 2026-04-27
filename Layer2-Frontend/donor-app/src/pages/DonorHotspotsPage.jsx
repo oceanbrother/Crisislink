@@ -188,21 +188,22 @@ const DonorHotspotsPage = () => {
         <section className="donor-page-intro donor-page-intro--hotspots">
           <div className="donor-page-meta donor-page-meta-pill donor-page-meta-pill--hotspots">
             <span className="material-symbols-outlined">location_on</span>
-            <span>Reference postcode: {focusPostcode || 'State-wide'}</span>
+            <span>
+              {t('hotspots.referencePostcode', {
+                postcode: focusPostcode || t('hotspots.referenceStatewide', 'State-wide'),
+                defaultValue: 'Reference postcode: {{postcode}}',
+              })}
+            </span>
           </div>
         </section>
 
-        <section className="hotspot-board" aria-label="Hotspot priority map">
+        <section className="hotspot-board" aria-label={t('hotspots.ariaLabel', 'Hotspot priority map')}>
           <div className="hotspot-board-header">
             <div className="hotspot-board-title-wrap">
-              <p className="hotspot-eyebrow">Hotspot map</p>
-              <h2 className="hotspot-title">Food shortage hotspots</h2>
-              <p className="hotspot-subtitle">
-                Hotspots are grouped by region to act like a suburb map when you scan for nearby need.
-              </p>
-              <p className="hotspot-helper-copy">
-                Start from region clusters, then open a postcode card to inspect exact shortage details.
-              </p>
+              <p className="hotspot-eyebrow">{t('hotspots.eyebrow', 'Hotspot map')}</p>
+              <h2 className="hotspot-title">{t('hotspots.title', 'Food shortage hotspots')}</h2>
+              <p className="hotspot-subtitle">{t('hotspots.subtitle', 'Hotspots are grouped by region to act like a suburb map when you scan for nearby need.')}</p>
+              <p className="hotspot-helper-copy">{t('hotspots.helper', 'Start from region clusters, then open a postcode card to inspect exact shortage details.')}</p>
             </div>
             <div className="hotspot-chip-row">
               <button
@@ -210,81 +211,85 @@ const DonorHotspotsPage = () => {
                 className={hotspotPriorityFilter === 'all' ? 'hotspot-chip hotspot-chip--neutral active' : 'hotspot-chip hotspot-chip--neutral'}
                 onClick={() => setHotspotPriorityFilter('all')}
               >
-                All hotspots
+                {t('hotspots.chips.all', 'All hotspots')}
               </button>
               <button
                 type="button"
-                title="Show urgent shortage hotspots"
+                title={t('hotspots.chips.criticalTitle', 'Show urgent shortage hotspots')}
                 className={hotspotPriorityFilter === 'critical' ? 'hotspot-chip hotspot-chip--critical active' : 'hotspot-chip hotspot-chip--critical'}
                 onClick={() => setHotspotPriorityFilter('critical')}
               >
-                Critical shortage · {priorityCounts.critical}
+                {t('hotspots.chips.critical', { count: priorityCounts.critical, defaultValue: 'Critical shortage · {{count}}' })}
               </button>
               <button
                 type="button"
-                title={priorityCounts.high === 0 ? 'No high-need hotspots right now' : 'Show high-need hotspots'}
+                title={
+                  priorityCounts.high === 0
+                    ? t('hotspots.chips.highEmptyTitle', 'No high-need hotspots right now')
+                    : t('hotspots.chips.highTitle', 'Show high-need hotspots')
+                }
                 disabled={priorityCounts.high === 0}
                 className={hotspotPriorityFilter === 'high' ? 'hotspot-chip hotspot-chip--high active' : 'hotspot-chip hotspot-chip--high'}
                 onClick={() => setHotspotPriorityFilter('high')}
               >
-                High need · {priorityCounts.high}
+                {t('hotspots.chips.high', { count: priorityCounts.high, defaultValue: 'High need · {{count}}' })}
               </button>
               <button
                 type="button"
-                title="Show emerging-risk hotspots to monitor"
+                title={t('hotspots.chips.watchTitle', 'Show emerging-risk hotspots to monitor')}
                 className={hotspotPriorityFilter === 'watch' ? 'hotspot-chip hotspot-chip--watch active' : 'hotspot-chip hotspot-chip--watch'}
                 onClick={() => setHotspotPriorityFilter('watch')}
               >
-                Watchlist risk · {priorityCounts.watch}
+                {t('hotspots.chips.watch', { count: priorityCounts.watch, defaultValue: 'Watchlist risk · {{count}}' })}
               </button>
             </div>
           </div>
 
           <div className="hotspot-controls">
             <label className="hotspot-control">
-              <span>View</span>
+              <span>{t('hotspots.controls.view', 'View')}</span>
               <select
                 value={hotspotRegionFilter}
                 onChange={(event) => setHotspotRegionFilter(event.target.value)}
               >
                 {hotspotRegions.map((region) => (
                   <option key={region} value={region}>
-                    {region === 'all' ? 'All regions (state-wide)' : region}
+                    {region === 'all' ? t('hotspots.controls.allRegions', 'All regions (state-wide)') : region}
                   </option>
                 ))}
               </select>
             </label>
 
             <label className="hotspot-control">
-              <span>Distance</span>
+              <span>{t('hotspots.controls.distance', 'Distance')}</span>
               <select
                 value={hotspotDistanceFilter}
                 onChange={(event) => setHotspotDistanceFilter(event.target.value)}
               >
-                <option value="all">Any distance</option>
-                <option value="10">Within 10 km</option>
-                <option value="25">Within 25 km</option>
-                <option value="50">Within 50 km</option>
+                <option value="all">{t('hotspots.controls.anyDistance', 'Any distance')}</option>
+                <option value="10">{t('hotspots.controls.within10', 'Within 10 km')}</option>
+                <option value="25">{t('hotspots.controls.within25', 'Within 25 km')}</option>
+                <option value="50">{t('hotspots.controls.within50', 'Within 50 km')}</option>
               </select>
             </label>
 
             <label className="hotspot-control">
-              <span>Sort</span>
+              <span>{t('hotspots.controls.sort', 'Sort')}</span>
               <select
                 value={hotspotSortMode}
                 onChange={(event) => setHotspotSortMode(event.target.value)}
               >
-                <option value="priority">Priority (highest need first)</option>
-                <option value="distance">Distance (closest first)</option>
+                <option value="priority">{t('hotspots.controls.sortPriority', 'Priority (highest need first)')}</option>
+                <option value="distance">{t('hotspots.controls.sortDistance', 'Distance (closest first)')}</option>
               </select>
             </label>
           </div>
 
           <p className="hotspot-legend-copy">
-            Critical shortage = urgent need. High need = strong demand. Watchlist risk = areas to monitor next.
+            {t('hotspots.legendCopy', 'Critical shortage = urgent need. High need = strong demand. Watchlist risk = areas to monitor next.')}
           </p>
           <p className="hotspot-sample-note">
-            Sample data only. Live hotspot scoring will be connected after database integration.
+            {t('hotspots.sampleNote', 'Sample data only. Live hotspot scoring will be connected after database integration.')}
           </p>
 
           <div className="hotspot-layout">
@@ -294,8 +299,8 @@ const DonorHotspotsPage = () => {
             >
               {hotspotRegionGroups.length === 0 ? (
                 <div className="hotspot-grid-empty">
-                  <strong>No hotspots match these filters.</strong>
-                  <span>Try all regions or a wider distance range.</span>
+                  <strong>{t('hotspots.emptyTitle', 'No hotspots match these filters.')}</strong>
+                  <span>{t('hotspots.emptyHint', 'Try all regions or a wider distance range.')}</span>
                 </div>
               ) : (
                 hotspotRegionGroups.map((group) => (
@@ -312,15 +317,21 @@ const DonorHotspotsPage = () => {
                     <header className="hotspot-region-cluster-head">
                       <div>
                         <p className="hotspot-region-cluster-label">{group.region}</p>
-                        <h3>{group.zones.length} hotspot{group.zones.length === 1 ? '' : 's'}</h3>
+                        <h3>{t('hotspots.regionCount', { count: group.zones.length, defaultValue: '{{count}} hotspots' })}</h3>
                       </div>
                       <div className="hotspot-region-cluster-meta">
                         <span>
                           {hotspotSortMode === 'distance'
-                            ? `Closest ${group.closestDistance.toFixed(1)} km`
-                            : `Top priority ${group.topPriority}`}
+                            ? t('hotspots.clusterClosest', {
+                                distance: group.closestDistance.toFixed(1),
+                                defaultValue: 'Closest {{distance}} km',
+                              })
+                            : t('hotspots.clusterPriority', {
+                                score: group.topPriority,
+                                defaultValue: 'Top priority {{score}}',
+                              })}
                         </span>
-                        <strong>{group.totalShortfall} portions short</strong>
+                        <strong>{t('hotspots.clusterShortfall', { count: group.totalShortfall, defaultValue: '{{count}} portions short' })}</strong>
                       </div>
                     </header>
 
@@ -340,14 +351,16 @@ const DonorHotspotsPage = () => {
                         >
                           <div className="hotspot-zone-row">
                             <strong>{zone.postcode}</strong>
-                            <span>{zone.priorityBand.label}</span>
+                            <span>
+                              {t(`hotspots.priorityBands.${zone.priorityBand.tone}`, zone.priorityBand.label)}
+                            </span>
                           </div>
                           <p>{zone.nearestHub.name}</p>
                           <div className="hotspot-zone-metrics">
-                            <span>Need score {zone.resourceRequirement}</span>
-                            <span>Active listings {zone.activeListings}</span>
-                            <span>Priority {zone.priorityScore}</span>
-                            <span>{zone.distanceToDonorKm} km away</span>
+                            <span>{t('hotspots.metrics.needScore', { count: zone.resourceRequirement, defaultValue: 'Need score {{count}}' })}</span>
+                            <span>{t('hotspots.metrics.activeListings', { count: zone.activeListings, defaultValue: 'Active listings {{count}}' })}</span>
+                            <span>{t('hotspots.metrics.priority', { count: zone.priorityScore, defaultValue: 'Priority {{count}}' })}</span>
+                            <span>{t('hotspots.metrics.distanceAway', { distance: zone.distanceToDonorKm, defaultValue: '{{distance}} km away' })}</span>
                           </div>
                         </button>
                       ))}
@@ -359,22 +372,26 @@ const DonorHotspotsPage = () => {
 
             {selectedHotspot ? (
               <aside className="hotspot-detail-panel" aria-live="polite">
-                <h3>Hotspot detail · {selectedHotspot.postcode}</h3>
-                <p>Only currently needed categories are shown.</p>
+                <h3>{t('hotspots.detailTitle', { postcode: selectedHotspot.postcode, defaultValue: 'Hotspot detail · {{postcode}}' })}</h3>
+                <p>{t('hotspots.detailHint', 'Only currently needed categories are shown.')}</p>
 
                 <div className="hotspot-detail-stats">
                   <div>
-                    <span>Current shortfall</span>
-                    <strong>{selectedHotspot.totalShortfall} portions</strong>
+                    <span>{t('hotspots.detailStats.shortfall', 'Current shortfall')}</span>
+                    <strong>{t('hotspots.portions', { count: selectedHotspot.totalShortfall, defaultValue: '{{count}} portions' })}</strong>
                   </div>
                   <div>
-                    <span>Approx. distance</span>
-                    <strong>{selectedHotspot.distanceToDonorKm} km</strong>
+                    <span>{t('hotspots.detailStats.distance', 'Approx. distance')}</span>
+                    <strong>{t('hotspots.kilometres', { distance: selectedHotspot.distanceToDonorKm, defaultValue: '{{distance}} km' })}</strong>
                   </div>
                   <div>
-                    <span>Nearest supply point</span>
+                    <span>{t('hotspots.detailStats.nearestSupply', 'Nearest supply point')}</span>
                     <strong>
-                      {selectedHotspot.nearestHub.name} ({selectedHotspot.nearestHub.distanceKm} km)
+                      {t('hotspots.nearestHub', {
+                        name: selectedHotspot.nearestHub.name,
+                        distance: selectedHotspot.nearestHub.distanceKm,
+                        defaultValue: '{{name}} ({{distance}} km)',
+                      })}
                     </strong>
                   </div>
                 </div>
@@ -383,7 +400,7 @@ const DonorHotspotsPage = () => {
                   {selectedHotspot.neededItems.map((item) => (
                     <li key={item.category}>
                       <span>{item.category}</span>
-                      <strong>{item.shortfallPortions} portions short</strong>
+                      <strong>{t('hotspots.shortageAmount', { count: item.shortfallPortions, defaultValue: '{{count}} portions short' })}</strong>
                     </li>
                   ))}
                 </ul>

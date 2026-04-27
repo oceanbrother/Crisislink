@@ -59,51 +59,49 @@ const DonorDashboardPage = () => {
       <main className="donor-dashboard-shell">
         <section className="donor-dashboard-hero">
           <div className="donor-dashboard-copy">
-            <p className="donor-dashboard-eyebrow">Donor workspace</p>
-            <h1>Choose what you want to do next</h1>
-            <p>
-              Keep posting, insights, and listing management separate so you always know what you’re working on.
-            </p>
+            <p className="donor-dashboard-eyebrow">{t('donorWorkspace.eyebrow', 'Donor workspace')}</p>
+            <h1>{t('donorWorkspace.title', 'Choose your next donor task')}</h1>
+            <p>{t('donorWorkspace.subtitle', 'Post food, check shortage hotspots, or manage the listings you have already shared.')}</p>
           </div>
 
-          <div className="donor-dashboard-postcode-card" role="group" aria-label="Current donor postcode">
+          <div className="donor-dashboard-postcode-card" role="group" aria-label={t('donorWorkspace.currentPostcodeAria', 'Current donor postcode')}>
             <div className="donor-dashboard-postcode-icon">
               <span className="material-symbols-outlined">location_on</span>
             </div>
             <div className="donor-dashboard-postcode-copy">
-              <span>Current postcode</span>
-              <strong>{postcode || 'Add when you post food'}</strong>
+              <span>{t('donorWorkspace.currentPostcodeLabel', 'Current postcode')}</span>
+              <strong>{postcode || t('donorWorkspace.currentPostcodeFallback', 'Add when you post food')}</strong>
             </div>
           </div>
         </section>
 
-        <section className="donor-dashboard-grid" aria-label="Donor workspace actions">
+        <section className="donor-dashboard-grid" aria-label={t('donorWorkspace.actionsAria', 'Donor workspace actions')}>
           <article className="donor-dashboard-card donor-dashboard-card--post">
-            <p className="donor-dashboard-card-eyebrow">Post food</p>
-            <h2>Post surplus food</h2>
-            <p>Share food you have available.</p>
+            <p className="donor-dashboard-card-eyebrow">{t('donorWorkspace.cards.post.eyebrow', 'Post food')}</p>
+            <h2>{t('donorWorkspace.cards.post.title', 'Post surplus food')}</h2>
+            <p>{t('donorWorkspace.cards.post.description', 'Share food you have available.')}</p>
             <button type="button" className="donor-dashboard-card-cta" onClick={() => goTo('/donor/post')}>
-              Open posting form
+              {t('donorWorkspace.cards.post.button', 'Open posting form')}
               <span className="material-symbols-outlined">arrow_forward</span>
             </button>
           </article>
 
           <article className="donor-dashboard-card donor-dashboard-card--hotspots">
-            <p className="donor-dashboard-card-eyebrow">Decision support</p>
-            <h2>View food shortage hotspots</h2>
-            <p>Find areas that need food most.</p>
+            <p className="donor-dashboard-card-eyebrow">{t('donorWorkspace.cards.hotspots.eyebrow', 'Decision support')}</p>
+            <h2>{t('donorWorkspace.cards.hotspots.title', 'View food shortage hotspots')}</h2>
+            <p>{t('donorWorkspace.cards.hotspots.description', 'Find areas that need food most.')}</p>
             <button type="button" className="donor-dashboard-card-cta" onClick={() => goTo('/donor/hotspots')}>
-              View hotspot map
+              {t('donorWorkspace.cards.hotspots.button', 'View hotspot map')}
               <span className="material-symbols-outlined">arrow_forward</span>
             </button>
           </article>
 
           <article className="donor-dashboard-card donor-dashboard-card--listings">
-            <p className="donor-dashboard-card-eyebrow">My activity</p>
-            <h2>Manage my listings</h2>
-            <p>View or edit your posts.</p>
+            <p className="donor-dashboard-card-eyebrow">{t('donorWorkspace.cards.listings.eyebrow', 'My activity')}</p>
+            <h2>{t('donorWorkspace.cards.listings.title', 'Manage my listings')}</h2>
+            <p>{t('donorWorkspace.cards.listings.description', 'View or edit your posts.')}</p>
             <button type="button" className="donor-dashboard-card-cta" onClick={() => goTo('/donor/listings')}>
-              Open my listings
+              {t('donorWorkspace.cards.listings.button', 'Open my listings')}
               <span className="material-symbols-outlined">arrow_forward</span>
             </button>
           </article>

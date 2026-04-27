@@ -16,6 +16,101 @@
     "eyebrow": "Local food sharing",
     "support": "Post surplus food for your community, or browse available food to claim."
   },
+  "donorNav": {
+    "post": "Post food",
+    "listings": "My listings",
+    "hotspots": "Hotspots"
+  },
+  "donorWorkspace": {
+    "eyebrow": "Donor workspace",
+    "title": "Choose your next donor task",
+    "subtitle": "Post food, check shortage hotspots, or manage the listings you have already shared.",
+    "currentPostcodeAria": "Current donor postcode",
+    "currentPostcodeLabel": "Current postcode",
+    "currentPostcodeFallback": "Add when you post food",
+    "actionsAria": "Donor workspace actions",
+    "cards": {
+      "post": {
+        "eyebrow": "Post food",
+        "title": "Post surplus food",
+        "description": "Share food you have available.",
+        "button": "Open posting form"
+      },
+      "hotspots": {
+        "eyebrow": "Decision support",
+        "title": "View food shortage hotspots",
+        "description": "Find areas that need food most.",
+        "button": "View hotspot map"
+      },
+      "listings": {
+        "eyebrow": "My activity",
+        "title": "Manage my listings",
+        "description": "View or edit your posts.",
+        "button": "Open my listings"
+      }
+    }
+  },
+  "hotspots": {
+    "ariaLabel": "Hotspot priority map",
+    "referencePostcode": "Reference postcode: {{postcode}}",
+    "referenceStatewide": "State-wide",
+    "eyebrow": "Hotspot map",
+    "title": "Food shortage hotspots",
+    "subtitle": "Hotspots are grouped by region to act like a suburb map when you scan for nearby need.",
+    "helper": "Start from region clusters, then open a postcode card to inspect exact shortage details.",
+    "chips": {
+      "all": "All hotspots",
+      "criticalTitle": "Show urgent shortage hotspots",
+      "critical": "Critical shortage · {{count}}",
+      "highTitle": "Show high-need hotspots",
+      "highEmptyTitle": "No high-need hotspots right now",
+      "high": "High need · {{count}}",
+      "watchTitle": "Show emerging-risk hotspots to monitor",
+      "watch": "Watchlist risk · {{count}}"
+    },
+    "controls": {
+      "view": "View",
+      "allRegions": "All regions (state-wide)",
+      "distance": "Distance",
+      "anyDistance": "Any distance",
+      "within10": "Within 10 km",
+      "within25": "Within 25 km",
+      "within50": "Within 50 km",
+      "sort": "Sort",
+      "sortPriority": "Priority (highest need first)",
+      "sortDistance": "Distance (closest first)"
+    },
+    "legendCopy": "Critical shortage = urgent need. High need = strong demand. Watchlist risk = areas to monitor next.",
+    "sampleNote": "Sample data only. Live hotspot scoring will be connected after database integration.",
+    "emptyTitle": "No hotspots match these filters.",
+    "emptyHint": "Try all regions or a wider distance range.",
+    "regionCount": "{{count}} hotspots",
+    "clusterClosest": "Closest {{distance}} km",
+    "clusterPriority": "Top priority {{score}}",
+    "clusterShortfall": "{{count}} portions short",
+    "priorityBands": {
+      "critical": "Critical hotspot",
+      "high": "High hotspot",
+      "watch": "Watchlist hotspot"
+    },
+    "metrics": {
+      "needScore": "Need score {{count}}",
+      "activeListings": "Active listings {{count}}",
+      "priority": "Priority {{count}}",
+      "distanceAway": "{{distance}} km away"
+    },
+    "detailTitle": "Hotspot detail · {{postcode}}",
+    "detailHint": "Only currently needed categories are shown.",
+    "detailStats": {
+      "shortfall": "Current shortfall",
+      "distance": "Approx. distance",
+      "nearestSupply": "Nearest supply point"
+    },
+    "portions": "{{count}} portions",
+    "kilometres": "{{distance}} km",
+    "nearestHub": "{{name}} ({{distance}} km)",
+    "shortageAmount": "{{count}} portions short"
+  },
   "postcode": {
     "title": "Enter your postcode",
     "subtitle": "Help us find food near you",

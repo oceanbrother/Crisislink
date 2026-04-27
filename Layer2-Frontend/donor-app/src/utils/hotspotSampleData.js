@@ -32,8 +32,8 @@ export const hotspotSampleZones = [
   {
     postcode: '3051',
     region: 'North Melbourne',
-    seifaScore: 971,
-    resourceRequirement: 81,
+    seifaScore: 942,
+    resourceRequirement: 89,
     activeListings: 1,
     estimatedPopulationInNeed: 1490,
     distanceToDonorKm: 7.9,
@@ -107,8 +107,8 @@ export const hotspotSampleZones = [
   {
     postcode: '3630',
     region: 'Regional North',
-    seifaScore: 952,
-    resourceRequirement: 79,
+    seifaScore: 938,
+    resourceRequirement: 88,
     activeListings: 1,
     estimatedPopulationInNeed: 1380,
     distanceToDonorKm: 183.5,
