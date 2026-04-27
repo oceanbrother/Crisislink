@@ -74,7 +74,7 @@
   padding-bottom: 8rem;
   padding-left: 1.5rem;
   padding-right: 1.5rem;
-  max-width: 700px;
+  max-width: 920px;
   margin: 0 auto;
   width: 100%;
 }
@@ -175,13 +175,17 @@
 .photo-preview {
   position: relative;
   margin-bottom: 2rem;
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--surface-container-lowest);
 }
 
 .photo-preview img {
   width: 100%;
-  max-height: 260px;
+  aspect-ratio: 4 / 3;
   object-fit: cover;
-  border-radius: var(--radius-lg);
+  object-position: center 58%;
+  display: block;
 }
 
 .btn-change-photo {
@@ -209,7 +213,7 @@
   background: var(--on-primary-container, #f5fff7);
   border: 1px solid var(--primary-fixed-dim);
   border-radius: var(--radius-lg);
-  padding: 2rem;
+  padding: 1.7rem;
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
   position: relative;
   overflow: hidden;
@@ -277,12 +281,12 @@
 
 .field-label {
   display: block;
-  font-size: 0.7rem;
-  font-weight: 700;
+  font-size: 0.84rem;
+  font-weight: 800;
   text-transform: uppercase;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.12em;
   color: var(--primary);
-  margin-bottom: 0.5rem;
+  margin-bottom: 0.65rem;
   margin-left: 0.25rem;
 }
 
@@ -301,8 +305,8 @@
   border-radius: 0.5rem;
   padding: 1rem 1.25rem;
   font-family: var(--font-body);
-  font-size: 1rem;
-  font-weight: 500;
+  font-size: 1.08rem;
+  font-weight: 600;
   color: var(--on-surface);
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
   transition: box-shadow 0.2s;
@@ -325,10 +329,11 @@
 
 .field-hint {
   display: block;
-  font-size: 0.75rem;
+  font-size: 0.92rem;
   color: var(--on-surface-variant);
   margin-top: 0.4rem;
   margin-left: 0.25rem;
+  line-height: 1.55;
 }
 
 /* ── Select field ─────────────────────────────────────────── */
@@ -343,8 +348,8 @@
   border-radius: 0.5rem;
   padding: 1rem 3rem 1rem 1.25rem;
   font-family: var(--font-body);
-  font-size: 1rem;
-  font-weight: 500;
+  font-size: 1.05rem;
+  font-weight: 600;
   color: var(--on-surface);
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
   appearance: none;
@@ -434,7 +439,7 @@
 }
 
 .form-footer-inner {
-  max-width: 700px;
+  max-width: 920px;
   margin: 0 auto;
 }
 
@@ -609,8 +614,19 @@
   background: #fff8f6;
 }
 
+.success-action-btn.text-danger {
+  border: none;
+  background: transparent;
+  color: #a8392b;
+  padding-top: 0.2rem;
+  padding-bottom: 0.2rem;
+  font-size: 0.92rem;
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+
 .ai-review-note {
-  margin: -0.5rem 0 1.25rem;
+  margin: -0.25rem 0 1.35rem;
   padding: 0.95rem 1rem;
   border-radius: 1rem;
   background: rgba(0, 105, 76, 0.06);
@@ -619,19 +635,19 @@
 
 .ai-review-note p {
   margin: 0 0 0.4rem;
-  font-size: 0.95rem;
-  font-weight: 700;
+  font-size: 1rem;
+  font-weight: 800;
   color: var(--primary);
 }
 
 .ai-review-note ul {
   margin: 0;
-  padding-left: 1rem;
+  padding-left: 1.15rem;
   display: grid;
-  gap: 0.28rem;
-  color: var(--on-surface-variant);
-  font-size: 0.9rem;
-  line-height: 1.45;
+  gap: 0.4rem;
+  color: var(--on-surface);
+  font-size: 0.93rem;
+  line-height: 1.5;
 }
 
 .form-input,
@@ -653,7 +669,7 @@
   border-radius: 1rem;
   padding: 1rem 1.25rem;
   font-family: var(--font-body);
-  font-size: 1rem;
+  font-size: 1.05rem;
   line-height: 1.55;
   color: var(--on-surface);
   box-shadow: 0 2px 8px rgba(0,0,0,0.04);
@@ -666,8 +682,8 @@
 }
 
 .field-hint.strong {
-  font-size: 0.9rem;
-  line-height: 1.5;
+  font-size: 1rem;
+  line-height: 1.6;
   color: var(--on-surface);
 }
 
@@ -693,7 +709,48 @@
   text-align: center;
 }
 
-input[type="date"].form-input {
-  appearance: none;
-  -webkit-appearance: none;
+.field-warning {
+  margin: 0.6rem 0 0;
+  color: #9c5e00;
+  font-size: 0.92rem;
+  line-height: 1.5;
+  font-weight: 700;
+}
+
+.date-input-wrapper {
+  position: relative;
+}
+
+.date-input-wrapper .form-input {
+  padding-right: 4rem;
+}
+
+.date-picker-trigger {
+  position: absolute;
+  right: 0.7rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 2.6rem;
+  height: 2.6rem;
+  border: none;
+  border-radius: 999px;
+  background: rgba(0, 105, 76, 0.08);
+  color: var(--primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.date-picker-trigger .material-symbols-outlined {
+  font-size: 1.25rem;
+}
+
+.date-picker-native {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
 }

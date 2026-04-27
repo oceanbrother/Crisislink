@@ -29,9 +29,9 @@ const OrgCodeInputPage = () => {
       return
     }
 
-    const orgSession = { orgCode: trimmed }
+    const orgSession = { orgCode: trimmed.toUpperCase() }
     window.localStorage.setItem(ORG_SESSION_KEY, JSON.stringify(orgSession))
-    navigate('/org/dashboard', { state: orgSession })
+    navigate('/org/listings', { state: orgSession })
   }
 
   return (
@@ -52,6 +52,9 @@ const OrgCodeInputPage = () => {
           <p className="org-code-desc">{t('orgCode.subtitle')}</p>
 
           <form onSubmit={handleSubmit} className="form-group">
+            <label className="org-code-label" htmlFor="org-code-input">
+              {t('orgCode.label')}
+            </label>
             <input
               id="org-code-input"
               className="org-code-input"
@@ -66,7 +69,7 @@ const OrgCodeInputPage = () => {
             {error && <div className="error-message">{error}</div>}
 
             <button type="submit" className="submit-btn">
-              {t('orgCode.button')} →
+              {t('orgCode.button')}
             </button>
 
             <button
@@ -77,7 +80,7 @@ const OrgCodeInputPage = () => {
               {t('common.back')}
             </button>
 
-            <p className="privacy-note">{t('common.secure')}</p>
+            <p className="privacy-note">{t('orgCode.note')}</p>
           </form>
         </div>
       </main>

@@ -2,12 +2,14 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { getAvailableListings, claimListing, unclaimListing, deleteListing } from '../services/api'
-import { FILTER_OPTIONS, formatBestBeforeLabel, normalizeCategory } from '../constants/listings'
+import { FILTER_OPTIONS, formatBestBeforeLabel, resolveListingCategory } from '../constants/listings'
+import OrgFeatureNav from '../components/OrgFeatureNav'
 import '../styles/LiveListingBoard.css'
 
-const getTranslatedCategory = (category, t) => {
-  const option = FILTER_OPTIONS.find((item) => item.value === category)
-  return t(`dashboard.tabs.${option?.key || 'other'}`, category)
+const getTranslatedCategory = (category, foodType, t) => {
+  const resolvedCategory = resolveListingCategory(category, foodType)
+  const option = FILTER_OPTIONS.find((item) => item.value === resolvedCategory)
+  return t(`dashboard.tabs.${option?.key || 'other'}`, resolvedCategory)
 }
 
 const getRelativeTime = (createdAt, t) => {
@@ -17,18 +19,69 @@ const getRelativeTime = (createdAt, t) => {
   const minutes = Math.floor(diff / 60000)
   const hours = Math.floor(diff / 3600000)
   const days = Math.floor(diff / 86400000)
-  
+
   if (minutes < 1) return t('listing.justNow')
   if (minutes < 60) return t('listing.minutesAgo', { count: minutes })
   if (hours < 24) return t('listing.hoursAgo', { count: hours })
   return t('listing.daysAgo', { count: days })
 }
 
+const tokenizeSearch = (value) => {
+  return String(value || '')
+    .toLowerCase()
+    .split(/[^\p{L}\p{N}]+/gu)
+    .filter(Boolean)
+}
+
+const matchesSearchFields = (fields, term) => {
+  const normalizedTerm = String(term || '').trim().toLowerCase()
+  if (!normalizedTerm) return true
+
+  return fields.some((value) => {
+    const text = String(value || '').toLowerCase().trim()
+    if (!text) return false
+    const tokens = tokenizeSearch(text)
+
+    if (normalizedTerm.length === 1) {
+      return tokens.some((token) => token.startsWith(normalizedTerm))
+    }
+
+    return text.includes(normalizedTerm) || tokens.some((token) => token.startsWith(normalizedTerm))
+  })
+}
+
+const getSearchableFields = (listing, term) => {
+  const normalizedTerm = String(term || '').trim().toLowerCase()
+  const primaryFields = [listing.foodType, listing.description]
+
+  if (!normalizedTerm) {
+    return primaryFields
+  }
+
+  const secondaryFields = [listing.orgCode]
+
+  if (normalizedTerm.length >= 2) {
+    secondaryFields.push(listing.sizeCue)
+  }
+
+  if (/\d/.test(normalizedTerm)) {
+    secondaryFields.push(listing.postcode)
+  }
+
+  if (normalizedTerm.length >= 3 && Array.isArray(listing.dietary_tags)) {
+    secondaryFields.push(listing.dietary_tags.join(' '))
+  }
+
+  return [...primaryFields, ...secondaryFields]
+}
+
 const getListingViewState = (listing, orgCode) => {
-  const ownerCode = String(listing?.orgCode || '')
-  const currentOrgCode = String(orgCode || '')
+  const ownerCode = String(listing?.orgCode || '').trim().toUpperCase()
+  const currentOrgCode = String(orgCode || '').trim().toUpperCase()
   const isOwnOrgListing = ownerCode !== '' && ownerCode === currentOrgCode
-  const isClaimedByCurrentOrg = listing?.status === 'claimed' && listing?.claimedBy === orgCode
+  const isClaimedByCurrentOrg =
+    listing?.status === 'claimed' &&
+    String(listing?.claimedBy || '').trim().toUpperCase() === currentOrgCode
 
   if (isOwnOrgListing) return 'posted'
   if (isClaimedByCurrentOrg) return 'claimed'
@@ -41,6 +94,13 @@ const VIEW_STATE_PRIORITY = {
   claimed: 2,
 }
 
+const STATUS_OPTIONS = [
+  { value: 'all', key: 'all', summaryKey: 'total', className: 'org-summary-card--all' },
+  { value: 'available', key: 'available', summaryKey: 'available', className: 'org-summary-card--available' },
+  { value: 'posted', key: 'posted', summaryKey: 'posted', className: 'org-summary-card--posted' },
+  { value: 'claimed', key: 'claimed', summaryKey: 'claimed', className: 'org-summary-card--claimed' },
+]
+
 const parseClaimQuantityValue = (value) => {
   const parsed = Number.parseFloat(String(value ?? '').replace(',', '.').trim())
   if (Number.isFinite(parsed) === false) return null
@@ -52,6 +112,24 @@ const formatQuantityValue = (value) => {
   if (Number.isFinite(numeric) === false) return String(value ?? '')
   return Number.isInteger(numeric) ? String(numeric) : String(numeric.toFixed(2)).replace(/\.00$/, '')
 }
+
+const formatSourceLabel = (listing, orgCode, t) => {
+  const ownerCode = String(listing?.orgCode || '').trim()
+  const currentOrgCode = String(orgCode || '').trim()
+
+  if (ownerCode && ownerCode.toUpperCase() === currentOrgCode.toUpperCase()) {
+    return t('dashboard.statusTabs.posted', 'Posted by us')
+  }
+
+  if (ownerCode.toUpperCase().startsWith('DONOR-')) {
+    return t('listing.fromDonorCode', { code: ownerCode })
+  }
+
+  return t('listing.fromOrganizationCode', {
+    code: ownerCode || t('dashboard.communityFallback', 'Community'),
+  })
+}
+
 const LiveListingBoard = () => {
   const navigate = useNavigate()
   const location = useLocation()
@@ -99,11 +177,14 @@ const LiveListingBoard = () => {
       ])
       const mergedData = [
         ...availableData,
-        ...claimedData.filter(listing => (listing.claimedBy || '') === orgCode),
+        ...claimedData.filter(
+          (listing) =>
+            String(listing.claimedBy || '').trim().toUpperCase() === String(orgCode || '').trim().toUpperCase(),
+        ),
       ]
       const formatted = mergedData.map(listing => ({
         ...listing,
-        category: normalizeCategory(listing.category || listing.foodType),
+        category: resolveListingCategory(listing.category, listing.foodType),
       }))
       setListings(formatted)
     } catch (err) {
@@ -118,7 +199,7 @@ const LiveListingBoard = () => {
     let filtered = listings
 
     if (filterCategory !== 'All') {
-      filtered = filtered.filter(l => normalizeCategory(l.category || l.foodType) === filterCategory)
+      filtered = filtered.filter(l => resolveListingCategory(l.category, l.foodType) === filterCategory)
     }
 
     if (filterStatus !== 'all') {
@@ -127,11 +208,8 @@ const LiveListingBoard = () => {
 
     if (searchTerm) {
       const term = searchTerm.toLowerCase()
-      filtered = filtered.filter(l =>
-        l.foodType.toLowerCase().includes(term) ||
-        (l.description || '').toLowerCase().includes(term) ||
-        (l.orgCode || '').toLowerCase().includes(term) ||
-        (Array.isArray(l.dietary_tags) ? l.dietary_tags.join(' ') : '').toLowerCase().includes(term)
+      filtered = filtered.filter((listing) =>
+        matchesSearchFields(getSearchableFields(listing, term), term),
       )
     }
 
@@ -231,6 +309,19 @@ const LiveListingBoard = () => {
     return Number(claimDialogListing.quantity || 0)
   }, [claimDialogListing])
 
+  const hasActiveSearch = searchTerm.trim() !== ''
+  const hasActiveCategoryFilter = filterCategory !== 'All'
+  const hasActiveStatusFilter = filterStatus !== 'all'
+  const hasActiveControls = hasActiveSearch || hasActiveCategoryFilter || hasActiveStatusFilter
+  const isBaseEmpty = listings.length === 0
+  const isFilteredEmpty = !loading && !isBaseEmpty && filteredListings.length === 0
+
+  const clearFilters = () => {
+    setSearchTerm('')
+    setFilterCategory('All')
+    setFilterStatus('all')
+  }
+
   const listingSummary = useMemo(() => {
     return listings.reduce((acc, listing) => {
       const state = getListingViewState(listing, orgCode)
@@ -311,60 +402,73 @@ const LiveListingBoard = () => {
           <button className="brand-home-btn org-brand-btn" type="button" onClick={() => navigate('/')}>
             <span className="brand-home-title">{t('appName')}</span>
           </button>
-
-          <button className="post-action-btn" onClick={handlePostExcess} title={t('dashboard.shareButton')}>
-            <span className="material-symbols-outlined">add</span>
-            {t('dashboard.shareButton')}
-          </button>
         </div>
         <div className="navbar-divider" />
       </header>
 
       <main className="feed-content org-feed-content">
+        <div className="org-area-nav-row">
+          <OrgFeatureNav active="listings" orgCode={orgCode} />
+        </div>
+
         <section className="org-page-intro org-hero-card">
-          <div className="org-page-heading">
-            <h1 className="board-title org-page-title">{t('dashboard.title')}</h1>
-            <div className="org-page-meta">
-              <span>{t('dashboard.orgCodeLabel', 'Org code')}: {orgCode}</span>
+          <div className="org-page-heading-row">
+            <div className="org-page-heading">
+              <h1 className="board-title org-page-title">{t('dashboard.title')}</h1>
+              <div className="org-page-meta org-page-meta-pill">
+                <span className="material-symbols-outlined">domain</span>
+                <span>{t('dashboard.signedInAs', { orgCode })}</span>
+              </div>
             </div>
+
+            <button className="post-action-btn org-page-action" onClick={handlePostExcess} title={t('dashboard.shareButton')}>
+              <span className="material-symbols-outlined">add</span>
+              {t('dashboard.shareButton')}
+            </button>
           </div>
 
-          <div className="org-summary-grid">
-            <div className="org-summary-card org-summary-card--all">
-              <span className="org-summary-label">{t('dashboard.statusTabs.all')}</span>
-              <strong>{listingSummary.total}</strong>
-            </div>
-            <div className="org-summary-card org-summary-card--available">
-              <span className="org-summary-label">{t('dashboard.statusTabs.available')}</span>
-              <strong>{listingSummary.available}</strong>
-            </div>
-            <div className="org-summary-card org-summary-card--posted">
-              <span className="org-summary-label">{t('dashboard.statusTabs.posted')}</span>
-              <strong>{listingSummary.posted}</strong>
-            </div>
-            <div className="org-summary-card org-summary-card--claimed">
-              <span className="org-summary-label">{t('dashboard.statusTabs.claimed')}</span>
-              <strong>{listingSummary.claimed}</strong>
-            </div>
+          <div className="org-summary-grid" role="tablist" aria-label={t('dashboard.filterLabels.status')}>
+            {STATUS_OPTIONS.map((option) => (
+              <button
+                key={option.value}
+                type="button"
+                role="tab"
+                aria-selected={filterStatus === option.value}
+                className={`org-summary-card ${option.className} ${filterStatus === option.value ? 'active' : ''}`}
+                onClick={() => setFilterStatus(option.value)}
+              >
+                <span className="org-summary-label">{t(`dashboard.statusTabs.${option.key}`)}</span>
+                <strong>{listingSummary[option.summaryKey] || 0}</strong>
+              </button>
+            ))}
           </div>
         </section>
 
         <section className="filter-section org-filter-section org-filter-panel">
-          <div className="search-wrapper org-search-wrapper">
+          <div className={hasActiveSearch ? 'search-wrapper org-search-wrapper org-search-wrapper--active' : 'search-wrapper org-search-wrapper'}>
             <span className="material-symbols-outlined search-icon">search</span>
             <input
               type="text"
               placeholder={t('feed.search')}
-              className="search-input"
+              className={hasActiveSearch ? 'search-input search-input--active' : 'search-input'}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
+            {hasActiveSearch ? (
+              <button
+                type="button"
+                className="search-clear-btn"
+                onClick={() => setSearchTerm('')}
+                aria-label={t('feed.clearSearch', 'Clear search')}
+              >
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            ) : null}
           </div>
 
           <div className="filter-group filter-panel-group">
             <div className="filter-group-heading">
               <div className="filter-group-label">{t('dashboard.filterLabels.category')}</div>
-              <p className="filter-group-help">{t('dashboard.filterLabels.allCategories')}</p>
             </div>
             <div className="filter-chips org-filter-chips">
             {FILTER_OPTIONS.map((option) => (
@@ -382,47 +486,57 @@ const LiveListingBoard = () => {
             </div>
           </div>
 
-          <div className="filter-group filter-panel-group filter-panel-group--status">
-            <div className="filter-group-heading">
-              <div className="filter-group-label">{t('dashboard.filterLabels.status')}</div>
-              <p className="filter-group-help">{t(`dashboard.statusTabs.${filterStatus}`)}</p>
-            </div>
-            <div className="filter-chips org-status-chips">
-            {[
-              { value: 'all', key: 'all' },
-              { value: 'available', key: 'available' },
-              { value: 'posted', key: 'posted' },
-              { value: 'claimed', key: 'claimed' },
-            ].map((option) => (
-              <button
-                key={option.value}
-                className={`filter-chip status-chip status-chip--${option.value} ${filterStatus === option.value ? 'active' : ''}`}
-                onClick={() => setFilterStatus(option.value)}
-                type="button"
-              >
-                {t(`dashboard.statusTabs.${option.key}`)}
+          {hasActiveControls ? (
+            <div className={`filter-feedback-row ${hasActiveSearch ? '' : 'filter-feedback-row--minimal'}`.trim()} aria-live="polite">
+              <div className="filter-feedback-pills">
+                {hasActiveSearch ? (
+                  <span className="filter-feedback-pill filter-feedback-pill--query">
+                    <span className="material-symbols-outlined">search</span>
+                    {t('feed.searchingFor', 'Searching for')} “{searchTerm.trim()}”
+                  </span>
+                ) : null}
+              </div>
+              <button type="button" className="filter-clear-btn" onClick={clearFilters}>
+                {t('feed.clearFilters', 'Clear filters')}
               </button>
-            ))}
             </div>
-          </div>
+          ) : (
+            <p className="filter-feedback-hint">{t('feed.filterHint', 'Search by food name, notes, size, or postcode.')}</p>
+          )}
 
           {error && <div className="alert alert-error">{error}</div>}
           {success && <div className="alert alert-success">{success}</div>}
 
-          <div className="feed-meta-row">
-            <span className="feed-count">{t('listing.itemsAvailable', { count: filteredListings.length })}</span>
-          </div>
+          {isFilteredEmpty ? null : (
+            <div className="feed-meta-row">
+              <span className={hasActiveControls ? 'feed-count feed-count--filtered' : 'feed-count'}>
+                {hasActiveControls
+                  ? t('dashboard.showingMatches', { count: filteredListings.length, defaultValue: `Showing ${filteredListings.length} matching listings` })
+                  : t('listing.itemsAvailable', { count: filteredListings.length })}
+              </span>
+            </div>
+          )}
         </section>
 
         <div className="food-grid org-food-grid">
           {loading ? (
-            <div className="loading-state">
+            <div className="loading-state empty-state--rich">
               <p>{t('common.loading')}</p>
             </div>
-          ) : filteredListings.length === 0 ? (
-            <div className="empty-state">
-              <span className="material-symbols-outlined">inbox</span>
-              <p>{t('feed.noListings')}</p>
+          ) : isBaseEmpty ? (
+            <div className="empty-state empty-state--rich">
+              <span className="material-symbols-outlined empty-state-icon">inventory_2</span>
+              <h3 className="empty-state-title">{t('dashboard.emptyTitle', 'No listings yet')}</h3>
+              <p className="empty-state-subtitle">{t('dashboard.emptyHint', 'Listings from donors and organizations will appear here as soon as they are posted.')}</p>
+            </div>
+          ) : isFilteredEmpty ? (
+            <div className="empty-state empty-state--rich">
+              <span className="material-symbols-outlined empty-state-icon">search_off</span>
+              <h3 className="empty-state-title">{t('dashboard.emptySearchTitle', 'No matching listings')}</h3>
+              <p className="empty-state-subtitle">{t('dashboard.emptySearchHint', 'Try another search term or clear the active category and status filters.')}</p>
+              <button type="button" className="empty-state-action" onClick={clearFilters}>
+                {t('feed.clearFilters', 'Clear filters')}
+              </button>
             </div>
           ) : (
             filteredListings.map(listing => {
@@ -436,19 +550,19 @@ const LiveListingBoard = () => {
                 {listing.photoUrl ? <img className="food-card-image" src={listing.photoUrl} alt={listing.foodType} /> : null}
 
                 <div className="food-card-header org-card-header">
-                  <div>
+                  <div className="org-card-heading-stack">
                     <h3 className="food-card-title org-card-title">{listing.foodType}</h3>
-                    <p className="food-card-source org-card-source">
-                      {isOwnOrgListing
-                        ? t('feed.postedByYou', 'Posted by you')
-                        : `${t('dashboard.donorCodeLabel', 'Donor code')}: ${listing.orgCode || 'Community'}`}
-                    </p>
-                  </div>
-                  <div className="org-card-side">
-                    <span className="food-card-category org-card-category">
-                      {getTranslatedCategory(listing.category, t)}
-                    </span>
-                    <span className="listing-time org-card-time">{getRelativeTime(listing.createdAt, t)}</span>
+                    <div className="org-card-meta-row">
+                      <p className="food-card-source org-card-source">
+                        {formatSourceLabel(listing, orgCode, t)}
+                      </p>
+                      <span className="listing-time org-card-time">{getRelativeTime(listing.createdAt, t)}</span>
+                    </div>
+                    <div className="org-card-category-row">
+                      <span className="food-card-category org-card-category">
+                        {getTranslatedCategory(listing.category, listing.foodType, t)}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -489,20 +603,27 @@ const LiveListingBoard = () => {
                   ) : null}
                 </div>
 
-                {listing.description ? (
-                  <div className="org-extra-notes">
-                    <strong>{t('donation.extraNotes', 'Extra notes')}</strong>
-                    <p>{listing.description}</p>
+                {(listing.description || dietaryTags.length > 0) ? (
+                  <div className="card-supporting-stack org-supporting-stack">
+                    {dietaryTags.length > 0 && (
+                      <div className="supporting-panel org-dietary-panel">
+                        <strong className="supporting-panel-label">{t('donation.dietary', 'Dietary tag')}</strong>
+                        <div className="tags-row org-tag-row supporting-tag-list">
+                          {dietaryTags.map((tag, i) => (
+                            <span key={i} className="tag-chip">{t(`listing.dietary.${tag}`, tag)}</span>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {listing.description ? (
+                      <div className="org-extra-notes supporting-panel">
+                        <strong className="supporting-panel-label">{t('donation.extraNotes', 'Extra notes')}</strong>
+                        <p>{listing.description}</p>
+                      </div>
+                    ) : null}
                   </div>
                 ) : null}
-
-                {dietaryTags.length > 0 && (
-                  <div className="tags-row org-tag-row">
-                    {dietaryTags.map((tag, i) => (
-                      <span key={i} className="tag-chip">{t(`listing.dietary.${tag}`, tag)}</span>
-                    ))}
-                  </div>
-                )}
 
                 {isOwnOrgListing ? (
                   <div className="food-card-actions donor-card-actions">
@@ -555,11 +676,14 @@ const LiveListingBoard = () => {
                 <button type="button" className="claim-dialog-close" onClick={closeClaimDialog}>×</button>
               </div>
               <p className="claim-dialog-subtitle">
-                {t('dashboard.claimDialog.available', { quantity: formatQuantityValue(claimDialogListing.quantity) })}
+                {t('dashboard.claimDialog.available', {
+                  quantity: formatQuantityValue(claimDialogListing.quantity),
+                  unit: t(`listing.units.${claimDialogListing.unit || 'portions'}`, claimDialogListing.unit || 'portions'),
+                })}
               </p>
               <div className="claim-dialog-card">
                 <strong>{claimDialogListing.foodType}</strong>
-                <span>{t('dashboard.donorCodeLabel', 'Donor code')}: {claimDialogListing.orgCode || 'Community'}</span>
+                <span>{formatSourceLabel(claimDialogListing, orgCode, t)}</span>
               </div>
               <div className="claim-quantity-control">
                 <button
@@ -571,14 +695,12 @@ const LiveListingBoard = () => {
                   −
                 </button>
                 <input
-                  type="number"
-                  min="1"
-                  max={maxClaimQuantity}
-                  step="1"
+                  type="text"
+                  inputMode="decimal"
                   className="claim-quantity-input"
                   value={claimQuantity}
                   onChange={(event) => {
-                    setClaimQuantity(event.target.value)
+                    setClaimQuantity(event.target.value.replace(/[^0-9.]/g, ''))
                     if (claimError) setClaimError('')
                   }}
                 />

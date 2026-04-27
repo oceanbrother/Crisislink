@@ -41,13 +41,80 @@ const CATEGORY_ALIASES = {
   other: 'Other',
 }
 
+const CATEGORY_KEYWORDS = {
+  'Prepared meals': [
+    'sandwich',
+    'burger',
+    'wings',
+    'chicken',
+    'meal',
+    'rice',
+    'curry',
+    'pasta',
+    'soup',
+    'pizza',
+    'lasagna',
+    'noodle',
+    'dumpling',
+    'salad',
+    'wrap',
+    'taco',
+    'sushi',
+    'burrito',
+    'quesadilla',
+    'hot dog',
+  ],
+  Dairy: ['cheese', 'milk', 'yogurt', 'yoghurt', 'cream', 'butter', 'egg'],
+  'Baked goods': ['bread', 'cake', 'muffin', 'pastry', 'croissant', 'donut', 'cookie', 'brownie', 'bun', 'scone', 'loaf', 'pie', 'tart'],
+  'Fruit & veg': ['apple', 'banana', 'orange', 'berry', 'berries', 'grape', 'melon', 'lettuce', 'tomato', 'carrot', 'broccoli', 'spinach', 'fruit', 'vegetable', 'veg'],
+  Pantry: ['cereal', 'beans', 'lentils', 'flour', 'oil', 'spice', 'seasoning', 'jar', 'tin', 'canned', 'sauce', 'crackers', 'pasta pack', 'rice pack'],
+}
+
+const DIETARY_KEYWORDS = {
+  vegan: ['vegan', 'tofu', 'falafel', 'hummus', 'lentil', 'bean'],
+  vegetarian: ['vegetarian', 'cheese', 'egg', 'omelette', 'macaroni', 'grilled cheese'],
+  'non-vegetarian': ['chicken', 'beef', 'pork', 'ham', 'bacon', 'fish', 'salmon', 'tuna', 'shrimp', 'meat', 'wings', 'burger', 'steak'],
+}
+
+function findKeywordMatch(value, keywordGroups) {
+  const text = String(value || '').trim().toLowerCase()
+  if (!text) return null
+
+  for (const [group, keywords] of Object.entries(keywordGroups)) {
+    if (keywords.some((keyword) => text.includes(keyword))) {
+      return group
+    }
+  }
+
+  return null
+}
+
 export function normalizeCategory(value) {
   if (value === undefined || value === null || String(value).trim() === '') {
     return 'Other'
   }
   const normalized = String(value).trim().toLowerCase().replace(/[_-]/g, ' ')
   const compact = normalized.replace(/\s+/g, '')
-  return CATEGORY_ALIASES[compact] || CATEGORY_ALIASES[normalized] || 'Other'
+  return CATEGORY_ALIASES[compact] || CATEGORY_ALIASES[normalized] || inferCategoryFromFoodName(value)
+}
+
+export function inferCategoryFromFoodName(value) {
+  return findKeywordMatch(value, CATEGORY_KEYWORDS) || 'Other'
+}
+
+export function resolveListingCategory(category, foodName) {
+  const normalizedCategory = normalizeCategory(category)
+  const inferredCategory = inferCategoryFromFoodName(foodName)
+
+  if (normalizedCategory === 'Other' && inferredCategory !== 'Other') {
+    return inferredCategory
+  }
+
+  if (normalizedCategory === 'Baked goods' && inferredCategory === 'Prepared meals') {
+    return inferredCategory
+  }
+
+  return normalizedCategory
 }
 
 export const DIETARY_OPTIONS = [
@@ -68,6 +135,10 @@ export function getPrimaryDietaryChoice(tags = []) {
   }
   if (normalized.includes('non')) return 'non-vegetarian'
   return 'none'
+}
+
+export function inferDietaryChoiceFromFoodName(value) {
+  return findKeywordMatch(value, DIETARY_KEYWORDS) || 'none'
 }
 
 export function buildDietaryTags(choice) {
