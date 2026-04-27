@@ -18,7 +18,10 @@ import {
   resolveListingCategory,
   SIZE_CUE_OPTIONS,
 } from '../constants/listings'
+import DonorFeatureNav from './DonorFeatureNav'
 import { forgetDonorListing, getOrCreateDonorCode, rememberDonorListing } from '../utils/donorIdentity'
+import { resolveImageUrl } from '../utils/imageUrl'
+import { getSavedDonorPostcode, saveDonorPostcode } from '../utils/donorPostcode'
 import '../styles/DonationForm.css'
 
 const DEFAULT_CATEGORY = 'Baked goods'
@@ -63,6 +66,15 @@ function parseQuantityValue(value) {
   const parsed = Number.parseFloat(String(value ?? '').replace(',', '.').trim())
   if (Number.isFinite(parsed) === false) return null
   return parsed
+}
+
+function fileToDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader()
+    reader.onload = () => resolve(String(reader.result || ''))
+    reader.onerror = () => reject(new Error('Unable to read image file'))
+    reader.readAsDataURL(file)
+  })
 }
 
 function normalizeDateInput(value) {
@@ -132,7 +144,7 @@ function buildInitialState({ postcode, orgMode, initialOrgCode, listing }) {
 }
 
 const DonationForm = () => {
-  const { postcode } = useParams()
+  const { postcode: routePostcode } = useParams()
   const navigate = useNavigate()
   const location = useLocation()
   const { t } = useTranslation()
@@ -145,6 +157,13 @@ const DonationForm = () => {
   const orgName = location.state?.orgName || ''
   const editingListing = location.state?.listing || null
   const editMode = Boolean(location.state?.editMode && editingListing)
+  const postcode = String(
+    routePostcode ||
+      location.state?.postcode ||
+      editingListing?.postcode ||
+      getSavedDonorPostcode() ||
+      '',
+  ).trim()
 
   const [formData, setFormData] = useState(() =>
     buildInitialState({ postcode, orgMode, initialOrgCode, listing: editingListing }),
@@ -154,6 +173,7 @@ const DonationForm = () => {
   const [error, setError] = useState('')
   const [aiWarning, setAiWarning] = useState('')
   const [successListing, setSuccessListing] = useState(null)
+  const [previewLoadFailed, setPreviewLoadFailed] = useState(false)
 
   const pageTitle = useMemo(() => {
     if (editMode) return t('donation.editTitle', 'Edit listing')
@@ -167,11 +187,18 @@ const DonationForm = () => {
     setError('')
     setAiWarning('')
     setSuccessListing(null)
+    setPreviewLoadFailed(false)
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
     selectedFileRef.current = null
   }, [postcode, orgMode, initialOrgCode, editMode, editingListing?.id])
+
+  useEffect(() => {
+    if (!orgMode && formData.postcode && /^\d{4}$/.test(String(formData.postcode).trim())) {
+      saveDonorPostcode(formData.postcode)
+    }
+  }, [formData.postcode, orgMode])
 
   const handleQuantityAdjust = (delta) => {
     setFormData((prev) => {
@@ -192,12 +219,7 @@ const DonationForm = () => {
       navigate('/org/listings', { state: { orgCode: initialOrgCode } })
       return
     }
-    const targetPostcode = formData.postcode || postcode
-    if (targetPostcode) {
-      navigate('/feed/' + targetPostcode)
-      return
-    }
-    navigate('/')
+    navigate('/donor', { state: { postcode: formData.postcode || postcode } })
   }
 
   const handleFileChange = async (event) => {
@@ -205,6 +227,7 @@ const DonationForm = () => {
     if (!file) return
 
     selectedFileRef.current = file
+    setPreviewLoadFailed(false)
     setAiProcessing(true)
     setError('')
     setAiWarning('')
@@ -262,6 +285,7 @@ const DonationForm = () => {
 
   const quantityValue = parseQuantityValue(formData.quantity)
   const showQuantityWarning = quantityValue !== null && quantityValue > MAX_CONFIDENT_AI_QUANTITY
+  const previewImageUrl = resolveImageUrl(formData.photoUrl)
 
   const handleRemoveListing = async (listing) => {
     if (!listing) return
@@ -274,7 +298,7 @@ const DonationForm = () => {
       if (orgMode) {
         navigate('/org/listings', { state: { orgCode: initialOrgCode } })
       } else {
-        navigate('/feed/' + listing.postcode)
+        navigate('/donor/listings', { state: { postcode: listing.postcode } })
       }
     } catch (err) {
       console.error('Remove listing error:', err)
@@ -310,9 +334,14 @@ const DonationForm = () => {
       if (selectedFileRef.current) {
         try {
           const uploadResult = await uploadImage(selectedFileRef.current)
-          permanentPhotoUrl = uploadResult.url
+          permanentPhotoUrl = resolveImageUrl(uploadResult?.url)
         } catch (uploadErr) {
-          console.warn('Image upload failed, continuing with existing image:', uploadErr)
+          console.warn('Image upload failed, saving data-url fallback instead:', uploadErr)
+          try {
+            permanentPhotoUrl = await fileToDataUrl(selectedFileRef.current)
+          } catch (fallbackErr) {
+            console.warn('Image fallback conversion failed, continuing with existing image:', fallbackErr)
+          }
         }
       }
 
@@ -369,20 +398,21 @@ const DonationForm = () => {
                 if (orgMode) {
                   navigate('/org/listings', { state: { orgCode: initialOrgCode } })
                 } else {
-                  navigate('/feed/' + successListing.postcode)
+                  navigate('/donor/listings', { state: { postcode: successListing.postcode } })
                 }
               }}
             >
               {orgMode
                 ? t('donation.actions.backDashboard', 'Back to dashboard')
-                : t('donation.actions.backListings', 'Back to live listings')}
+                : t('donation.actions.backListings', 'Back to my listings')}
             </button>
             <button
               type="button"
               className="success-action-btn"
               onClick={() =>
-                navigate('/form/' + successListing.postcode, {
+                navigate('/donor/post', {
                   state: {
+                    postcode: successListing.postcode,
                     editMode: true,
                     listing: successListing,
                     orgMode,
@@ -394,8 +424,12 @@ const DonationForm = () => {
             >
               {t('donation.actions.editListing', 'Edit this listing')}
             </button>
-            <button type="button" className="success-action-btn" onClick={() => navigate('/')}>
-              {t('donation.actions.backHome', 'Back to home')}
+            <button
+              type="button"
+              className="success-action-btn"
+              onClick={() => navigate(orgMode ? '/' : '/donor', { state: { postcode: successListing.postcode } })}
+            >
+              {orgMode ? t('donation.actions.backHome', 'Back to home') : 'Back to donor workspace'}
             </button>
             <button
               type="button"
@@ -428,6 +462,12 @@ const DonationForm = () => {
         <div className="form-header-divider" />
       </header>
 
+      {orgMode ? null : (
+        <div className="donor-form-nav-row">
+          <DonorFeatureNav active="post" postcode={formData.postcode || postcode} />
+        </div>
+      )}
+
       <form onSubmit={handleSubmit}>
         <main className="form-content">
           <header className="form-hero">
@@ -441,14 +481,15 @@ const DonationForm = () => {
             </p>
           </header>
 
-          {formData.photoUrl ? (
+          {previewImageUrl && !previewLoadFailed ? (
             <div className="photo-preview">
-              <img src={formData.photoUrl} alt="Food" />
+              <img src={previewImageUrl} alt="Food" onError={() => setPreviewLoadFailed(true)} />
               <button
                 type="button"
                 className="btn-change-photo"
                 onClick={() => {
                   selectedFileRef.current = null
+                  setPreviewLoadFailed(false)
                   handleChange('photoUrl', null)
                   if (fileInputRef.current) fileInputRef.current.value = ''
                 }}

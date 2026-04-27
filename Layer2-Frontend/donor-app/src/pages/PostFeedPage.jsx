@@ -1,9 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
+import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { deleteListing, getAvailableListings } from '../services/api'
 import { FILTER_OPTIONS, formatBestBeforeLabel, resolveListingCategory } from '../constants/listings'
+import DonorFeatureNav from '../components/DonorFeatureNav'
 import { forgetDonorListing, getOrCreateDonorCode, isRememberedDonorListing } from '../utils/donorIdentity'
+import { resolveImageUrl } from '../utils/imageUrl'
+import { getSavedDonorPostcode, saveDonorPostcode } from '../utils/donorPostcode'
 import '../styles/PostFeedPage.css'
 
 function getDietaryClass(tag) {
@@ -77,8 +80,9 @@ function getSearchableFields(listing, term) {
 }
 
 const PostFeedPage = () => {
-  const { postcode } = useParams()
+  const { postcode: routePostcode } = useParams()
   const navigate = useNavigate()
+  const location = useLocation()
   const { t, i18n } = useTranslation()
 
   const [activeFilter, setActiveFilter] = useState('All')
@@ -87,13 +91,19 @@ const PostFeedPage = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [showLanguageMenu, setShowLanguageMenu] = useState(false)
+  const [brokenImageIds, setBrokenImageIds] = useState([])
 
   const donorCode = useMemo(() => getOrCreateDonorCode(), [])
+  const postcode = String(routePostcode || location.state?.postcode || getSavedDonorPostcode() || '').trim()
 
   const fetchListings = async () => {
     try {
       setLoading(true)
-      const data = await getAvailableListings({ postcode, status: 'available' })
+      const filters = { status: 'available' }
+      if (postcode) {
+        filters.postcode = postcode
+      }
+      const data = await getAvailableListings(filters)
       setListings(Array.isArray(data) ? data : [])
       setError('')
     } catch (err) {
@@ -106,6 +116,7 @@ const PostFeedPage = () => {
   }
 
   useEffect(() => {
+    saveDonorPostcode(postcode)
     fetchListings()
   }, [postcode])
 
@@ -145,8 +156,9 @@ const PostFeedPage = () => {
   }
 
   const handleEdit = (listing) => {
-    navigate('/form/' + listing.postcode, {
+    navigate('/donor/post', {
       state: {
+        postcode: listing.postcode,
         editMode: true,
         listing,
         orgMode: false,
@@ -165,19 +177,23 @@ const PostFeedPage = () => {
     }
   }
 
+  const markImageBroken = (listingId) => {
+    setBrokenImageIds((prev) => (prev.includes(listingId) ? prev : [...prev, listingId]))
+  }
+
   return (
     <div className="post-feed-page donor-role-page">
       <header className="navbar donor-navbar">
         <div className="navbar-inner donor-navbar-inner">
-          <button className="brand-home-btn" type="button" onClick={() => navigate('/')}>
+          <button
+            className="brand-home-btn"
+            type="button"
+            onClick={() => navigate('/donor', { state: { postcode } })}
+          >
             <span className="brand-home-title">{t('appName')}</span>
           </button>
 
           <div className="nav-actions donor-nav-actions">
-            <button className="post-action-btn" type="button" onClick={() => navigate('/form/' + postcode)}>
-              <span className="material-symbols-outlined">add</span>
-              {t('feed.shareButton', 'Post surplus')}
-            </button>
             <div className="language-btn-wrapper">
               <button className="nav-icon-btn" type="button" onClick={() => setShowLanguageMenu((prev) => !prev)}>
                 <span className="material-symbols-outlined">language</span>
@@ -195,16 +211,24 @@ const PostFeedPage = () => {
       </header>
 
       <main className="feed-content donor-feed-content">
-        <section className="donor-page-intro">
+        <div className="donor-area-nav-row">
+          <DonorFeatureNav active="listings" postcode={postcode} />
+        </div>
+
+        <section className="donor-page-intro donor-page-intro--listings">
           <div className="donor-page-heading">
             <h1 className="board-title donor-page-title">{t('feed.pageTitle', 'Your donor listings')}</h1>
-            <div className="donor-page-location-card" role="group" aria-label={t('listing.postcode', 'Postcode')}>
+            <div
+              className="donor-page-location-card donor-page-location-card--compact"
+              role="group"
+              aria-label={t('listing.postcode', 'Postcode')}
+            >
               <div className="donor-page-location-badge">
                 <span className="material-symbols-outlined donor-page-location-icon">location_on</span>
               </div>
               <div className="donor-page-location-copy">
                 <span className="donor-page-location-label">{t('listing.postcode', 'Postcode')}</span>
-                <span className="donor-page-location-value">{postcode}</span>
+                <span className="donor-page-location-value">{postcode || 'Saved on next post'}</span>
               </div>
             </div>
           </div>
@@ -308,10 +332,19 @@ const PostFeedPage = () => {
               const categoryOption = FILTER_OPTIONS.find((option) => option.value === category)
               const listingLocked = ownListing && listing.hasClaims
               const relativeTime = getRelativeTime(listing.createdAt, t)
+              const imageUrl = resolveImageUrl(listing.photoUrl)
+              const shouldShowImage = imageUrl && !brokenImageIds.includes(listing.id)
 
               return (
                 <article key={listing.id} className={ownListing ? 'food-card own-listing-card donor-card' : 'food-card donor-card'}>
-                  {listing.photoUrl ? <img className="food-card-image" src={listing.photoUrl} alt={listing.foodType} /> : null}
+                  {shouldShowImage ? (
+                    <img
+                      className="food-card-image"
+                      src={imageUrl}
+                      alt={listing.foodType}
+                      onError={() => markImageBroken(listing.id)}
+                    />
+                  ) : null}
 
                   <div className="food-card-header donor-card-header">
                     <div className="donor-card-heading-stack">

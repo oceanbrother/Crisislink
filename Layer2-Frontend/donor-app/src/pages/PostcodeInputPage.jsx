@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import { saveDonorPostcode } from '../utils/donorPostcode'
 import '../styles/PostcodeInputPage.css'
 
 const PostcodeInputPage = () => {
@@ -22,7 +23,8 @@ const PostcodeInputPage = () => {
   const handleSubmit = (e) => {
     e.preventDefault()
     if (/^\d{4}$/.test(postcode)) {
-      navigate(`/feed/${postcode}`)
+      saveDonorPostcode(postcode)
+      navigate('/donor', { state: { postcode } })
     } else {
       setError(t('postcode.invalid'))
     }
