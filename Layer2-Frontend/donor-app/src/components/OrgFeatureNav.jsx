@@ -26,6 +26,13 @@ const OrgFeatureNav = ({ active = 'listings', orgCode = '' }) => {
       >
         {t('common.alerts')}
       </button>
+      <button
+        type="button"
+        className={`org-feature-nav-button ${active === 'gaps' ? 'active' : ''}`.trim()}
+        onClick={() => goTo('/org/gaps')}
+      >
+        {t('dashboard.coverageInsights.navLabel', 'Supply gaps')}
+      </button>
     </section>
   )
 }

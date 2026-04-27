@@ -143,11 +143,13 @@ const DonationForm = () => {
   const orgMode = location.state?.orgMode || false
   const initialOrgCode = location.state?.orgCode || ''
   const orgName = location.state?.orgName || ''
+  const focusPostcode = String(location.state?.focusPostcode || '').trim()
   const editingListing = location.state?.listing || null
   const editMode = Boolean(location.state?.editMode && editingListing)
+  const effectivePostcode = postcode || focusPostcode
 
   const [formData, setFormData] = useState(() =>
-    buildInitialState({ postcode, orgMode, initialOrgCode, listing: editingListing }),
+    buildInitialState({ postcode: effectivePostcode, orgMode, initialOrgCode, listing: editingListing }),
   )
   const [loading, setLoading] = useState(false)
   const [aiProcessing, setAiProcessing] = useState(false)
@@ -163,7 +165,7 @@ const DonationForm = () => {
   const donorOrgCode = orgMode ? String(initialOrgCode || '').toUpperCase() : getOrCreateDonorCode()
 
   useEffect(() => {
-    setFormData(buildInitialState({ postcode, orgMode, initialOrgCode, listing: editingListing }))
+    setFormData(buildInitialState({ postcode: effectivePostcode, orgMode, initialOrgCode, listing: editingListing }))
     setError('')
     setAiWarning('')
     setSuccessListing(null)
@@ -171,7 +173,7 @@ const DonationForm = () => {
       fileInputRef.current.value = ''
     }
     selectedFileRef.current = null
-  }, [postcode, orgMode, initialOrgCode, editMode, editingListing?.id])
+  }, [effectivePostcode, orgMode, initialOrgCode, editMode, editingListing?.id])
 
   const handleQuantityAdjust = (delta) => {
     setFormData((prev) => {
@@ -645,6 +647,14 @@ const DonationForm = () => {
               </div>
 
               <div className="ai-field">
+                {orgMode && focusPostcode ? (
+                  <p className="response-context-hint">
+                    {t('donation.respondingToPostcode', {
+                      postcode: focusPostcode,
+                      defaultValue: 'Responding to supply gap in {{postcode}}',
+                    })}
+                  </p>
+                ) : null}
                 <label className="field-label" htmlFor="postcodeField">{t('donation.postcode')}</label>
                 <input
                   id="postcodeField"

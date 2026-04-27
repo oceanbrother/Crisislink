@@ -13,6 +13,7 @@ import DonationFormPage from './pages/DonationFormPage'
 import OrgCodeInputPage from './pages/OrgCodeInputPage'
 import LiveListingBoard from './pages/LiveListingBoard'
 import OrgAlertsPage from './pages/OrgAlertsPage'
+import OrgSupplyGapPage from './pages/OrgSupplyGapPage'
 
 function PasswordGate({ expectedPassword, children }) {
   const { t } = useTranslation()
@@ -106,10 +107,11 @@ function AppRoutes() {
       <Route path="/form/:postcode" element={<DonationFormPage />} />
       <Route path="/form" element={<DonationFormPage />} />
 
-      {/* Organization flow: code -> listings + alerts */}
+      {/* Organization flow: code -> listings + alerts + supply gaps */}
       <Route path="/org/code" element={<OrgCodeInputPage />} />
       <Route path="/org/listings" element={<LiveListingBoard />} />
       <Route path="/org/alerts" element={<OrgAlertsPage />} />
+      <Route path="/org/gaps" element={<OrgSupplyGapPage />} />
 
       {/* Catch all - redirect to home */}
       <Route path="*" element={<Navigate to="/" replace />} />

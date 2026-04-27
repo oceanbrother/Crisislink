@@ -230,6 +230,45 @@
       "noDataHint": "等 forecasting 数据源接入后，这里会显示需求预警。",
       "loadErrorTitle": "无法加载预警页面",
       "loadErrorHint": "当前无法读取该预警视图所需的实时列表数据，请稍后再试。"
+    },
+    "coverageInsights": {
+      "title": "供给覆盖监测",
+      "kicker": "覆盖",
+      "subtitle": "识别高需求且活跃食物供给偏低或为零的邮编区域。",
+      "sampleNote": "当前展示的是临时邮编样例数据，待实时 coverage map 数据接入后会替换。",
+      "summary": {
+        "zeroSupply": "个零供给热点",
+        "atRisk": "个风险邮编",
+        "tracked": "个追踪邮编"
+      },
+      "hotspotsTitle": "高需求且暂无活跃供给的区域",
+      "hotspotsHint": "这些邮编目前在实时面板中没有可领取物品。",
+      "watchTitle": "覆盖预警名单",
+      "watchHint": "这些邮编当前活跃份数可能不足，建议提前调配。",
+      "allCovered": "当前所有重点邮编都存在活跃供给。",
+      "noWatch": "目前没有额外的预警邮编。",
+      "detailTitle": "邮编详情面板",
+      "detailHint": "使用此面板辅助优先区域的调配决策。",
+      "fields": {
+        "seifa": "SEIFA 分数",
+        "activeListings": "活跃列表数量",
+        "population": "预计有需求人口",
+        "nearestSupply": "最近活跃供给点"
+      },
+      "badges": {
+        "zeroSupply": "暂无供给"
+      },
+      "coverage": {
+        "none": "无覆盖",
+        "low": "覆盖偏低",
+        "watch": "需关注",
+        "healthy": "覆盖稳定"
+      },
+      "respondAction": "响应该邮编",
+      "noDataTitle": "暂无覆盖数据",
+      "noDataHint": "当列表数据足够时，这里会显示覆盖热点。",
+      "loadErrorTitle": "无法加载覆盖洞察",
+      "loadErrorHint": "当前无法读取邮编覆盖分析所需数据，请稍后再试。"
     }
   },
   "listing": {
