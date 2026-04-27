@@ -56,10 +56,17 @@ export const buildDemandInsights = (listings) => {
     })[0]
   })()
 
+  const alerts = [...enriched].sort((left, right) => {
+    if (right.demandLift !== left.demandLift) return right.demandLift - left.demandLift
+    if (right.confidence !== left.confidence) return right.confidence - left.confidence
+    return right.pressureScore - left.pressureScore
+  })
+
   const fallbackTopAlert = getFallbackTopAlert()
 
   return {
     source: ALERT_DATA_SOURCE,
+    alerts,
     topAlert,
     fallbackTopAlert,
   }
