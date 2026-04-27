@@ -392,22 +392,64 @@ const DonationForm = () => {
               ? t('donation.success.orgMessage')
               : t('donation.success.donorMessage')}
           </p>
+          {!orgMode ? (
+            <div className="success-next-step">
+              <strong>{t('donation.success.nextStepLabel', 'Next step')}</strong>
+              <p>{t('donation.success.nextStepHint', 'Check nearby food shortage hotspots to see where your donation can help most.')}</p>
+            </div>
+          ) : null}
           <div className="success-action-stack">
             <button
               type="button"
               className="success-action-btn primary"
               onClick={() => {
                 if (orgMode) {
-                  navigate('/org/listings', { state: { orgCode: initialOrgCode } })
+                  navigate('/org/listings', {
+                    state: { orgCode: initialOrgCode || successListing.orgCode || '' },
+                  })
                 } else {
                   navigate('/donor/listings', { state: { postcode: successListing.postcode } })
                 }
               }}
             >
               {orgMode
-                ? t('donation.actions.backDashboard', 'Back to dashboard')
+                ? t('donation.actions.backOrgListings', 'Back to food listings')
                 : t('donation.actions.backListings', 'Back to my listings')}
             </button>
+            {orgMode ? (
+              <>
+                <button
+                  type="button"
+                  className="success-action-btn"
+                  onClick={() =>
+                    navigate('/org/alerts', {
+                      state: { orgCode: initialOrgCode || successListing.orgCode || '' },
+                    })
+                  }
+                >
+                  {t('donation.actions.viewOrgAlerts', 'Review alerts')}
+                </button>
+                <button
+                  type="button"
+                  className="success-action-btn"
+                  onClick={() =>
+                    navigate('/org/gaps', {
+                      state: { orgCode: initialOrgCode || successListing.orgCode || '' },
+                    })
+                  }
+                >
+                  {t('donation.actions.viewOrgGaps', 'Review supply gaps')}
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                className="success-action-btn"
+                onClick={() => navigate('/donor/hotspots', { state: { postcode: successListing.postcode } })}
+              >
+                {t('donation.actions.viewHotspots', 'See where food is needed')}
+              </button>
+            )}
             <button
               type="button"
               className="success-action-btn"
@@ -426,13 +468,15 @@ const DonationForm = () => {
             >
               {t('donation.actions.editListing', 'Edit this listing')}
             </button>
-            <button
-              type="button"
-              className="success-action-btn"
-              onClick={() => navigate(orgMode ? '/' : '/donor', { state: { postcode: successListing.postcode } })}
-            >
-              {orgMode ? t('donation.actions.backHome', 'Back to home') : 'Back to donor workspace'}
-            </button>
+            {!orgMode ? (
+              <button
+                type="button"
+                className="success-action-btn"
+                onClick={() => navigate('/donor', { state: { postcode: successListing.postcode } })}
+              >
+                Back to donor workspace
+              </button>
+            ) : null}
             <button
               type="button"
               className="success-action-btn text-danger"

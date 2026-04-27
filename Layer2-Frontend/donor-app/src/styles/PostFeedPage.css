@@ -995,6 +995,11 @@
   flex-wrap: wrap;
 }
 
+.hotspot-board-title-wrap {
+  min-width: 280px;
+  flex: 1 1 520px;
+}
+
 .hotspot-eyebrow {
   margin: 0 0 0.25rem;
   font-size: 0.78rem;
@@ -1025,6 +1030,51 @@
   font-weight: 700;
 }
 
+.hotspot-reference-anchor {
+  margin: 0.55rem 0 0;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  border-radius: 999px;
+  border: 1px solid rgba(136, 82, 0, 0.14);
+  background: rgba(255, 255, 255, 0.92);
+  padding: 0.3rem 0.65rem;
+  font-size: 0.9rem;
+  color: #5e4418;
+  font-weight: 700;
+}
+
+.hotspot-reference-anchor .material-symbols-outlined {
+  font-size: 1rem;
+  color: #8b5e12;
+}
+
+.hotspot-top-priority-copy {
+  margin: 0.6rem 0 0;
+  color: #5e4418;
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.hotspot-top-priority-copy strong {
+  color: #4d3511;
+}
+
+.hotspot-chip-filter-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.hotspot-chip-filter-label {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: #5e4418;
+  white-space: nowrap;
+}
+
 .donor-page-meta-pill--hotspots {
   padding: 0.6rem 0.9rem;
   border-radius: 999px;
@@ -1040,24 +1090,34 @@
 }
 
 .hotspot-chip-row {
-  display: inline-flex;
+  display: flex;
   align-items: center;
   gap: 0.65rem;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  overflow-y: hidden;
+  width: 100%;
   padding: 0.4rem;
   border-radius: 999px;
   background: rgba(255, 255, 255, 0.76);
   border: 1px solid rgba(136, 82, 0, 0.08);
+  scroll-behavior: smooth;
 }
 
 .hotspot-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
   border: 1px solid transparent;
   padding: 0.6rem 1rem;
+  min-width: 10.8rem;
   min-height: 2.55rem;
   border-radius: 999px;
   font-size: 0.84rem;
   font-weight: 800;
   letter-spacing: 0.01em;
+  white-space: nowrap;
   cursor: pointer;
   transition: transform 0.2s ease, box-shadow 0.2s ease, background 0.2s ease, color 0.2s ease;
 }
@@ -1131,6 +1191,12 @@
   margin-top: 1rem;
 }
 
+.hotspot-region-guide {
+  margin: 0.72rem 0 0;
+  font-size: 0.82rem;
+  color: #7a6848;
+}
+
 .hotspot-control {
   display: inline-flex;
   align-items: center;
@@ -1190,6 +1256,59 @@
   grid-template-columns: 1.45fr 1fr;
   gap: 0.9rem;
   margin-top: 0.85rem;
+  position: relative;
+}
+
+.hotspot-region-grid,
+.hotspot-detail-panel {
+  transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.hotspot-layout.is-updating .hotspot-region-grid,
+.hotspot-layout.is-updating .hotspot-detail-panel {
+  opacity: 0.52;
+  transform: translateY(1px);
+  pointer-events: none;
+}
+
+.hotspot-update-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 0.55rem;
+  pointer-events: none;
+}
+
+.hotspot-update-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.7rem;
+  border-radius: 999px;
+  border: 1px solid rgba(136, 82, 0, 0.2);
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 8px 20px rgba(35, 27, 8, 0.08);
+  color: #6f4d12;
+  font-size: 0.8rem;
+  font-weight: 700;
+}
+
+.hotspot-update-pill .material-symbols-outlined {
+  font-size: 0.9rem;
+  animation: hotspot-spin 1s linear infinite;
+}
+
+@keyframes hotspot-spin {
+  from {
+    transform: rotate(0deg);
+  }
+
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .hotspot-region-grid {
@@ -1652,6 +1771,14 @@
     grid-template-columns: 1fr;
     grid-template-areas: none;
   }
+
+  .hotspot-chip-filter-group {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.45rem;
+  }
 }
 
 
@@ -1828,6 +1955,10 @@
 
   .hotspot-controls {
     align-items: flex-start;
+  }
+
+  .hotspot-chip {
+    min-width: 9.8rem;
   }
 
   .hotspot-region-grid {

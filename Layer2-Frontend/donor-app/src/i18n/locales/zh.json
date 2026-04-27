@@ -23,8 +23,8 @@
   },
   "donorWorkspace": {
     "eyebrow": "捐赠者工作区",
-    "title": "选择你的下一步 donor 任务",
-    "subtitle": "继续发布食物、查看短缺热点，或管理你已经分享过的物品。",
+    "title": "捐赠者工作区",
+    "subtitle": "继续发布剩余食物、查看本地热点，并管理你的物品。",
     "currentPostcodeAria": "当前 donor 邮编",
     "currentPostcodeLabel": "当前邮编",
     "currentPostcodeFallback": "发布食物时再填写",
@@ -38,9 +38,9 @@
       },
       "hotspots": {
         "eyebrow": "决策支持",
-        "title": "查看食物短缺热点",
-        "description": "找到最需要食物的区域。",
-        "button": "查看热点地图"
+        "title": "看看哪里最需要食物",
+        "description": "在捐赠前先查看附近的食物短缺热点。",
+        "button": "打开热点地图"
       },
       "listings": {
         "eyebrow": "我的动态",
@@ -52,12 +52,14 @@
   },
   "hotspots": {
     "ariaLabel": "热点优先级地图",
-    "referencePostcode": "参考邮编：{{postcode}}",
-    "referenceStatewide": "全州视图",
-    "eyebrow": "热点地图",
-    "title": "食物短缺热点",
-    "subtitle": "热点按区域分组展示，方便你像看简化地图一样快速扫描附近需求。",
+    "referencePostcode": "基于邮编 {{postcode}}",
+    "referenceStatewide": "基于全州基线",
+    "eyebrow": "需求地图",
+    "title": "哪里最需要食物",
+    "subtitle": "查看参考邮编附近的食物短缺热点。",
     "helper": "先从区域簇开始看，再打开具体邮编卡片查看短缺详情。",
+    "topPriorityLabel": "当前最高优先级：",
+    "topPriorityHint": "{{name}}（{{distance}} 公里）- 短缺 {{shortfall}} 份",
     "chips": {
       "all": "全部热点",
       "criticalTitle": "显示最紧急的短缺热点",
@@ -70,7 +72,14 @@
     },
     "controls": {
       "view": "查看范围",
+      "needLevel": "需求级别",
       "allRegions": "全部区域（全州）",
+      "groups": {
+        "metro": "城区范围",
+        "greater": "大区范围",
+        "regional": "区域城镇"
+      },
+      "groupHint": "Metro = 内城区域。Greater = 周边郊区。Regional = 都市圈外区域。",
       "distance": "距离",
       "anyDistance": "任意距离",
       "within10": "10 公里内",
@@ -82,8 +91,11 @@
     },
     "legendCopy": "严重短缺 = 需要立刻行动。高需求 = 短缺明显。观察风险 = 建议持续关注。",
     "sampleNote": "当前为样本数据。接通数据库后会显示真实热点评分。",
+    "updating": "正在更新热点…",
     "emptyTitle": "没有热点符合当前筛选条件。",
     "emptyHint": "试试查看全部区域，或放宽距离范围。",
+    "emptyDistanceTitle": "{{distance}} 公里内没有热点。",
+    "emptyDistanceHint": "试着把距离范围扩大到 {{distance}} 公里以上。",
     "regionCount": "{{count}} 个热点",
     "clusterClosest": "最近 {{distance}} 公里",
     "clusterPriority": "最高优先级 {{score}}",
@@ -140,7 +152,7 @@
     "editLockedTooltip": "这条物品已经被领取过，不能再编辑或删除。",
     "homeLink": "返回首页",
     "kicker": "Donor 参考视图",
-    "pageTitle": "你发布的物品",
+    "pageTitle": "我的物品",
     "filterHint": "可按食物名称、备注、大小或邮编搜索。",
     "searchingFor": "正在搜索",
     "filteringCategory": "类别",
@@ -182,7 +194,9 @@
       "donorTag": "感谢您的分享。",
       "orgMessage": "您的剩余食物现在可供其他社区领取。",
       "orgTag": "感谢您帮助网络。",
-      "updatedTitle": "物品已更新"
+      "updatedTitle": "物品已更新",
+      "nextStepLabel": "下一步",
+      "nextStepHint": "查看附近的食物短缺热点，看看你的捐赠最适合帮助哪里。"
     },
     "editTitle": "编辑物品",
     "sizeCue": "大小或重量",
@@ -196,8 +210,12 @@
     "saveButton": "保存物品修改",
     "actions": {
       "backHome": "返回首页",
-      "backListings": "返回实时物品列表",
+      "backListings": "返回我的物品",
+      "backOrgListings": "返回食物列表",
       "backDashboard": "返回面板",
+      "viewOrgAlerts": "查看预警",
+      "viewOrgGaps": "查看供给缺口",
+      "viewHotspots": "看看哪里最需要食物",
       "editListing": "编辑这条物品",
       "removeListing": "删除这条物品"
     },

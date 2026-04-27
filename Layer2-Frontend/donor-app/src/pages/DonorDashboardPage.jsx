@@ -57,20 +57,27 @@ const DonorDashboardPage = () => {
       </header>
 
       <main className="donor-dashboard-shell">
-        <section className="donor-dashboard-hero">
-          <div className="donor-dashboard-copy">
-            <p className="donor-dashboard-eyebrow">{t('donorWorkspace.eyebrow', 'Donor workspace')}</p>
-            <h1>{t('donorWorkspace.title', 'Choose your next donor task')}</h1>
-            <p>{t('donorWorkspace.subtitle', 'Post food, check shortage hotspots, or manage the listings you have already shared.')}</p>
-          </div>
-
-          <div className="donor-dashboard-postcode-card" role="group" aria-label={t('donorWorkspace.currentPostcodeAria', 'Current donor postcode')}>
-            <div className="donor-dashboard-postcode-icon">
-              <span className="material-symbols-outlined">location_on</span>
-            </div>
-            <div className="donor-dashboard-postcode-copy">
-              <span>{t('donorWorkspace.currentPostcodeLabel', 'Current postcode')}</span>
-              <strong>{postcode || t('donorWorkspace.currentPostcodeFallback', 'Add when you post food')}</strong>
+        <section className="donor-dashboard-intro donor-dashboard-hero-card">
+          <div className="donor-dashboard-heading-row">
+            <div className="donor-dashboard-heading">
+              <h1>{t('donorWorkspace.title', 'Donor workspace')}</h1>
+              <p className="donor-dashboard-subtitle">
+                {t(
+                  'donorWorkspace.subtitle',
+                  'Post surplus food, view local hotspots, and manage your listings.',
+                )}
+              </p>
+              <div
+                className="donor-dashboard-meta-pill"
+                role="group"
+                aria-label={t('donorWorkspace.currentPostcodeAria', 'Current donor postcode')}
+              >
+                <span className="material-symbols-outlined">location_on</span>
+                <span className="donor-dashboard-meta-label">
+                  {t('donorWorkspace.currentPostcodeLabel', 'Current postcode')}
+                </span>
+                <strong>{postcode || t('donorWorkspace.currentPostcodeFallback', 'Add when you post food')}</strong>
+              </div>
             </div>
           </div>
         </section>

@@ -23,8 +23,8 @@
   },
   "donorWorkspace": {
     "eyebrow": "Donor workspace",
-    "title": "Choose your next donor task",
-    "subtitle": "Post food, check shortage hotspots, or manage the listings you have already shared.",
+    "title": "Donor workspace",
+    "subtitle": "Post surplus food, view local hotspots, and manage your listings.",
     "currentPostcodeAria": "Current donor postcode",
     "currentPostcodeLabel": "Current postcode",
     "currentPostcodeFallback": "Add when you post food",
@@ -38,9 +38,9 @@
       },
       "hotspots": {
         "eyebrow": "Decision support",
-        "title": "View food shortage hotspots",
-        "description": "Find areas that need food most.",
-        "button": "View hotspot map"
+        "title": "See where food is needed",
+        "description": "Check nearby food shortage hotspots before you donate.",
+        "button": "Open hotspot map"
       },
       "listings": {
         "eyebrow": "My activity",
@@ -52,12 +52,14 @@
   },
   "hotspots": {
     "ariaLabel": "Hotspot priority map",
-    "referencePostcode": "Reference postcode: {{postcode}}",
-    "referenceStatewide": "State-wide",
-    "eyebrow": "Hotspot map",
-    "title": "Food shortage hotspots",
-    "subtitle": "Hotspots are grouped by region to act like a suburb map when you scan for nearby need.",
+    "referencePostcode": "Based on postcode {{postcode}}",
+    "referenceStatewide": "Based on state-wide baseline",
+    "eyebrow": "Need map",
+    "title": "Where food is needed most",
+    "subtitle": "Food shortage hotspots near your reference postcode.",
     "helper": "Start from region clusters, then open a postcode card to inspect exact shortage details.",
+    "topPriorityLabel": "Top priority right now:",
+    "topPriorityHint": "{{name}} ({{distance}} km) - {{shortfall}} portions short",
     "chips": {
       "all": "All hotspots",
       "criticalTitle": "Show urgent shortage hotspots",
@@ -70,7 +72,14 @@
     },
     "controls": {
       "view": "View",
+      "needLevel": "Need level",
       "allRegions": "All regions (state-wide)",
+      "groups": {
+        "metro": "Metro areas",
+        "greater": "Greater regions",
+        "regional": "Regional"
+      },
+      "groupHint": "Metro = inner city areas. Greater = surrounding suburbs. Regional = outside metro regions.",
       "distance": "Distance",
       "anyDistance": "Any distance",
       "within10": "Within 10 km",
@@ -82,8 +91,11 @@
     },
     "legendCopy": "Critical shortage = urgent need. High need = strong demand. Watchlist risk = areas to monitor next.",
     "sampleNote": "Sample data only. Live hotspot scoring will be connected after database integration.",
+    "updating": "Updating hotspots...",
     "emptyTitle": "No hotspots match these filters.",
     "emptyHint": "Try all regions or a wider distance range.",
+    "emptyDistanceTitle": "No hotspots within {{distance}} km.",
+    "emptyDistanceHint": "Try expanding your distance range to {{distance}} km or more.",
     "regionCount": "{{count}} hotspots",
     "clusterClosest": "Closest {{distance}} km",
     "clusterPriority": "Top priority {{score}}",
@@ -140,7 +152,7 @@
     "editLockedTooltip": "This listing has already been claimed and can no longer be edited or removed.",
     "homeLink": "Back to home",
     "kicker": "Donor preview",
-    "pageTitle": "Your donor listings",
+    "pageTitle": "My listings",
     "filterHint": "Search by food name, notes, size, or postcode.",
     "searchingFor": "Searching for",
     "filteringCategory": "Category",
@@ -182,7 +194,9 @@
       "donorTag": "Thank you for sharing.",
       "orgMessage": "Your surplus food is now available for other communities to claim.",
       "orgTag": "Thank you for helping the network.",
-      "updatedTitle": "Listing updated"
+      "updatedTitle": "Listing updated",
+      "nextStepLabel": "Next step",
+      "nextStepHint": "Check nearby food shortage hotspots to see where your donation can help most."
     },
     "editTitle": "Edit listing",
     "sizeCue": "Size or weight",
@@ -196,8 +210,12 @@
     "saveButton": "Save listing changes",
     "actions": {
       "backHome": "Back to home",
-      "backListings": "Back to live listings",
+      "backListings": "Back to my listings",
+      "backOrgListings": "Back to food listings",
       "backDashboard": "Back to dashboard",
+      "viewOrgAlerts": "Review alerts",
+      "viewOrgGaps": "Review supply gaps",
+      "viewHotspots": "See where food is needed",
       "editListing": "Edit this listing",
       "removeListing": "Remove this listing"
     },

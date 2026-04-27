@@ -1,140 +1,143 @@
 .donor-dashboard-page {
   min-height: 100vh;
   background:
-    radial-gradient(circle at top left, rgba(255, 246, 227, 0.72), transparent 40%),
-    linear-gradient(180deg, #fffdf8 0%, #f9f5ec 100%);
+    radial-gradient(circle at top right, rgba(0, 107, 76, 0.08), transparent 24%),
+    linear-gradient(180deg, rgba(238, 247, 242, 0.88) 0%, #ffffff 22%);
 }
 
 .donor-dashboard-shell {
-  max-width: 1180px;
+  max-width: 1520px;
   margin: 0 auto;
-  padding: 6.6rem 2rem 3rem;
+  padding: 6.4rem 1.5rem 3rem;
 }
 
-.donor-dashboard-hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
-  gap: 1.4rem;
-  align-items: end;
+@media (min-width: 768px) {
+  .donor-dashboard-shell {
+    padding-left: 4rem;
+    padding-right: 4rem;
+  }
 }
 
-.donor-dashboard-copy h1 {
-  margin: 0;
-  max-width: 720px;
-  color: #6a4100;
-  font-size: clamp(2.3rem, 4.5vw, 3.8rem);
-  line-height: 1.02;
-  letter-spacing: -0.04em;
-  word-break: break-word;
+.donor-dashboard-intro {
+  display: block;
+  margin-bottom: 0.95rem;
+  padding-top: 0.95rem;
 }
 
-.donor-dashboard-copy p:last-child {
-  margin: 1rem 0 0;
-  max-width: 42rem;
-  color: #6f5c3b;
-  font-size: 1.08rem;
-  line-height: 1.55;
+.donor-dashboard-hero-card {
+  background: linear-gradient(180deg, rgba(255, 255, 255, 0.94) 0%, rgba(247, 251, 249, 0.92) 100%);
+  border: 1px solid rgba(0, 107, 76, 0.08);
+  border-radius: 1.75rem;
+  padding: 1.15rem 1.2rem;
+  box-shadow: 0 18px 40px rgba(18, 50, 39, 0.06);
 }
 
-.donor-dashboard-eyebrow {
-  margin: 0 0 0.75rem;
-  color: #885200;
-  font-size: 0.82rem;
-  font-weight: 800;
-  letter-spacing: 0.16em;
-  text-transform: uppercase;
-}
-
-.donor-dashboard-postcode-card {
-  display: grid;
-  grid-template-columns: 4.25rem 1fr;
+.donor-dashboard-heading-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
   gap: 1rem;
-  align-items: center;
-  padding: 1.25rem 1.3rem;
-  border-radius: 1.6rem;
-  border: 1px solid rgba(136, 82, 0, 0.14);
-  background: rgba(255, 255, 255, 0.92);
-  box-shadow: 0 14px 34px rgba(35, 27, 8, 0.06);
+  flex-wrap: wrap;
 }
 
-.donor-dashboard-postcode-icon {
-  width: 4.25rem;
-  height: 4.25rem;
-  border-radius: 999px;
+.donor-dashboard-heading {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.55rem;
+}
+
+.donor-dashboard-heading h1 {
+  margin: 0;
+  font-size: 2rem;
+  color: #0d5a43;
+  letter-spacing: -0.05em;
+  line-height: 0.98;
+}
+
+.donor-dashboard-subtitle {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: #4f655d;
+  max-width: 58ch;
+}
+
+.donor-dashboard-meta-pill {
   display: inline-flex;
   align-items: center;
-  justify-content: center;
-  background: rgba(136, 82, 0, 0.08);
-  color: #885200;
+  gap: 0.55rem;
+  padding: 0.58rem 0.85rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  border: 1px solid rgba(0, 107, 76, 0.12);
+  box-shadow: 0 8px 22px rgba(18, 50, 39, 0.05);
+  color: #173f33;
+  flex-wrap: wrap;
 }
 
-.donor-dashboard-postcode-icon .material-symbols-outlined {
-  font-size: 1.55rem;
+.donor-dashboard-meta-pill .material-symbols-outlined {
+  font-size: 1.35rem;
+  color: #0f6b4c;
 }
 
-.donor-dashboard-postcode-copy {
-  display: flex;
-  flex-direction: column;
-  gap: 0.25rem;
-}
-
-.donor-dashboard-postcode-copy span {
-  color: #8f7b57;
-  font-size: 0.78rem;
+.donor-dashboard-meta-label {
+  font-size: 0.82rem;
   font-weight: 800;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
+  color: #5f756d;
 }
 
-.donor-dashboard-postcode-copy strong {
-  color: #2f2618;
-  font-size: 1.55rem;
-  line-height: 1.05;
+.donor-dashboard-meta-pill strong {
+  font-size: 0.96rem;
+  font-weight: 700;
+  color: #173f33;
 }
 
 .donor-dashboard-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 1rem;
-  margin-top: 2rem;
+  margin-top: 1rem;
 }
 
 .donor-dashboard-card {
   display: flex;
   flex-direction: column;
   gap: 0.8rem;
-  min-height: 18rem;
-  padding: 1.45rem;
-  border-radius: 1.45rem;
-  border: 1px solid rgba(136, 82, 0, 0.12);
+  min-height: 15.5rem;
+  padding: 1.15rem 1.2rem;
+  border-radius: 1.25rem;
+  border: 1px solid rgba(0, 107, 76, 0.08);
   background: rgba(255, 255, 255, 0.94);
-  box-shadow: 0 14px 32px rgba(35, 27, 8, 0.05);
+  box-shadow: 0 16px 38px rgba(18, 50, 39, 0.05);
 }
 
 .donor-dashboard-card--hotspots {
-  background: linear-gradient(155deg, rgba(255, 252, 247, 0.98), rgba(248, 242, 229, 0.88));
+  background: linear-gradient(180deg, rgba(243, 250, 247, 0.98) 0%, rgba(255, 255, 255, 0.96) 100%);
 }
 
 .donor-dashboard-card-eyebrow {
   margin: 0;
-  color: #885200;
+  color: #5f756d;
   font-size: 0.76rem;
   font-weight: 800;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .donor-dashboard-card h2 {
   margin: 0;
-  color: #4d3511;
-  font-size: 1.7rem;
-  line-height: 1.08;
+  color: #173f33;
+  font-size: 1.38rem;
+  line-height: 1.12;
 }
 
 .donor-dashboard-card p:last-of-type {
   margin: 0;
-  color: #6f5c3b;
-  font-size: 1rem;
+  color: #60746d;
+  font-size: 0.98rem;
   line-height: 1.55;
 }
 
@@ -146,12 +149,18 @@
   gap: 0.45rem;
   border: none;
   border-radius: 999px;
-  padding: 0.82rem 1.1rem;
-  background: #885200;
+  padding: 0.8rem 1.15rem;
+  background: #0f6b4c;
   color: #fff;
-  font-size: 0.98rem;
+  font-size: 0.94rem;
   font-weight: 800;
   cursor: pointer;
+  box-shadow: 0 12px 24px rgba(15, 107, 76, 0.18);
+}
+
+.donor-dashboard-card-cta:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 16px 30px rgba(15, 107, 76, 0.22);
 }
 
 .donor-dashboard-card-cta .material-symbols-outlined {
@@ -159,7 +168,6 @@
 }
 
 @media (max-width: 980px) {
-  .donor-dashboard-hero,
   .donor-dashboard-grid {
     grid-template-columns: 1fr;
   }
@@ -168,5 +176,13 @@
 @media (max-width: 720px) {
   .donor-dashboard-shell {
     padding: 6rem 1rem 2rem;
+  }
+
+  .donor-dashboard-heading h1 {
+    font-size: 1.85rem;
+  }
+
+  .donor-dashboard-meta-pill {
+    width: 100%;
   }
 }
