@@ -28,7 +28,7 @@ const HomePage = () => {
           </section>
 
           <div className="cards-grid">
-            <div className="role-card role-card--donor" onClick={() => navigate('/postcode')}>
+            <div className="role-card role-card--donor" onClick={() => navigate('/donor')}>
               <div className="role-card-accent donor" />
               <div className="role-card-inner">
                 <div className="role-card-copy">
@@ -42,7 +42,7 @@ const HomePage = () => {
                   className="role-btn donor"
                   onClick={(e) => {
                     e.stopPropagation()
-                    navigate('/postcode')
+                    navigate('/donor')
                   }}
                 >
                   {t('home.donor.button')}
