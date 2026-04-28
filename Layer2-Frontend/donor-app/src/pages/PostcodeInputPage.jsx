@@ -24,22 +24,22 @@ const PostcodeInputPage = () => {
     e.preventDefault()
     if (/^\d{4}$/.test(postcode)) {
       saveDonorPostcode(postcode)
-      navigate('/donor', { state: { postcode } })
+      navigate('/donor/listings', { state: { postcode } })
     } else {
       setError(t('postcode.invalid'))
     }
   }
 
   return (
-    <div className="postcode-page">
-      <button className="back-link" onClick={() => navigate('/')}>
+    <div className="postcode-page donor-role-page">
+      <button className="back-link" onClick={() => navigate('/roles')}>
         <span className="material-symbols-outlined">arrow_back</span>
       </button>
 
       <main className="postcode-main">
         <div className="postcode-card">
           <div className="postcode-icon-circle">
-            <span className="material-symbols-outlined">location_on</span>
+            <span className="material-symbols-outlined">volunteer_activism</span>
           </div>
 
           <div className="postcode-brand">{t('appName')}</div>
@@ -63,7 +63,7 @@ const PostcodeInputPage = () => {
             {error ? <div className="error-message">{error}</div> : null}
 
             <button type="submit" className="submit-btn">
-              {t('postcode.button')} →
+              {t('postcode.button')}
             </button>
 
             <p className="privacy-note">{t('common.secure')}</p>

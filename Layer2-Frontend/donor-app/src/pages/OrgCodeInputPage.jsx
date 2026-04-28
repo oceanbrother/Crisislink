@@ -35,15 +35,15 @@ const OrgCodeInputPage = () => {
   }
 
   return (
-    <div className="org-code-page">
-      <button className="back-link" onClick={() => navigate('/')}>
+    <div className="org-code-page org-role-page">
+      <button className="org-code-back-link" onClick={() => navigate('/roles')}>
         <span className="material-symbols-outlined">arrow_back</span>
       </button>
 
       <main className="org-code-main">
-        <div className="org-code-card">
-          <div className="org-code-icon-circle">
-            <span className="material-symbols-outlined">business</span>
+          <div className="org-code-card">
+            <div className="org-code-icon-circle">
+            <span className="material-symbols-outlined">groups</span>
           </div>
 
           <div className="org-code-brand">{t('appName')}</div>
@@ -51,10 +51,7 @@ const OrgCodeInputPage = () => {
           <h1 className="org-code-title">{t('orgCode.title')}</h1>
           <p className="org-code-desc">{t('orgCode.subtitle')}</p>
 
-          <form onSubmit={handleSubmit} className="form-group">
-            <label className="org-code-label" htmlFor="org-code-input">
-              {t('orgCode.label')}
-            </label>
+          <form onSubmit={handleSubmit} className="org-code-form">
             <input
               id="org-code-input"
               className="org-code-input"
@@ -64,23 +61,16 @@ const OrgCodeInputPage = () => {
               placeholder={t('orgCode.placeholder')}
               maxLength="40"
               autoComplete="organization"
+              aria-label={t('orgCode.label')}
             />
 
-            {error && <div className="error-message">{error}</div>}
+            {error ? <div className="org-code-error-message">{error}</div> : null}
 
-            <button type="submit" className="submit-btn">
+            <button type="submit" className="org-code-submit-btn">
               {t('orgCode.button')}
             </button>
 
-            <button
-              type="button"
-              className="secondary-link"
-              onClick={() => navigate('/')}
-            >
-              {t('common.back')}
-            </button>
-
-            <p className="privacy-note">{t('orgCode.note')}</p>
+            <p className="org-code-note">{t('common.secure')}</p>
           </form>
         </div>
       </main>
