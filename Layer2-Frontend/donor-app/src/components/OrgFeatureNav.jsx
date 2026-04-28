@@ -1,6 +1,7 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import WorkspaceFeatureNav from './WorkspaceFeatureNav'
 
 const OrgFeatureNav = ({ active = 'listings', orgCode = '' }) => {
   const navigate = useNavigate()
@@ -11,29 +12,30 @@ const OrgFeatureNav = ({ active = 'listings', orgCode = '' }) => {
   }
 
   return (
-    <section className="org-feature-nav" aria-label={t('common.navigation', 'Organization navigation')}>
-      <button
-        type="button"
-        className={`org-feature-nav-button ${active === 'listings' ? 'active' : ''}`.trim()}
-        onClick={() => goTo('/org/listings')}
-      >
-        {t('dashboard.title')}
-      </button>
-      <button
-        type="button"
-        className={`org-feature-nav-button ${active === 'alerts' ? 'active' : ''}`.trim()}
-        onClick={() => goTo('/org/alerts')}
-      >
-        {t('common.alerts')}
-      </button>
-      <button
-        type="button"
-        className={`org-feature-nav-button ${active === 'gaps' ? 'active' : ''}`.trim()}
-        onClick={() => goTo('/org/gaps')}
-      >
-        {t('common.supplyGaps', 'Supply gaps')}
-      </button>
-    </section>
+    <WorkspaceFeatureNav
+      role="org"
+      ariaLabel={t('common.navigation', 'Organization navigation')}
+      items={[
+        {
+          key: 'listings',
+          label: t('dashboard.title'),
+          active: active === 'listings',
+          onClick: () => goTo('/org/listings'),
+        },
+        {
+          key: 'alerts',
+          label: t('common.alerts'),
+          active: active === 'alerts',
+          onClick: () => goTo('/org/alerts'),
+        },
+        {
+          key: 'gaps',
+          label: t('dashboard.coverageInsights.navLabel', 'Supply gaps'),
+          active: active === 'gaps',
+          onClick: () => goTo('/org/gaps'),
+        },
+      ]}
+    />
   )
 }
 

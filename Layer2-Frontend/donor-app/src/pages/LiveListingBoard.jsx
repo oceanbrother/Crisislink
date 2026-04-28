@@ -2,8 +2,12 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { getAvailableListings, claimListing, unclaimListing, deleteListing } from '../services/api'
-import { FILTER_OPTIONS, formatBestBeforeLabel, resolveListingCategory } from '../constants/listings'
+import { DIETARY_FILTER_OPTIONS, FILTER_OPTIONS, formatBestBeforeLabel, resolveListingCategory } from '../constants/listings'
 import OrgFeatureNav from '../components/OrgFeatureNav'
+import WorkspaceContextCard from '../components/WorkspaceContextCard'
+import WorkspaceFilterPanel from '../components/WorkspaceFilterPanel'
+import WorkspaceHeader from '../components/WorkspaceHeader'
+import WorkspaceSummaryCard from '../components/WorkspaceSummaryCard'
 import '../styles/LiveListingBoard.css'
 
 const getTranslatedCategory = (category, foodType, t) => {
@@ -24,6 +28,29 @@ const getRelativeTime = (createdAt, t) => {
   if (minutes < 60) return t('listing.minutesAgo', { count: minutes })
   if (hours < 24) return t('listing.hoursAgo', { count: hours })
   return t('listing.daysAgo', { count: days })
+}
+
+const normalizeDietaryTag = (value) => String(value || '').trim().toLowerCase().replace(/\s+/g, '-')
+
+const resolveDietaryTranslationKey = (value) => {
+  const normalized = normalizeDietaryTag(value)
+  if (normalized === 'non-vegetarian') return 'nonVegetarian'
+  if (normalized === 'dairy-free' || normalized === 'lactose-free') return 'dairyFree'
+  if (normalized === 'gluten-free') return 'glutenFree'
+  return normalized
+}
+
+const matchesDietaryFilter = (tags, filterValue) => {
+  if (filterValue === 'all') return true
+  if (!Array.isArray(tags) || tags.length === 0) return false
+
+  return tags.some((rawTag) => {
+    const normalized = normalizeDietaryTag(rawTag)
+    if (filterValue === 'dairy-free') {
+      return normalized === 'dairy-free' || normalized === 'lactose-free'
+    }
+    return normalized === filterValue
+  })
 }
 
 const tokenizeSearch = (value) => {
@@ -143,6 +170,7 @@ const LiveListingBoard = () => {
   const [success, setSuccess] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [filterCategory, setFilterCategory] = useState('All')
+  const [filterFoodType, setFilterFoodType] = useState('all')
   const [filterStatus, setFilterStatus] = useState(location.state?.filterStatus || 'all')
   const [claimDialogListing, setClaimDialogListing] = useState(null)
   const [claimQuantity, setClaimQuantity] = useState('1')
@@ -165,7 +193,7 @@ const LiveListingBoard = () => {
 
   useEffect(() => {
     filterAndDisplayListings()
-  }, [listings, searchTerm, filterCategory, filterStatus, orgCode])
+  }, [listings, searchTerm, filterCategory, filterFoodType, filterStatus, orgCode])
 
   const loadListings = async () => {
     setLoading(true)
@@ -206,6 +234,10 @@ const LiveListingBoard = () => {
       filtered = filtered.filter((listing) => getListingViewState(listing, orgCode) === filterStatus)
     }
 
+    if (filterFoodType !== 'all') {
+      filtered = filtered.filter((listing) => matchesDietaryFilter(listing.dietary_tags, filterFoodType))
+    }
+
     if (searchTerm) {
       const term = searchTerm.toLowerCase()
       filtered = filtered.filter((listing) =>
@@ -230,10 +262,8 @@ const LiveListingBoard = () => {
     try {
       await claimListing(listingId, { orgId: orgCode })
       setSuccess('Listing claimed successfully.')
-      setTimeout(() => {
-        setSuccess('')
-        loadListings()
-      }, 1500)
+      await loadListings()
+      setTimeout(() => setSuccess(''), 1500)
     } catch (err) {
       setError(t('feed.noListings'))
       setTimeout(() => setError(''), 3000)
@@ -250,10 +280,8 @@ const LiveListingBoard = () => {
     try {
       await unclaimListing(listingId, { orgId: orgCode })
       setSuccess('Claim removed successfully.')
-      setTimeout(() => {
-        setSuccess('')
-        loadListings()
-      }, 1500)
+      await loadListings()
+      setTimeout(() => setSuccess(''), 1500)
     } catch (err) {
       setError('Unable to remove this claim right now.')
       setTimeout(() => setError(''), 3000)
@@ -267,7 +295,7 @@ const LiveListingBoard = () => {
       state: {
         orgMode: true,
         orgCode,
-        orgName: `Organization ${orgCode}`,
+        orgName: `Organisation ${orgCode}`,
       },
     })
   }
@@ -279,7 +307,7 @@ const LiveListingBoard = () => {
         listing,
         orgMode: true,
         orgCode,
-        orgName: `Organization ${orgCode}`,
+        orgName: `Organisation ${orgCode}`,
       },
     })
   }
@@ -292,10 +320,8 @@ const LiveListingBoard = () => {
     try {
       await deleteListing(listing.id, listing.orgCode || orgCode)
       setSuccess(t('donation.actions.removeListing', 'Remove this listing'))
-      setTimeout(() => {
-        setSuccess('')
-        loadListings()
-      }, 1200)
+      await loadListings()
+      setTimeout(() => setSuccess(''), 1200)
     } catch (err) {
       setError('Unable to remove this listing right now.')
       setTimeout(() => setError(''), 3000)
@@ -311,14 +337,16 @@ const LiveListingBoard = () => {
 
   const hasActiveSearch = searchTerm.trim() !== ''
   const hasActiveCategoryFilter = filterCategory !== 'All'
+  const hasActiveFoodTypeFilter = filterFoodType !== 'all'
   const hasActiveStatusFilter = filterStatus !== 'all'
-  const hasActiveControls = hasActiveSearch || hasActiveCategoryFilter || hasActiveStatusFilter
+  const hasActiveControls = hasActiveSearch || hasActiveCategoryFilter || hasActiveFoodTypeFilter || hasActiveStatusFilter
   const isBaseEmpty = listings.length === 0
   const isFilteredEmpty = !loading && !isBaseEmpty && filteredListings.length === 0
 
   const clearFilters = () => {
     setSearchTerm('')
     setFilterCategory('All')
+    setFilterFoodType('all')
     setFilterStatus('all')
   }
 
@@ -383,10 +411,8 @@ const LiveListingBoard = () => {
       setSuccess(t('dashboard.claimDialog.success', { quantity: formatQuantityValue(requestedQuantity) }))
       setClaimDialogListing(null)
       setClaimQuantity('1')
-      setTimeout(() => {
-        setSuccess('')
-        loadListings()
-      }, 1200)
+      await loadListings()
+      setTimeout(() => setSuccess(''), 1200)
     } catch (err) {
       const detail = err?.response?.data?.detail
       setClaimError(typeof detail === 'string' ? detail : t('dashboard.claimDialog.failed'))
@@ -396,37 +422,38 @@ const LiveListingBoard = () => {
   }
 
   return (
-    <div className="live-listing-board org-role-board">
-      <header className="navbar org-navbar">
-        <div className="navbar-inner org-navbar-inner">
-          <button className="brand-home-btn org-brand-btn" type="button" onClick={() => navigate('/')}>
-            <span className="brand-home-title">{t('appName')}</span>
-          </button>
-        </div>
-        <div className="navbar-divider" />
-      </header>
+    <div className="live-listing-board org-role-board org-role-page">
+      <WorkspaceHeader
+        role="org"
+        onBackClick={() => navigate('/roles')}
+        onBrandClick={() => navigate('/roles')}
+      />
 
       <main className="feed-content org-feed-content">
-        <div className="org-area-nav-row">
+        <div className="workspace-nav-row org-area-nav-row">
           <OrgFeatureNav active="listings" orgCode={orgCode} />
         </div>
 
-        <section className="org-page-intro org-hero-card">
-          <div className="org-page-heading-row">
-            <div className="org-page-heading">
-              <h1 className="board-title org-page-title">{t('dashboard.title')}</h1>
-              <div className="org-page-meta org-page-meta-pill">
-                <span className="material-symbols-outlined">domain</span>
-                <span>{t('dashboard.signedInAs', { orgCode })}</span>
-              </div>
-            </div>
-
-            <button className="post-action-btn org-page-action" onClick={handlePostExcess} title={t('dashboard.shareButton')}>
+        <WorkspaceSummaryCard
+          role="org"
+          className="workspace-listings-summary workspace-listings-summary--org"
+          title={t('dashboard.title')}
+          subtitle={t('dashboard.subtitle', 'Claim available food, post your own listings, and monitor local demand signals.')}
+          action={(
+            <button className="workspace-primary-action workspace-summary-card__cta org-page-action" onClick={handlePostExcess} title={t('dashboard.shareButton')}>
               <span className="material-symbols-outlined">add</span>
               {t('dashboard.shareButton')}
             </button>
-          </div>
-
+          )}
+          context={(
+            <WorkspaceContextCard
+              label={t('dashboard.organizationCodeLabel', 'Organisation code')}
+              value={orgCode}
+              supportingText={t('dashboard.orgCodeHint', 'Workspace identity for live listings and collection tools.')}
+              icon="groups"
+            />
+          )}
+        >
           <div className="org-summary-grid" role="tablist" aria-label={t('dashboard.filterLabels.status')}>
             {STATUS_OPTIONS.map((option) => (
               <button
@@ -442,9 +469,9 @@ const LiveListingBoard = () => {
               </button>
             ))}
           </div>
-        </section>
+        </WorkspaceSummaryCard>
 
-        <section className="filter-section org-filter-section org-filter-panel">
+        <WorkspaceFilterPanel role="org" className="filter-section workspace-listings-filters workspace-listings-filters--org org-filter-section">
           <div className={hasActiveSearch ? 'search-wrapper org-search-wrapper org-search-wrapper--active' : 'search-wrapper org-search-wrapper'}>
             <span className="material-symbols-outlined search-icon">search</span>
             <input
@@ -486,6 +513,26 @@ const LiveListingBoard = () => {
             </div>
           </div>
 
+          <div className="filter-group filter-panel-group">
+            <div className="filter-group-heading">
+              <div className="filter-group-label">{t('dashboard.filterLabels.foodType', 'Food type')}</div>
+            </div>
+            <div className="filter-chips org-filter-chips">
+              {DIETARY_FILTER_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  className={`filter-chip dietary-chip ${filterFoodType === option.value ? 'active' : ''}`}
+                  onClick={() => setFilterFoodType(option.value)}
+                  type="button"
+                >
+                  {option.value === 'all'
+                    ? t('dashboard.tabs.allTypes', 'All types')
+                    : t(`listing.dietary.${option.key}`, option.value)}
+                </button>
+              ))}
+            </div>
+          </div>
+
           {hasActiveControls ? (
             <div className={`filter-feedback-row ${hasActiveSearch ? '' : 'filter-feedback-row--minimal'}`.trim()} aria-live="polite">
               <div className="filter-feedback-pills">
@@ -493,6 +540,11 @@ const LiveListingBoard = () => {
                   <span className="filter-feedback-pill filter-feedback-pill--query">
                     <span className="material-symbols-outlined">search</span>
                     {t('feed.searchingFor', 'Searching for')} “{searchTerm.trim()}”
+                  </span>
+                ) : null}
+                {hasActiveFoodTypeFilter ? (
+                  <span className="filter-feedback-pill">
+                    {t('dashboard.filterLabels.foodType', 'Food type')} · {t(`listing.dietary.${resolveDietaryTranslationKey(filterFoodType)}`, filterFoodType)}
                   </span>
                 ) : null}
               </div>
@@ -516,7 +568,7 @@ const LiveListingBoard = () => {
               </span>
             </div>
           )}
-        </section>
+        </WorkspaceFilterPanel>
 
         <div className="food-grid org-food-grid">
           {loading ? (
@@ -566,10 +618,6 @@ const LiveListingBoard = () => {
                   </div>
                 </div>
 
-                {isOwnOrgListing && (
-                  <div className="listing-status-pill listing-status-pill--posted">{t('dashboard.statusPills.posted')}</div>
-                )}
-
                 {isClaimedByCurrentOrg && !isOwnOrgListing && (
                   <div className="listing-status-pill listing-status-pill--claimed">
                     {t('dashboard.statusPills.claimed', { quantity: Number.isInteger(Number(listing.quantity)) ? Number(listing.quantity) : listing.quantity })}
@@ -610,7 +658,7 @@ const LiveListingBoard = () => {
                         <strong className="supporting-panel-label">{t('donation.dietary', 'Dietary tag')}</strong>
                         <div className="tags-row org-tag-row supporting-tag-list">
                           {dietaryTags.map((tag, i) => (
-                            <span key={i} className="tag-chip">{t(`listing.dietary.${tag}`, tag)}</span>
+                            <span key={i} className="tag-chip">{t(`listing.dietary.${resolveDietaryTranslationKey(tag)}`, tag)}</span>
                           ))}
                         </div>
                       </div>

@@ -17,6 +17,8 @@ import LiveListingBoard from './pages/LiveListingBoard'
 import OrgAlertsPage from './pages/OrgAlertsPage'
 import OrgSupplyGapPage from './pages/OrgSupplyGapPage'
 
+const ACCESS_STORAGE_KEY = 'crisislink-site-access-granted'
+
 function PasswordGate({ expectedPassword, children }) {
   const { t } = useTranslation()
   const [inputPassword, setInputPassword] = useState('')
@@ -27,13 +29,17 @@ function PasswordGate({ expectedPassword, children }) {
   useEffect(() => {
     if (!expectedPassword) {
       setIsUnlocked(true)
+      return
     }
+    window.localStorage.removeItem(ACCESS_STORAGE_KEY)
+    setIsUnlocked(window.sessionStorage.getItem(ACCESS_STORAGE_KEY) === 'true')
   }, [expectedPassword])
 
   const handleSubmit = (event) => {
     event.preventDefault()
 
     if (inputPassword.trim() === expectedPassword) {
+      window.sessionStorage.setItem(ACCESS_STORAGE_KEY, 'true')
       setIsUnlocked(true)
       setError('')
       navigate('/', { replace: true })
@@ -100,6 +106,7 @@ function AppRoutes() {
     <Routes>
       {/* Home page - role selection */}
       <Route path="/" element={<HomePage />} />
+      <Route path="/roles" element={<HomePage />} />
 
       {/* Donor flow: workspace -> post / hotspots / listings */}
       <Route path="/postcode" element={<PostcodeInputPage />} />
