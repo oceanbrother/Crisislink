@@ -1,20 +1,21 @@
 {
-  "appName": "CrisisLink",
+  "appName": "OutBackShare",
   "tagline": "食物救济资源协调平台",
   "home": {
-    "question": "请选择您今天要完成的事情",
+    "eyebrow": "选择你的工作区",
+    "question": "选择你要如何使用 OutBackShare",
     "donor": {
       "title": "我想捐赠食物",
-      "description": "把多余食物分享给附近的社区组织",
-      "button": "发布食物"
+      "description": "快速发布剩余食物，让附近已认证的社区组织在食物浪费前完成领取。",
+      "button": "以捐赠者身份继续"
     },
     "organization": {
       "title": "我管理一个社区组织",
-      "description": "浏览可领取的食物，或代表组织发布剩余食物",
-      "button": "以组织身份继续"
+      "description": "查看可领取列表、协调领取，并识别本地食物需求更高的区域。",
+      "button": "以社区组织身份继续"
     },
-    "eyebrow": "本地食物共享",
-    "support": "为您的社区发布剩余食物，或浏览附近可领取的食物。"
+    "support": "请选择 donor 或 community organisation 工作区后继续。",
+    "about": "从合适的工作区发布剩余食物、管理列表，或查看本地短缺热点。"
   },
   "donorNav": {
     "post": "发布食物",
@@ -24,7 +25,7 @@
   "donorWorkspace": {
     "eyebrow": "捐赠者工作区",
     "title": "捐赠者工作区",
-    "subtitle": "继续发布剩余食物、查看本地热点，并管理你的物品。",
+    "subtitle": "发布剩余食物、查看哪里更需要食物，并管理你的物品。",
     "currentPostcodeAria": "当前 donor 邮编",
     "currentPostcodeLabel": "当前邮编",
     "currentPostcodeFallback": "发布食物时再填写",
@@ -34,19 +35,19 @@
         "eyebrow": "发布食物",
         "title": "发布剩余食物",
         "description": "分享你现在可提供的食物。",
-        "button": "打开发布表单"
+        "button": "发布食物"
       },
       "hotspots": {
-        "eyebrow": "决策支持",
+        "eyebrow": "需求热点",
         "title": "看看哪里最需要食物",
-        "description": "在捐赠前先查看附近的食物短缺热点。",
-        "button": "打开热点地图"
+        "description": "捐赠前先查看附近的食物短缺热点。",
+        "button": "查看热点地图"
       },
       "listings": {
-        "eyebrow": "我的动态",
-        "title": "管理我的物品",
-        "description": "查看或编辑你发过的内容。",
-        "button": "打开我的物品"
+        "eyebrow": "我的物品",
+        "title": "管理你的物品",
+        "description": "查看、编辑或跟踪你发布的内容。",
+        "button": "查看我的物品"
       }
     }
   },
@@ -124,8 +125,8 @@
     "shortageAmount": "短缺 {{count}} 份"
   },
   "postcode": {
-    "title": "输入您的邮编",
-    "subtitle": "帮助我们找到您附近的食物",
+    "title": "你的邮编是什么？",
+    "subtitle": "输入你的邮编，以查看附近的社区组织和本地食物短缺热点。",
     "placeholder": "例如 3000",
     "button": "继续",
     "example": "例如 邮编 3000",
@@ -153,6 +154,11 @@
     "homeLink": "返回首页",
     "kicker": "Donor 参考视图",
     "pageTitle": "我的物品",
+    "quickPost": "发布食物",
+    "quickPostTooltip": "发布剩余食物",
+    "postcodeHint": "用于附近物品列表和热点。",
+    "editableListings": "可编辑发布",
+    "lockedListings": "已领取 / 已锁定",
     "filterHint": "可按食物名称、备注、大小或邮编搜索。",
     "searchingFor": "正在搜索",
     "filteringCategory": "类别",
@@ -201,7 +207,7 @@
     "editTitle": "编辑物品",
     "sizeCue": "大小或重量",
     "sizeCuePlaceholder": "例如 小袋、中托盘、500g 瓶装",
-    "sizeCueHint": "请选择最接近的体量区间，让接收方更容易判断取货量。",
+    "sizeCueHint": "请选择预估份数，不需要填写精确重量。",
     "dietary": "饮食标签",
     "bestBefore": "最佳食用日期",
     "openDatePicker": "打开日历",
@@ -217,7 +223,8 @@
       "viewOrgGaps": "查看供给缺口",
       "viewHotspots": "看看哪里最需要食物",
       "editListing": "编辑这条物品",
-      "removeListing": "删除这条物品"
+      "removeListing": "删除这条物品",
+      "postAnother": "继续发布另一条物品"
     },
     "reviewTitle": "以下是建议填写内容，发布前请再次确认。",
     "reviewHintFood": "检查食物名称和分类是否正确。",
@@ -227,44 +234,43 @@
     "bestBeforePlaceholder": "DD/MM/YYYY",
     "sizeOptions": {
       "none": "请选择",
-      "small": "小",
-      "medium": "中",
-      "large": "大",
-      "extraLarge": "特大",
-      "bulkHeavy": "大批量 / 较重"
+      "small": "小份 - 约 1 人份",
+      "medium": "中份 - 约 2-3 人份",
+      "large": "大份 - 约 4-6 人份",
+      "extraLarge": "特大份 - 7 人份以上",
+      "bulkHeavy": "大批量 / 较重 - 托盘或整箱"
     }
   },
   "orgCode": {
-    "title": "查找你的组织",
-    "subtitle": "输入组织代码或名称后继续。",
-    "label": "组织代码或名称",
+    "title": "查找你的社区组织",
+    "subtitle": "输入社区组织代码或名称，以访问实时物品列表和组织工具。",
+    "label": "社区组织代码或名称",
     "placeholder": "例如 HCFB-2841 或 Helping Hands",
     "button": "继续",
-    "example": "请输入组织代码或名称后继续",
+    "example": "请输入社区组织代码或名称后继续",
     "note": "只有通过验证的社区组织才能访问实时物品列表。"
   },
   "accessGate": {
-    "badge": "受限访问",
-    "title": "进入 CrisisLink",
-    "subtitle": "适用于社区组织与食物合作伙伴。",
-    "label": "输入密码",
-    "placeholder": "访问密码",
+    "badge": "项目访问",
+    "title": "进入 OutBackShare",
+    "subtitle": "仅供已批准合作伙伴和演示用户使用。",
+    "label": "密码",
+    "placeholder": "",
     "button": "继续",
     "error": "密码错误，请重试。",
-    "heroTitle": "分享食物，支持你的社区。",
-    "heroCopy": "实时协调本地食物供给，并响应需求变化。",
-    "highlightsLabel": "CrisisLink 亮点",
-    "bullets": {
-      "post": "发布剩余食物",
-      "coordinate": "与社区组织协作",
-      "spot": "及早发现需求"
-    },
-    "trust": "安全的公益平台 · 仅限已批准用户访问"
+    "heroTitle": "在食物被浪费前，把本地剩余资源先协调起来。",
+    "heroCopy": "OutBackShare 连接本地食物捐赠者与已认证的社区组织，帮助剩余食物更快送达附近社区。",
+    "builtFor": "适用角色",
+    "donorRole": "分享剩余食物的捐赠者",
+    "orgRole": "协调本地分发的社区组织",
+    "trust": "访问仅限已批准合作伙伴和演示用户。"
   },
   "dashboard": {
     "title": "食物列表",
+    "subtitle": "领取可用食物，或管理你们组织发布的物品。",
     "serviceArea": "服务区域",
-    "orgCodeLabel": "机构代码",
+    "orgCodeLabel": "社区组织代码",
+    "orgCodeHint": "用于管理实时物品列表和领取工具。",
     "signedInAs": "当前组织：{{orgCode}}",
     "donorCodeLabel": "捐赠方代码",
     "communityFallback": "社区",
@@ -273,6 +279,7 @@
     "shareButton": "发布食物",
     "tabs": {
       "all": "全部",
+      "allTypes": "全部类型",
       "bakery": "烘焙食品",
       "bakedGoods": "烘焙食品",
       "produce": "水果与蔬菜",
@@ -282,6 +289,10 @@
       "grocery": "杂货",
       "vegan": "纯素",
       "vegetarian": "素食",
+      "nonVegetarian": "非素食",
+      "dairyFree": "无乳糖 / 无乳制品",
+      "glutenFree": "无麸质",
+      "halal": "清真",
       "expiringSoon": "即将过期",
       "pantry": "日杂与调味",
       "other": "其他"
@@ -289,6 +300,7 @@
     "filterLabels": {
       "category": "食物类别",
       "allCategories": "全部类别",
+      "foodType": "饮食类型",
       "status": "物品状态"
     },
     "statusPills": {
@@ -319,7 +331,7 @@
     "clearFilters": "清除筛选",
     "showingMatches": "当前显示 {{count}} 条匹配物品",
     "emptyTitle": "还没有物品",
-    "emptyHint": "只要 donor 或 organization 发布了物品，它们就会出现在这里。",
+    "emptyHint": "只要 donor 或 community organisation 发布了物品，它们就会出现在这里。",
     "emptySearchTitle": "没有匹配的物品",
     "emptySearchHint": "试试别的关键词，或者清除当前类别和状态筛选。",
     "intelligence": {
@@ -382,7 +394,9 @@
       "noDataHint": "当列表数据足够时，这里会显示覆盖热点。",
       "loadErrorTitle": "无法加载覆盖洞察",
       "loadErrorHint": "当前无法读取邮编覆盖分析所需数据，请稍后再试。"
-    }
+    },
+    "workspaceTitle": "社区组织工作区",
+    "workspaceSubtitle": "查看附近服务区域的实时供需信号。"
   },
   "listing": {
     "itemsAvailable": "{{count}} 件物品可用",
@@ -391,7 +405,7 @@
     "from": "来自",
     "fromCode": "来自 {{code}}",
     "fromDonorCode": "来自捐赠方",
-    "fromOrganizationCode": "来自机构",
+    "fromOrganizationCode": "来自社区组织",
     "postcode": "邮编",
     "claimingButton": "领取中...",
     "claimThisButton": "领取食物",
@@ -404,8 +418,9 @@
       "vegetarian": "素食",
       "vegan": "纯素",
       "glutenFree": "无谷蛋白",
-      "dairyFree": "无乳制品",
+      "dairyFree": "无乳糖 / 无乳制品",
       "nonVegetarian": "非素食",
+      "halal": "清真",
       "none": "无饮食标签"
     },
     "units": {

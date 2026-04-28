@@ -1,17 +1,8 @@
 import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-
-const STORAGE_KEY = 'crisislink-donor-postcode'
-
-function getSavedDonorPostcode() {
-  try {
-    return String(window.localStorage.getItem(STORAGE_KEY) || '').trim()
-  } catch (error) {
-    return ''
-  }
-}
-
+import { getSavedDonorPostcode } from '../utils/donorPostcode'
+import WorkspaceFeatureNav from './WorkspaceFeatureNav'
 const DonorFeatureNav = ({ active = 'listings', postcode = '' }) => {
   const navigate = useNavigate()
   const { t } = useTranslation()
@@ -23,22 +14,24 @@ const DonorFeatureNav = ({ active = 'listings', postcode = '' }) => {
   }
 
   return (
-    <section className="donor-feature-nav" aria-label={t('common.navigation', 'Donor navigation')}>
-      <button
-        type="button"
-        className={`donor-feature-nav-button ${active === 'listings' ? 'active' : ''}`.trim()}
-        onClick={() => goTo('/feed/' + effectivePostcode)}
-      >
-        {t('donorNav.listings', 'My listings')}
-      </button>
-      <button
-        type="button"
-        className={`donor-feature-nav-button ${active === 'hotspots' ? 'active' : ''}`.trim()}
-        onClick={() => goTo('/hotspots/' + effectivePostcode)}
-      >
-        {t('donorNav.hotspots', 'Hotspots')}
-      </button>
-    </section>
+    <WorkspaceFeatureNav
+      role="donor"
+      ariaLabel={t('common.navigation', 'Donor navigation')}
+      items={[
+        {
+          key: 'listings',
+          label: t('donorNav.listings', 'My listings'),
+          active: active === 'listings',
+          onClick: () => goTo('/donor/listings'),
+        },
+        {
+          key: 'hotspots',
+          label: t('donorNav.hotspots', 'Hotspots'),
+          active: active === 'hotspots',
+          onClick: () => goTo('/donor/hotspots'),
+        },
+      ]}
+    />
   )
 }
 
