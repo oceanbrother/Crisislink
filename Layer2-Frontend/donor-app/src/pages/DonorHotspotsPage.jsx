@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import WorkspaceHeader from '../components/WorkspaceHeader'
 import DonorFeatureNav from '../components/DonorFeatureNav'
 import {
   computeHotspotPriorityScore,
@@ -52,7 +53,6 @@ const DonorHotspotsPage = () => {
   const location = useLocation()
   const { postcode: postcodeFromPath } = useParams()
   const { t, i18n } = useTranslation()
-  const [showLanguageMenu, setShowLanguageMenu] = useState(false)
   const [hotspotSortMode, setHotspotSortMode] = useState('priority')
   const [hotspotRegionFilter, setHotspotRegionFilter] = useState('all')
   const [hotspotDistanceFilter, setHotspotDistanceFilter] = useState('all')
@@ -233,43 +233,17 @@ const DonorHotspotsPage = () => {
     return ranked[0]
   }, [visibleHotspots])
 
-  const handleLanguageChange = (lang) => {
-    i18n.changeLanguage(lang)
-    localStorage.setItem('preferredLanguage', lang)
-    setShowLanguageMenu(false)
-  }
 
   return (
     <div className="post-feed-page donor-role-page donor-hotspots-page">
-      <header className="navbar donor-navbar">
-        <div className="navbar-inner donor-navbar-inner">
-          <button
-            className="brand-home-btn"
-            type="button"
-            onClick={() => navigate('/donor', { state: { postcode: focusPostcode } })}
-          >
-            <span className="brand-home-title">{t('appName')}</span>
-          </button>
-
-          <div className="nav-actions donor-nav-actions">
-            <div className="language-btn-wrapper">
-              <button className="nav-icon-btn" type="button" onClick={() => setShowLanguageMenu((prev) => !prev)}>
-                <span className="material-symbols-outlined">language</span>
-              </button>
-              {showLanguageMenu ? (
-                <div className="language-menu">
-                  <button type="button" onClick={() => handleLanguageChange('en')}>English</button>
-                  <button type="button" onClick={() => handleLanguageChange('zh')}>中文</button>
-                </div>
-              ) : null}
-            </div>
-          </div>
-        </div>
-        <div className="navbar-divider" />
-      </header>
+      <WorkspaceHeader
+        role="donor"
+        onBackClick={() => navigate('/donor/listings', { state: { postcode: focusPostcode } })}
+        onBrandClick={() => navigate('/donor/listings', { state: { postcode: focusPostcode } })}
+      />
 
       <main className="feed-content donor-feed-content">
-        <div className="donor-area-nav-row">
+        <div className="workspace-nav-row donor-area-nav-row">
           <DonorFeatureNav active="hotspots" postcode={focusPostcode} />
         </div>
 

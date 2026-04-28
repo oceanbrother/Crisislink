@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { getAvailableListings } from '../services/api'
 import { buildSupplyGapInsights } from '../constants/supplyGapInsights'
 import OrgFeatureNav from '../components/OrgFeatureNav'
+import WorkspaceHeader from '../components/WorkspaceHeader'
 import '../styles/LiveListingBoard.css'
 
 const OrgSupplyGapPage = () => {
@@ -151,25 +152,22 @@ const OrgSupplyGapPage = () => {
       state: {
         orgMode: true,
         orgCode,
-        orgName: `Organization ${orgCode}`,
+        orgName: `Organisation ${orgCode}`,
         focusPostcode: zone?.postcode || '',
       },
     })
   }
 
   return (
-    <div className="live-listing-board org-role-board">
-      <header className="navbar org-navbar">
-        <div className="navbar-inner org-navbar-inner">
-          <button className="brand-home-btn org-brand-btn" type="button" onClick={() => navigate('/')}>
-            <span className="brand-home-title">{t('appName')}</span>
-          </button>
-        </div>
-        <div className="navbar-divider" />
-      </header>
+    <div className="live-listing-board org-role-board org-role-page">
+      <WorkspaceHeader
+        role="org"
+        onBackClick={() => navigate('/org/listings', { state: { orgCode } })}
+        onBrandClick={() => navigate('/org/listings', { state: { orgCode } })}
+      />
 
       <main className="feed-content org-feed-content">
-        <div className="org-area-nav-row">
+        <div className="workspace-nav-row org-area-nav-row">
           <OrgFeatureNav active="gaps" orgCode={orgCode} />
         </div>
 
@@ -177,7 +175,7 @@ const OrgSupplyGapPage = () => {
           <div className="org-page-heading-row">
             <div className="org-page-heading">
               <h1 className="board-title org-page-title">
-                {t('dashboard.workspaceTitle', 'Organization workspace')}
+                {t('dashboard.workspaceTitle', 'Organisation workspace')}
               </h1>
               <p className="org-page-subtitle">
                 {t('dashboard.workspaceSubtitle', 'Review live supply and demand signals for nearby service areas.')}

@@ -2,8 +2,12 @@ import React, { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { deleteListing, getAvailableListings } from '../services/api'
-import { FILTER_OPTIONS, formatBestBeforeLabel, resolveListingCategory } from '../constants/listings'
+import { DIETARY_FILTER_OPTIONS, FILTER_OPTIONS, formatBestBeforeLabel, resolveListingCategory } from '../constants/listings'
 import DonorFeatureNav from '../components/DonorFeatureNav'
+import WorkspaceContextCard from '../components/WorkspaceContextCard'
+import WorkspaceFilterPanel from '../components/WorkspaceFilterPanel'
+import WorkspaceHeader from '../components/WorkspaceHeader'
+import WorkspaceSummaryCard from '../components/WorkspaceSummaryCard'
 import { forgetDonorListing, getOrCreateDonorCode, isRememberedDonorListing } from '../utils/donorIdentity'
 import { resolveImageUrl } from '../utils/imageUrl'
 import { getSavedDonorPostcode, saveDonorPostcode } from '../utils/donorPostcode'
@@ -14,10 +18,43 @@ function getDietaryClass(tag) {
   return String(tag).toLowerCase().replace(/\s+/g, '-')
 }
 
+function normalizeDietaryTag(value) {
+  return String(value || '').trim().toLowerCase().replace(/\s+/g, '-')
+}
+
+function resolveDietaryTranslationKey(value) {
+  const normalized = normalizeDietaryTag(value)
+  if (normalized === 'non-vegetarian') return 'nonVegetarian'
+  if (normalized === 'dairy-free' || normalized === 'lactose-free') return 'dairyFree'
+  if (normalized === 'gluten-free') return 'glutenFree'
+  return normalized
+}
+
+function matchesDietaryFilter(tags, filterValue) {
+  if (filterValue === 'all') return true
+  if (!Array.isArray(tags) || tags.length === 0) return false
+
+  return tags.some((rawTag) => {
+    const normalized = normalizeDietaryTag(rawTag)
+    if (filterValue === 'dairy-free') {
+      return normalized === 'dairy-free' || normalized === 'lactose-free'
+    }
+    return normalized === filterValue
+  })
+}
+
 function isLegacyDonorListing(listing, currentPostcode) {
   const listingOrgCode = String(listing?.orgCode || '').trim().toUpperCase()
   const postcode = String(currentPostcode || '').trim()
   return postcode !== '' && listingOrgCode === ('DONOR-' + postcode).toUpperCase()
+}
+
+function isOwnedDonorListing(listing, donorCode, postcode) {
+  return (
+    listing.orgCode === donorCode ||
+    isRememberedDonorListing(listing.id) ||
+    isLegacyDonorListing(listing, postcode)
+  )
 }
 
 function getRelativeTime(createdAt, t) {
@@ -86,11 +123,11 @@ const PostFeedPage = () => {
   const { t, i18n } = useTranslation()
 
   const [activeFilter, setActiveFilter] = useState('All')
+  const [activeFoodType, setActiveFoodType] = useState('all')
   const [search, setSearch] = useState('')
   const [listings, setListings] = useState([])
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
-  const [showLanguageMenu, setShowLanguageMenu] = useState(false)
   const [brokenImageIds, setBrokenImageIds] = useState([])
 
   const donorCode = useMemo(() => getOrCreateDonorCode(), [])
@@ -124,36 +161,44 @@ const PostFeedPage = () => {
     const term = search.trim().toLowerCase()
     return listings.filter((listing) => {
       const category = resolveListingCategory(listing.category, listing.foodType)
-      const ownListing =
-        listing.orgCode === donorCode ||
-        isRememberedDonorListing(listing.id) ||
-        isLegacyDonorListing(listing, postcode)
+      const ownListing = isOwnedDonorListing(listing, donorCode, postcode)
 
       if (!ownListing) return false
 
       const matchesFilter = activeFilter === 'All' || category === activeFilter
       if (!matchesFilter) return false
 
+      const matchesFoodType = matchesDietaryFilter(listing.dietary_tags, activeFoodType)
+      if (!matchesFoodType) return false
+
       return matchesSearchFields(getSearchableFields(listing, term), term)
     })
-  }, [activeFilter, donorCode, listings, postcode, search])
+  }, [activeFilter, activeFoodType, donorCode, listings, postcode, search])
 
   const hasActiveSearch = search.trim() !== ''
   const hasActiveFilter = activeFilter !== 'All'
-  const hasActiveControls = hasActiveSearch || hasActiveFilter
+  const hasActiveFoodTypeFilter = activeFoodType !== 'all'
+  const hasActiveControls = hasActiveSearch || hasActiveFilter || hasActiveFoodTypeFilter
   const isBaseEmpty = listings.length === 0
   const isFilteredEmpty = !loading && !isBaseEmpty && filteredListings.length === 0
 
   const clearFilters = () => {
     setSearch('')
     setActiveFilter('All')
+    setActiveFoodType('all')
   }
 
-  const handleLanguageChange = (lang) => {
-    i18n.changeLanguage(lang)
-    localStorage.setItem('preferredLanguage', lang)
-    setShowLanguageMenu(false)
-  }
+  const donorSummary = useMemo(() => {
+    return listings.reduce((acc, listing) => {
+      if (!isOwnedDonorListing(listing, donorCode, postcode)) return acc
+      acc.total += 1
+      if (!listing.hasClaims) {
+        acc.editable += 1
+      }
+      return acc
+    }, { total: 0, editable: 0 })
+  }, [donorCode, listings, postcode])
+
 
   const handleEdit = (listing) => {
     navigate('/donor/post', {
@@ -161,6 +206,15 @@ const PostFeedPage = () => {
         postcode: listing.postcode,
         editMode: true,
         listing,
+        orgMode: false,
+      },
+    })
+  }
+
+  const handleCreatePost = () => {
+    navigate('/donor/post', {
+      state: {
+        postcode,
         orgMode: false,
       },
     })
@@ -183,58 +237,56 @@ const PostFeedPage = () => {
 
   return (
     <div className="post-feed-page donor-role-page">
-      <header className="navbar donor-navbar">
-        <div className="navbar-inner donor-navbar-inner">
-          <button
-            className="brand-home-btn"
-            type="button"
-            onClick={() => navigate('/donor', { state: { postcode } })}
-          >
-            <span className="brand-home-title">{t('appName')}</span>
-          </button>
-
-          <div className="nav-actions donor-nav-actions">
-            <div className="language-btn-wrapper">
-              <button className="nav-icon-btn" type="button" onClick={() => setShowLanguageMenu((prev) => !prev)}>
-                <span className="material-symbols-outlined">language</span>
-              </button>
-              {showLanguageMenu ? (
-                <div className="language-menu">
-                  <button type="button" onClick={() => handleLanguageChange('en')}>English</button>
-                  <button type="button" onClick={() => handleLanguageChange('zh')}>中文</button>
-                </div>
-              ) : null}
-            </div>
-          </div>
-        </div>
-        <div className="navbar-divider" />
-      </header>
+      <WorkspaceHeader
+        role="donor"
+        onBackClick={() => navigate('/roles')}
+        onBrandClick={() => navigate('/roles')}
+      />
 
       <main className="feed-content donor-feed-content">
-        <div className="donor-area-nav-row">
+        <div className="workspace-nav-row donor-area-nav-row">
           <DonorFeatureNav active="listings" postcode={postcode} />
         </div>
 
-        <section className="donor-page-intro donor-page-intro--listings">
-          <div className="donor-page-heading">
-            <h1 className="board-title donor-page-title">{t('feed.pageTitle', 'Your donor listings')}</h1>
-            <div
-              className="donor-page-location-card donor-page-location-card--compact"
-              role="group"
-              aria-label={t('listing.postcode', 'Postcode')}
+        <WorkspaceSummaryCard
+          role="donor"
+          className="workspace-listings-summary workspace-listings-summary--donor"
+          title={t('feed.pageTitle', 'My listings')}
+          subtitle={t('feed.subtitle', 'Edit or remove the items you have posted.')}
+          action={(
+            <button
+              type="button"
+              className="workspace-primary-action workspace-summary-card__cta donor-quick-post-btn"
+              onClick={handleCreatePost}
+              aria-label={t('feed.quickPostTooltip', 'Post surplus food')}
+              title={t('feed.quickPostTooltip', 'Post surplus food')}
             >
-              <div className="donor-page-location-badge">
-                <span className="material-symbols-outlined donor-page-location-icon">location_on</span>
-              </div>
-              <div className="donor-page-location-copy">
-                <span className="donor-page-location-label">{t('listing.postcode', 'Postcode')}</span>
-                <span className="donor-page-location-value">{postcode || 'Saved on next post'}</span>
-              </div>
+              <span className="material-symbols-outlined" aria-hidden="true">add</span>
+              <span>{t('feed.quickPost', 'Post food')}</span>
+            </button>
+          )}
+          context={(
+            <WorkspaceContextCard
+              label={t('listing.postcode', 'Postcode')}
+              value={postcode || t('feed.postcodePending', 'Saved on next post')}
+              supportingText={t('feed.postcodeHint', 'Reference postcode for your donor workspace.')}
+              icon="location_on"
+            />
+          )}
+        >
+          <div className="workspace-summary-grid donor-summary-grid">
+            <div className="workspace-summary-metric">
+              <span className="workspace-summary-metric__label">{t('dashboard.statusTabs.all', 'All listings')}</span>
+              <strong className="workspace-summary-metric__value">{donorSummary.total}</strong>
+            </div>
+            <div className="workspace-summary-metric workspace-summary-metric--soft">
+              <span className="workspace-summary-metric__label">{t('feed.editableListings', 'Editable listings')}</span>
+              <strong className="workspace-summary-metric__value">{donorSummary.editable}</strong>
             </div>
           </div>
-        </section>
+        </WorkspaceSummaryCard>
 
-        <section className="filter-section donor-filter-section">
+        <WorkspaceFilterPanel role="donor" className="filter-section workspace-listings-filters workspace-listings-filters--donor donor-filter-section">
           <div className={hasActiveSearch ? 'search-wrapper donor-search-wrapper donor-search-wrapper--active' : 'search-wrapper donor-search-wrapper'}>
             <span className="material-symbols-outlined search-icon">search</span>
             <input
@@ -255,17 +307,44 @@ const PostFeedPage = () => {
               </button>
             ) : null}
           </div>
-          <div className="filter-chips donor-filter-chips">
-            {FILTER_OPTIONS.map((option) => (
-              <button
-                key={option.value}
-                type="button"
-                className={activeFilter === option.value ? 'filter-chip active' : 'filter-chip'}
-                onClick={() => setActiveFilter(option.value)}
-              >
-                {t('dashboard.tabs.' + option.key, option.value)}
-              </button>
-            ))}
+          <div className="filter-group filter-panel-group">
+            <div className="filter-group-heading">
+              <div className="filter-group-label">{t('dashboard.filterLabels.category')}</div>
+            </div>
+            <div className="filter-chips donor-filter-chips">
+              {FILTER_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  className={activeFilter === option.value ? 'filter-chip active' : 'filter-chip'}
+                  onClick={() => setActiveFilter(option.value)}
+                >
+                  {option.value === 'All'
+                    ? t('dashboard.filterLabels.allCategories')
+                    : t('dashboard.tabs.' + option.key, option.value)}
+                </button>
+              ))}
+            </div>
+          </div>
+
+          <div className="filter-group filter-panel-group">
+            <div className="filter-group-heading">
+              <div className="filter-group-label">{t('dashboard.filterLabels.foodType', 'Food type')}</div>
+            </div>
+            <div className="filter-chips donor-filter-chips">
+              {DIETARY_FILTER_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  className={activeFoodType === option.value ? 'filter-chip active' : 'filter-chip'}
+                  onClick={() => setActiveFoodType(option.value)}
+                >
+                  {option.value === 'all'
+                    ? t('dashboard.tabs.allTypes', 'All types')
+                    : t(`listing.dietary.${option.key}`, option.value)}
+                </button>
+              ))}
+            </div>
           </div>
 
           {hasActiveControls ? (
@@ -280,6 +359,11 @@ const PostFeedPage = () => {
                 {hasActiveFilter ? (
                   <span className="filter-feedback-pill">
                     {t('feed.filteringCategory', 'Category')} · {t('dashboard.tabs.' + (FILTER_OPTIONS.find((option) => option.value === activeFilter)?.key || 'all'), activeFilter)}
+                  </span>
+                ) : null}
+                {hasActiveFoodTypeFilter ? (
+                  <span className="filter-feedback-pill">
+                    {t('dashboard.filterLabels.foodType', 'Food type')} · {t(`listing.dietary.${resolveDietaryTranslationKey(activeFoodType)}`, activeFoodType)}
                   </span>
                 ) : null}
               </div>
@@ -300,7 +384,7 @@ const PostFeedPage = () => {
               </span>
             </div>
           )}
-        </section>
+        </WorkspaceFilterPanel>
 
         {error ? <div className="error-message board-error">{error}</div> : null}
 
@@ -322,10 +406,7 @@ const PostFeedPage = () => {
         ) : (
           <div className="food-grid donor-food-grid">
             {filteredListings.map((listing) => {
-              const ownListing =
-                listing.orgCode === donorCode ||
-                isRememberedDonorListing(listing.id) ||
-                isLegacyDonorListing(listing, postcode)
+              const ownListing = isOwnedDonorListing(listing, donorCode, postcode)
               const dietaryTag = Array.isArray(listing.dietary_tags) && listing.dietary_tags.length > 0 ? listing.dietary_tags[0] : ''
               const bestBefore = formatBestBeforeLabel(listing.expiryDate, i18n.language === 'zh' ? 'zh-CN' : 'en-AU')
               const category = resolveListingCategory(listing.category, listing.foodType)

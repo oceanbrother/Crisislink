@@ -2,9 +2,9 @@ import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { getSavedDonorPostcode } from '../utils/donorPostcode'
-import '../styles/DonorFeatureNav.css'
+import WorkspaceFeatureNav from './WorkspaceFeatureNav'
 
-const DonorFeatureNav = ({ active = 'post', postcode = '' }) => {
+const DonorFeatureNav = ({ active = 'listings', postcode = '' }) => {
   const navigate = useNavigate()
   const { t } = useTranslation()
   const effectivePostcode = String(postcode || getSavedDonorPostcode() || '').trim()
@@ -14,29 +14,24 @@ const DonorFeatureNav = ({ active = 'post', postcode = '' }) => {
   }
 
   return (
-    <section className="donor-feature-nav" aria-label="Donor navigation">
-      <button
-        type="button"
-        className={`donor-feature-nav-button ${active === 'post' ? 'active' : ''}`.trim()}
-        onClick={() => goTo('/donor/post')}
-      >
-        {t('donorNav.post', 'Post food')}
-      </button>
-      <button
-        type="button"
-        className={`donor-feature-nav-button ${active === 'listings' ? 'active' : ''}`.trim()}
-        onClick={() => goTo('/donor/listings')}
-      >
-        {t('donorNav.listings', 'My listings')}
-      </button>
-      <button
-        type="button"
-        className={`donor-feature-nav-button ${active === 'hotspots' ? 'active' : ''}`.trim()}
-        onClick={() => goTo('/donor/hotspots')}
-      >
-        {t('donorNav.hotspots', 'Hotspots')}
-      </button>
-    </section>
+    <WorkspaceFeatureNav
+      role="donor"
+      ariaLabel={t('common.navigation', 'Donor navigation')}
+      items={[
+        {
+          key: 'listings',
+          label: t('donorNav.listings', 'My listings'),
+          active: active === 'listings',
+          onClick: () => goTo('/donor/listings'),
+        },
+        {
+          key: 'hotspots',
+          label: t('donorNav.hotspots', 'Hotspots'),
+          active: active === 'hotspots',
+          onClick: () => goTo('/donor/hotspots'),
+        },
+      ]}
+    />
   )
 }
 
