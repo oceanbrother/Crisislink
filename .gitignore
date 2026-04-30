@@ -56,6 +56,10 @@ Thumbs.db
 Food-101/
 trained_models/
 
+# Local ML model artifact directories (do not commit full models)
+Layer4-AI/demand_prediction/models/
+Layer3-Backend/prediction_service/models/
+
 # Docker
 .dockerignore
 

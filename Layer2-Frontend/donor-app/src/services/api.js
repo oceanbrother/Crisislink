@@ -83,6 +83,21 @@ export const getAvailableListings = async (filters = {}) => {
   return response.data
 }
 
+export const getRiskScores = async (postcodes = []) => {
+  const response = await apiClient.get('/predictions/risk-scores', { params: { postcodes } })
+  return response.data
+}
+
+export const getGapPostcodes = async (params = {}) => {
+  const response = await apiClient.get('/predictions/gap-postcodes', { params })
+  return response.data
+}
+
+export const getHotspots = async (params = {}) => {
+  const response = await apiClient.get('/predictions/hotspots', { params })
+  return response.data
+}
+
 export const claimListing = async (listingId, claimData) => {
   const response = await apiClient.post("/listings/" + listingId + "/claim", claimData)
   return response.data
