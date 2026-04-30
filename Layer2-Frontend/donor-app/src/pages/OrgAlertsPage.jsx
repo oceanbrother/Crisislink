@@ -1,8 +1,9 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { getAvailableListings } from '../services/api'
+import { getAvailableListings, getPredictionRiskScores } from '../services/api'
 import { buildDemandInsights } from '../constants/demandInsights'
+import { buildDemandInsightsFromRiskScores } from '../utils/predictionAdapters'
 import OrgFeatureNav from '../components/OrgFeatureNav'
 import '../styles/LiveListingBoard.css'
 
@@ -10,13 +11,14 @@ const DEMAND_SPIKE_THRESHOLD = 20
 const DEMAND_CRITICAL_THRESHOLD = 30
 const HIGH_CONFIDENCE_THRESHOLD = 80
 const MEDIUM_CONFIDENCE_THRESHOLD = 70
+const SHOW_SAMPLE_HINT = Boolean(import.meta.env.DEV)
 
 const OrgAlertsPage = () => {
   const navigate = useNavigate()
   const location = useLocation()
   const { t } = useTranslation()
 
-  const [listings, setListings] = useState([])
+  const [demandInsights, setDemandInsights] = useState(() => buildDemandInsights([]))
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
@@ -32,25 +34,35 @@ const OrgAlertsPage = () => {
 
   useEffect(() => {
     window.localStorage.setItem('crisislink-org-session', JSON.stringify({ orgCode }))
-    loadListings()
+    loadDemandInsights()
   }, [orgCode])
 
-  const loadListings = async () => {
+  const loadDemandInsights = async () => {
     setLoading(true)
     setError('')
 
     try {
+      try {
+        const riskScoreData = await getPredictionRiskScores()
+        const predictionInsights = buildDemandInsightsFromRiskScores(riskScoreData)
+
+        if (predictionInsights.alerts.length > 0) {
+          setDemandInsights(predictionInsights)
+          return
+        }
+      } catch (predictionError) {
+        // Prediction service is optional during frontend-only development.
+      }
+
       const availableData = await getAvailableListings({ status: 'available' })
-      setListings(Array.isArray(availableData) ? availableData : [])
+      setDemandInsights(buildDemandInsights(Array.isArray(availableData) ? availableData : []))
     } catch (loadError) {
       setError('alerts-load-failed')
-      setListings([])
+      setDemandInsights(buildDemandInsights([]))
     } finally {
       setLoading(false)
     }
   }
-
-  const demandInsights = useMemo(() => buildDemandInsights(listings), [listings])
   const demandAlerts = useMemo(() => {
     if (Array.isArray(demandInsights.alerts) && demandInsights.alerts.length > 0) {
       return demandInsights.alerts
@@ -285,7 +297,7 @@ const OrgAlertsPage = () => {
                   </button>
                 </div>
               </div>
-              {demandInsights.source === 'sample' ? (
+              {SHOW_SAMPLE_HINT && demandInsights.source !== 'prediction' ? (
                 <p className="org-demand-data-note">{t('dashboard.intelligence.sampleNote')}</p>
               ) : null}
             </div>

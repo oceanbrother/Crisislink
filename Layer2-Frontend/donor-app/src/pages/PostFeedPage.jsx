@@ -3,7 +3,9 @@ import { useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { deleteListing, getAvailableListings } from '../services/api'
 import { FILTER_OPTIONS, formatBestBeforeLabel, resolveListingCategory } from '../constants/listings'
+import DonorFeatureNav from '../components/DonorFeatureNav'
 import { forgetDonorListing, getOrCreateDonorCode, isRememberedDonorListing } from '../utils/donorIdentity'
+import { resolveImageUrl } from '../utils/imageUrl'
 import '../styles/PostFeedPage.css'
 
 function getDietaryClass(tag) {
@@ -87,6 +89,7 @@ const PostFeedPage = () => {
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [showLanguageMenu, setShowLanguageMenu] = useState(false)
+  const [brokenImageIds, setBrokenImageIds] = useState([])
 
   const donorCode = useMemo(() => getOrCreateDonorCode(), [])
 
@@ -165,6 +168,12 @@ const PostFeedPage = () => {
     }
   }
 
+  const markImageBroken = (listingId) => {
+    setBrokenImageIds((previousIds) => (
+      previousIds.includes(listingId) ? previousIds : [...previousIds, listingId]
+    ))
+  }
+
   return (
     <div className="post-feed-page donor-role-page">
       <header className="navbar donor-navbar">
@@ -209,6 +218,10 @@ const PostFeedPage = () => {
             </div>
           </div>
         </section>
+
+        <div className="donor-area-nav-row">
+          <DonorFeatureNav active="listings" postcode={postcode} />
+        </div>
 
         <section className="filter-section donor-filter-section">
           <div className={hasActiveSearch ? 'search-wrapper donor-search-wrapper donor-search-wrapper--active' : 'search-wrapper donor-search-wrapper'}>
@@ -308,10 +321,18 @@ const PostFeedPage = () => {
               const categoryOption = FILTER_OPTIONS.find((option) => option.value === category)
               const listingLocked = ownListing && listing.hasClaims
               const relativeTime = getRelativeTime(listing.createdAt, t)
+              const imageUrl = resolveImageUrl(listing.photoUrl)
 
               return (
                 <article key={listing.id} className={ownListing ? 'food-card own-listing-card donor-card' : 'food-card donor-card'}>
-                  {listing.photoUrl ? <img className="food-card-image" src={listing.photoUrl} alt={listing.foodType} /> : null}
+                  {imageUrl && !brokenImageIds.includes(listing.id) ? (
+                    <img
+                      className="food-card-image"
+                      src={imageUrl}
+                      alt={listing.foodType}
+                      onError={() => markImageBroken(listing.id)}
+                    />
+                  ) : null}
 
                   <div className="food-card-header donor-card-header">
                     <div className="donor-card-heading-stack">

@@ -8,11 +8,13 @@ import HomePage from './pages/HomePage'
 import PostcodeInputPage from './pages/PostcodeInputPage'
 import PostFeedPage from './pages/PostFeedPage'
 import DonationFormPage from './pages/DonationFormPage'
+import DonorHotspotsPage from './pages/DonorHotspotsPage'
 
 // Pages - Organization Flow
 import OrgCodeInputPage from './pages/OrgCodeInputPage'
 import LiveListingBoard from './pages/LiveListingBoard'
 import OrgAlertsPage from './pages/OrgAlertsPage'
+import OrgSupplyGapPage from './pages/OrgSupplyGapPage'
 
 function PasswordGate({ expectedPassword, children }) {
   const { t } = useTranslation()
@@ -101,6 +103,7 @@ function AppRoutes() {
       {/* Donor flow: postcode -> feed -> form */}
       <Route path="/postcode" element={<PostcodeInputPage />} />
       <Route path="/feed/:postcode" element={<PostFeedPage />} />
+      <Route path="/hotspots/:postcode" element={<DonorHotspotsPage />} />
 
       {/* Form with optional postcode param so we can redirect back to feed */}
       <Route path="/form/:postcode" element={<DonationFormPage />} />
@@ -110,6 +113,7 @@ function AppRoutes() {
       <Route path="/org/code" element={<OrgCodeInputPage />} />
       <Route path="/org/listings" element={<LiveListingBoard />} />
       <Route path="/org/alerts" element={<OrgAlertsPage />} />
+      <Route path="/org/gaps" element={<OrgSupplyGapPage />} />
 
       {/* Catch all - redirect to home */}
       <Route path="*" element={<Navigate to="/" replace />} />
