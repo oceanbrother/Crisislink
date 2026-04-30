@@ -7,7 +7,12 @@
       "title": "我想捐赠食物",
       "description": "把多余食物分享给附近的社区组织",
       "button": "发布食物"
-    },
+    "currentPostcodeAria": "当前捐赠者邮编",
+  "aroundMe": "我周围",
+  "hotspots": "热点",
+  "riskScore": "风险评分",
+  "totalSupply": "供应总量",
+  "gapPostcodes": "覆盖缺口"
     "organization": {
       "title": "我管理一个社区组织",
       "description": "浏览可领取的食物，或代表组织发布剩余食物",

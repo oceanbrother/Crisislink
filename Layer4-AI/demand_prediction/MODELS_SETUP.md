@@ -31,6 +31,11 @@ mkdir -p Layer4-AI/demand_prediction/models
 cp kmeans_model.pkl Layer4-AI/demand_prediction/models/
 cp shap_surrogate.pkl Layer4-AI/demand_prediction/models/
 cp scaler.pkl Layer4-AI/demand_prediction/models/
+
+# For prediction_service add additional artifacts
+mkdir -p Layer3-Backend/prediction_service/models
+cp cluster_lookup.json Layer3-Backend/prediction_service/models/
+cp demand_forecaster.pkl Layer3-Backend/prediction_service/models/
 ```
 
 ### Step 2: Verify DATABASE_URL
