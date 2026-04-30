@@ -16,6 +16,117 @@
     "eyebrow": "Local food sharing",
     "support": "Post surplus food for your community, or browse available food to claim."
   },
+  "donorNav": {
+    "post": "Post food",
+    "listings": "My listings",
+    "hotspots": "Hotspots"
+  },
+  "donorWorkspace": {
+      "hotspots": "Hotspots",
+      "aroundMe": "Around Me",
+      "riskScore": "Risk Score",
+      "totalSupply": "Total Supply",
+      "gapPostcodes": "Coverage Gaps"
+    "title": "Donor workspace",
+    "subtitle": "Post surplus food, view local hotspots, and manage your listings.",
+    "currentPostcodeAria": "Current donor postcode",
+    "currentPostcodeLabel": "Current postcode",
+    "currentPostcodeFallback": "Add when you post food",
+    "actionsAria": "Donor workspace actions",
+    "cards": {
+      "post": {
+        "eyebrow": "Post food",
+        "title": "Post surplus food",
+        "description": "Share food you have available.",
+        "button": "Open posting form"
+      },
+      "hotspots": {
+        "eyebrow": "Decision support",
+        "title": "See where food is needed",
+        "description": "Check nearby food shortage hotspots before you donate.",
+        "button": "Open hotspot map"
+      },
+      "listings": {
+        "eyebrow": "My activity",
+        "title": "Manage my listings",
+        "description": "View or edit your posts.",
+        "button": "Open my listings"
+      }
+    }
+  },
+  "hotspots": {
+    "ariaLabel": "Hotspot priority map",
+    "referencePostcode": "Based on postcode {{postcode}}",
+    "referenceStatewide": "Based on state-wide baseline",
+    "eyebrow": "Need map",
+    "title": "Where food is needed most",
+    "subtitle": "Food shortage hotspots near your reference postcode.",
+    "helper": "Start from region clusters, then open a postcode card to inspect exact shortage details.",
+    "topPriorityLabel": "Top priority right now:",
+    "topPriorityHint": "{{name}} ({{distance}} km) - {{shortfall}} portions short",
+    "chips": {
+      "all": "All hotspots",
+      "criticalTitle": "Show urgent shortage hotspots",
+      "critical": "Critical shortage · {{count}}",
+      "highTitle": "Show high-need hotspots",
+      "highEmptyTitle": "No high-need hotspots right now",
+      "high": "High need · {{count}}",
+      "watchTitle": "Show emerging-risk hotspots to monitor",
+      "watch": "Watchlist risk · {{count}}"
+    },
+    "controls": {
+      "view": "View",
+      "needLevel": "Need level",
+      "allRegions": "All regions (state-wide)",
+      "groups": {
+        "metro": "Metro areas",
+        "greater": "Greater regions",
+        "regional": "Regional"
+      },
+      "groupHint": "Metro = inner city areas. Greater = surrounding suburbs. Regional = outside metro regions.",
+      "distance": "Distance",
+      "anyDistance": "Any distance",
+      "within10": "Within 10 km",
+      "within25": "Within 25 km",
+      "within50": "Within 50 km",
+      "sort": "Sort",
+      "sortPriority": "Priority (highest need first)",
+      "sortDistance": "Distance (closest first)"
+    },
+    "legendCopy": "Critical shortage = urgent need. High need = strong demand. Watchlist risk = areas to monitor next.",
+    "sampleNote": "Sample data only. Live hotspot scoring will be connected after database integration.",
+    "updating": "Updating hotspots...",
+    "emptyTitle": "No hotspots match these filters.",
+    "emptyHint": "Try all regions or a wider distance range.",
+    "emptyDistanceTitle": "No hotspots within {{distance}} km.",
+    "emptyDistanceHint": "Try expanding your distance range to {{distance}} km or more.",
+    "regionCount": "{{count}} hotspots",
+    "clusterClosest": "Closest {{distance}} km",
+    "clusterPriority": "Top priority {{score}}",
+    "clusterShortfall": "{{count}} portions short",
+    "priorityBands": {
+      "critical": "Critical hotspot",
+      "high": "High hotspot",
+      "watch": "Watchlist hotspot"
+    },
+    "metrics": {
+      "needScore": "Need score {{count}}",
+      "activeListings": "Active listings {{count}}",
+      "priority": "Priority {{count}}",
+      "distanceAway": "{{distance}} km away"
+    },
+    "detailTitle": "Hotspot detail · {{postcode}}",
+    "detailHint": "Only currently needed categories are shown.",
+    "detailStats": {
+      "shortfall": "Current shortfall",
+      "distance": "Approx. distance",
+      "nearestSupply": "Nearest supply point"
+    },
+    "portions": "{{count}} portions",
+    "kilometres": "{{distance}} km",
+    "nearestHub": "{{name}} ({{distance}} km)",
+    "shortageAmount": "{{count}} portions short"
+  },
   "postcode": {
     "title": "Enter your postcode",
     "subtitle": "Help us find food near you",
@@ -45,7 +156,7 @@
     "editLockedTooltip": "This listing has already been claimed and can no longer be edited or removed.",
     "homeLink": "Back to home",
     "kicker": "Donor preview",
-    "pageTitle": "Your donor listings",
+    "pageTitle": "My listings",
     "filterHint": "Search by food name, notes, size, or postcode.",
     "searchingFor": "Searching for",
     "filteringCategory": "Category",
@@ -87,7 +198,9 @@
       "donorTag": "Thank you for sharing.",
       "orgMessage": "Your surplus food is now available for other communities to claim.",
       "orgTag": "Thank you for helping the network.",
-      "updatedTitle": "Listing updated"
+      "updatedTitle": "Listing updated",
+      "nextStepLabel": "Next step",
+      "nextStepHint": "Check nearby food shortage hotspots to see where your donation can help most."
     },
     "editTitle": "Edit listing",
     "sizeCue": "Size or weight",
@@ -101,8 +214,12 @@
     "saveButton": "Save listing changes",
     "actions": {
       "backHome": "Back to home",
-      "backListings": "Back to live listings",
+      "backListings": "Back to my listings",
+      "backOrgListings": "Back to food listings",
       "backDashboard": "Back to dashboard",
+      "viewOrgAlerts": "Review alerts",
+      "viewOrgGaps": "Review supply gaps",
+      "viewHotspots": "See where food is needed",
       "editListing": "Edit this listing",
       "removeListing": "Remove this listing"
     },
@@ -230,6 +347,45 @@
       "noDataHint": "Demand alerts will appear here once forecasting data is available.",
       "loadErrorTitle": "Unable to load alerts",
       "loadErrorHint": "We could not load listings required for this alerts view. Please try again."
+    },
+    "coverageInsights": {
+      "title": "Supply coverage watch",
+      "kicker": "Coverage",
+      "subtitle": "Identify high-need postcodes with low or zero active food supply.",
+      "sampleNote": "Sample postcode profiles are shown until the live coverage map feed is connected.",
+      "summary": {
+        "zeroSupply": "zero-supply hotspots",
+        "atRisk": "postcodes at risk",
+        "tracked": "tracked postcodes"
+      },
+      "hotspotsTitle": "High-need areas with no active supply",
+      "hotspotsHint": "These postcodes currently have no available listings in the live board.",
+      "watchTitle": "Coverage watchlist",
+      "watchHint": "Postcodes where current active portions are likely to run short.",
+      "allCovered": "Every tracked hotspot postcode currently has active supply.",
+      "noWatch": "No extra watchlist postcodes are flagged right now.",
+      "detailTitle": "Postcode detail panel",
+      "detailHint": "Use this panel to plan redistribution decisions for a priority postcode.",
+      "fields": {
+        "seifa": "SEIFA score",
+        "activeListings": "Active listing count",
+        "population": "Estimated population in need",
+        "nearestSupply": "Nearest active supply point"
+      },
+      "badges": {
+        "zeroSupply": "Zero supply"
+      },
+      "coverage": {
+        "none": "No cover",
+        "low": "Low cover",
+        "watch": "Watch",
+        "healthy": "Healthy"
+      },
+      "respondAction": "Respond to this postcode",
+      "noDataTitle": "No coverage data yet",
+      "noDataHint": "Coverage hotspots will appear here once enough listing data is available.",
+      "loadErrorTitle": "Unable to load coverage insights",
+      "loadErrorHint": "We could not load listing data required for postcode coverage analysis. Please try again."
     }
   },
   "listing": {
