@@ -55,12 +55,17 @@ def check_database_url():
         print(f"⚠ No .env file found at {env_file}")
         return False
     
-    with open(env_file) as f:
-        for line in f:
-            if line.startswith("DATABASE_URL"):
+    # Robust check: allow whitespace, exported vars, and commented lines
+    with open(env_file, 'r', encoding='utf-8', errors='ignore') as f:
+        for raw in f:
+            line = raw.strip()
+            if not line or line.startswith('#'):
+                continue
+            # support formats like 'DATABASE_URL=...' or 'export DATABASE_URL=...'
+            if 'DATABASE_URL' in line and '=' in line:
                 print(f"✓ DATABASE_URL is configured")
                 return True
-    
+
     print(f"⚠ DATABASE_URL not found in {env_file}")
     return False
 

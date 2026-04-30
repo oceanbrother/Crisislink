@@ -28,7 +28,7 @@ class RiskScorer:
       4. Random Forest risk prediction
     """
     
-    # Feature names expected by the model (must match training data)
+    # Default feature names (must match training data)
     FEATURE_NAMES = [
         "unemployment_rate",
         "rent_to_income_ratio",
@@ -38,6 +38,21 @@ class RiskScorer:
         "single_parent_pct",
         "median_hhd_income_weekly",
         "median_rent_weekly",
+    ]
+
+    # Fallback feature order for RandomForest when feature names are unknown.
+    RF_FEATURE_NAMES = [
+        "unemployment_rate",
+        "rent_to_income_ratio",
+        "unemployment_rate_log",
+        "rent_to_income_ratio_log",
+        "total_population_log",
+        "single_parent_pct",
+        "median_hhd_income_weekly",
+        "median_rent_weekly",
+        "rent_to_income_final",
+        "unemployment_rate_sqrt",
+        "cluster",
     ]
     
     def __init__(
@@ -55,6 +70,7 @@ class RiskScorer:
             rf_path: Path to shap_surrogate.pkl. If None, uses default.
         """
         self.scaler = self._load_scaler(scaler_path)
+        self.feature_names = self._resolve_feature_names()
         self.kmeans = KMeansClustering(kmeans_path)
         self.rf = RandomForestForecaster(rf_path)
     
@@ -81,6 +97,20 @@ class RiskScorer:
                 return pickle.load(f)
         except Exception as e:
             raise RuntimeError(f"Failed to load StandardScaler: {e}")
+
+    def _resolve_feature_names(self) -> list[str]:
+        """Resolve feature names to align with the scaler metadata."""
+        if hasattr(self.scaler, "feature_names_in_"):
+            return list(self.scaler.feature_names_in_)
+
+        if hasattr(self.scaler, "n_features_in_"):
+            expected = int(self.scaler.n_features_in_)
+            if expected == len(self.FEATURE_NAMES):
+                return list(self.FEATURE_NAMES)
+            # Fallback: use the first N features in a stable order.
+            return list(self.FEATURE_NAMES[:expected])
+
+        return list(self.FEATURE_NAMES)
     
     def score(self, seifa_records: pd.DataFrame) -> pd.DataFrame:
         """
@@ -99,15 +129,15 @@ class RiskScorer:
             )
         
         # Validate required features
-        missing_features = set(self.FEATURE_NAMES) - set(seifa_records.columns)
+        missing_features = set(self.feature_names) - set(seifa_records.columns)
         if missing_features:
             raise ValueError(
                 f"Missing required features: {missing_features}. "
-                f"Input DataFrame must have columns: {self.FEATURE_NAMES}"
+                f"Input DataFrame must have columns: {self.feature_names}"
             )
         
         # Extract features in correct order
-        X = seifa_records[self.FEATURE_NAMES].values
+        X = seifa_records[self.feature_names].values
         X = np.asarray(X, dtype=np.float64)
         
         # Handle NaN values - fill with median
@@ -118,12 +148,56 @@ class RiskScorer:
         
         # Scale features
         X_scaled = self.scaler.transform(X)
-        
+        scaled_df = pd.DataFrame(X_scaled, columns=self.feature_names)
+
         # Get cluster assignments
         clusters = self.kmeans.predict(X_scaled)
-        
+
+        # Prepare RandomForest input
+        rf_features = None
+        if hasattr(self.rf.model, "feature_names_in_"):
+            rf_features = list(self.rf.model.feature_names_in_)
+
+        if rf_features:
+            rf_cols = []
+            for name in rf_features:
+                if name in scaled_df.columns:
+                    rf_cols.append(scaled_df[name].values)
+                elif name in {"cluster", "cluster_assignment", "cluster_id"}:
+                    rf_cols.append(clusters)
+                elif name in seifa_records.columns:
+                    rf_cols.append(seifa_records[name].astype(float).values)
+                else:
+                    rf_cols.append(np.full(len(seifa_records), np.nan))
+
+            X_rf = np.column_stack(rf_cols)
+            # Fill NaNs with column median
+            rf_medians = np.nanmedian(X_rf, axis=0)
+            for i in range(X_rf.shape[1]):
+                mask = np.isnan(X_rf[:, i])
+                X_rf[mask, i] = rf_medians[i]
+        else:
+            expected = int(getattr(self.rf.model, "n_features_in_", X_scaled.shape[1]))
+            fallback = self.RF_FEATURE_NAMES[:expected]
+            rf_cols = []
+            for name in fallback:
+                if name in scaled_df.columns:
+                    rf_cols.append(scaled_df[name].values)
+                elif name in {"cluster", "cluster_assignment", "cluster_id"}:
+                    rf_cols.append(clusters)
+                elif name in seifa_records.columns:
+                    rf_cols.append(seifa_records[name].astype(float).values)
+                else:
+                    rf_cols.append(np.full(len(seifa_records), np.nan))
+
+            X_rf = np.column_stack(rf_cols)
+            rf_medians = np.nanmedian(X_rf, axis=0)
+            for i in range(X_rf.shape[1]):
+                mask = np.isnan(X_rf[:, i])
+                X_rf[mask, i] = rf_medians[i]
+
         # Get risk scores
-        risk_scores = self.rf.predict(X_scaled)
+        risk_scores = self.rf.predict(X_rf)
         
         # Compile results
         results = pd.DataFrame({
