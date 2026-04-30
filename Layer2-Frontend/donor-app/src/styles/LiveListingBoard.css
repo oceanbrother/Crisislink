@@ -2513,3 +2513,32 @@
     width: 100%;
   }
 }
+
+/* ── Map column layout (Alerts page) ─────────────────────────── */
+.org-demand-map-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.org-alert-filter-row--top {
+  margin-bottom: 0;
+}
+
+/* ── Inline postcode count chip ───────────────────────────────── */
+.org-coverage-results-count {
+  margin-left: auto;
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #5b7269;
+  padding: 0.28rem 0.7rem;
+  background: rgba(15, 107, 76, 0.07);
+  border-radius: 999px;
+}
+
+/* ── Standalone sample-data note ─────────────────────────────── */
+.org-coverage-data-note--standalone {
+  margin: -0.25rem 0 0.5rem;
+  padding: 0 0.25rem;
+}

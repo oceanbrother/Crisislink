@@ -2744,3 +2744,162 @@
     width: 100%;
   }
 }
+
+/* ── Hotspot map layout (new Leaflet version) ─────────────────── */
+.hotspot-chip-filter-group--compact {
+  margin-bottom: 1rem;
+}
+
+.hotspot-map-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.hotspot-map-col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.hotspot-controls--inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 1rem;
+  padding: 0;
+  background: none;
+  border: none;
+}
+
+.hotspot-map-legend {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem 0.9rem;
+  flex-wrap: wrap;
+  font-size: 0.78rem;
+  color: var(--text-secondary, #666);
+  padding: 0 0.2rem;
+}
+
+.hotspot-legend-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.hotspot-legend-label {
+  margin-right: 0.5rem;
+}
+
+.hotspot-legend-dot--critical { background: #d93025; }
+.hotspot-legend-dot--high     { background: #e8711a; }
+.hotspot-legend-dot--watch    { background: #c5960e; }
+
+.hotspot-detail-head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-bottom: 0.5rem;
+}
+
+.hotspot-detail-head h3 {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--text-primary, #111);
+}
+
+.hotspot-detail-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.65rem;
+  border-radius: 99px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.hotspot-detail-badge--critical { background: #fde8e7; color: #b91c1c; }
+.hotspot-detail-badge--high     { background: #fef0e6; color: #c2410c; }
+.hotspot-detail-badge--watch    { background: #fef9e7; color: #92400e; }
+
+.hotspot-detail-hub {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.875rem;
+  color: var(--text-secondary, #555);
+  margin-bottom: 1rem;
+}
+
+.hotspot-detail-hub .material-symbols-outlined {
+  font-size: 1.1rem;
+  color: var(--text-tertiary, #888);
+}
+
+.hotspot-needed-heading {
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary, #666);
+  margin: 1.25rem 0 0.5rem;
+}
+
+.hotspot-post-cta {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  margin-top: 1.5rem;
+  padding: 0.75rem 1.25rem;
+  background: var(--brand-green, #1a9c67);
+  color: #fff;
+  border: none;
+  border-radius: 0.65rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+
+.hotspot-post-cta:hover {
+  background: #168055;
+}
+
+.hotspot-post-cta .material-symbols-outlined {
+  font-size: 1.15rem;
+}
+
+.hotspot-detail-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  min-height: 180px;
+  color: var(--text-tertiary, #aaa);
+  text-align: center;
+}
+
+.hotspot-detail-placeholder .material-symbols-outlined {
+  font-size: 2.5rem;
+  opacity: 0.5;
+}
+
+.hotspot-detail-placeholder p {
+  margin: 0;
+  font-size: 0.875rem;
+}
+
+@media (max-width: 900px) {
+  .hotspot-map-layout {
+    grid-template-columns: 1fr;
+  }
+}
