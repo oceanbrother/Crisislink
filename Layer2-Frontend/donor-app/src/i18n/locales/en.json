@@ -22,11 +22,6 @@
     "hotspots": "Hotspots"
   },
   "donorWorkspace": {
-      "hotspots": "Hotspots",
-      "aroundMe": "Around Me",
-      "riskScore": "Risk Score",
-      "totalSupply": "Total Supply",
-      "gapPostcodes": "Coverage Gaps"
     "title": "Donor workspace",
     "subtitle": "Post surplus food, view local hotspots, and manage your listings.",
     "currentPostcodeAria": "Current donor postcode",

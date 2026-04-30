@@ -114,14 +114,4 @@ export const getPredictionRiskScores = async (filters = {}) => {
   return response.data
 }
 
-export const getGapPostcodes = async (filters = {}) => {
-  const response = await apiClient.get('/predictions/gap-postcodes', { params: filters })
-  return response.data
-}
-
-export const getHotspots = async (filters = {}) => {
-  const response = await apiClient.get('/predictions/hotspots', { params: filters })
-  return response.data
-}
-
 export default apiClient
