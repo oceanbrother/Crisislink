@@ -20,8 +20,16 @@ from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Query
 from pydantic import BaseModel
 
-from apscheduler.schedulers.asyncio import AsyncIOScheduler
-from apscheduler.triggers.cron import CronTrigger
+try:
+	from apscheduler.schedulers.asyncio import AsyncIOScheduler
+	from apscheduler.triggers.cron import CronTrigger
+	APSCHEDULER_AVAILABLE = True
+except Exception as e:
+	# Allow API to start even if APScheduler deps are missing on this machine
+	AsyncIOScheduler = None
+	CronTrigger = None
+	APSCHEDULER_AVAILABLE = False
+	print(f"⚠ APScheduler not available: {e}")
 
 # Import the risk scoring pipeline
 import sys
@@ -58,14 +66,18 @@ async def startup():
 		print(f"⚠ Risk scorer models not available: {e}")
 		risk_scorer = None
 
-	# Setup scheduler for periodic tasks
+	# Setup scheduler for periodic tasks (optional)
 	global scheduler
-	scheduler = AsyncIOScheduler()
-	# Weekly prediction: Monday 06:00
-	scheduler.add_job(_weekly_prediction_job, CronTrigger(day_of_week="mon", hour=6, minute=0))
-	# Daily gap detection: every day 07:00
-	scheduler.add_job(_daily_gap_detection_job, CronTrigger(hour=7, minute=0))
-	scheduler.start()
+	if APSCHEDULER_AVAILABLE:
+		scheduler = AsyncIOScheduler()
+		# Weekly prediction: Monday 06:00
+		scheduler.add_job(_weekly_prediction_job, CronTrigger(day_of_week="mon", hour=6, minute=0))
+		# Daily gap detection: every day 07:00
+		scheduler.add_job(_daily_gap_detection_job, CronTrigger(hour=7, minute=0))
+		scheduler.start()
+	else:
+		scheduler = None
+		print("⚠ Scheduler disabled; APScheduler not available")
 
 
 @app.on_event("shutdown")
@@ -74,7 +86,7 @@ async def shutdown():
 	global scheduler
 	if scheduler:
 		scheduler.shutdown(wait=False)
-	if database and database.is_connected():
+	if database and database.is_connected:
 		await database.disconnect()
 
 
@@ -90,7 +102,7 @@ async def _weekly_prediction_job():
 
 	print("Starting weekly prediction job...")
 	query = "SELECT postcode FROM postcode_seifa;"
-	rows = await database.fetch(query)
+	rows = await database.fetch_all(query)
 	postcodes = [r["postcode"] for r in rows]
 
 	# Fetch feature rows in batches
@@ -155,7 +167,7 @@ async def _daily_gap_detection_job():
 		HAVING COALESCE(SUM(CASE WHEN fl.status = 'available' THEN fl.quantity ELSE 0 END),0) = 0
 		ORDER BY ps.postcode;
 	"""
-	rows = await database.fetch(query)
+	rows = await database.fetch_all(query)
 	# Cache results in memory (simple module-level variable)
 	app.state.gap_postcodes = [ {"postcode": r["postcode"], "total_population": int(r["total_population"])} for r in rows ]
 	print(f"Daily gap detection complete: found {len(rows)} postcodes")
@@ -169,7 +181,7 @@ async def health_check():
 		"status": "healthy",
 		"service": "prediction_service",
 		"models_loaded": risk_scorer is not None,
-		"database_connected": database.is_connected(),
+		"database_connected": database.is_connected if database else False,
 	}
 
 
@@ -211,6 +223,8 @@ async def post_demand_forecast(req: DemandForecastRequest):
 	"""
 	if not risk_scorer:
 		raise HTTPException(status_code=503, detail="Models not loaded")
+	if not database:
+		raise HTTPException(status_code=503, detail="Database not configured")
     
 	# Fetch SEIFA data
 	query = """
@@ -273,6 +287,8 @@ async def get_risk_scores(
 	"""
 	if not postcodes:
 		raise HTTPException(status_code=400, detail="At least one postcode required")
+	if not database:
+		raise HTTPException(status_code=503, detail="Database not configured")
     
 	# Default to current week start
 	if week_start is None:
@@ -309,6 +325,8 @@ async def post_postcode_risk(postcode: str):
 	"""
 	if not risk_scorer:
 		raise HTTPException(status_code=503, detail="Models not loaded")
+	if not database:
+		raise HTTPException(status_code=503, detail="Database not configured")
     
 	query = """
 		SELECT 
@@ -341,6 +359,9 @@ async def get_supply_gaps(region_category: Optional[str] = None):
     
 	Returns ranked list of high-need areas.
 	"""
+	if not database:
+		raise HTTPException(status_code=503, detail="Database not configured")
+
 	query = """
 		SELECT 
 			ps.postcode,
@@ -465,6 +486,8 @@ async def batch_score_all_postcodes():
 	"""
 	if not risk_scorer:
 		raise HTTPException(status_code=503, detail="Models not loaded")
+	if not database:
+		raise HTTPException(status_code=503, detail="Database not configured")
     
 	# Fetch all SEIFA data
 	query = """
@@ -476,8 +499,9 @@ async def batch_score_all_postcodes():
 		FROM postcode_seifa;
 	"""
     
-	rows = await database.fetch(query)
-	df = pd.DataFrame(rows)
+	rows = await database.fetch_all(query)
+	# Convert asyncpg Record objects to plain dicts for pandas
+	df = pd.DataFrame([dict(row) for row in rows])
     
 	if df.empty:
 		return {"processed": 0, "failed": 0}

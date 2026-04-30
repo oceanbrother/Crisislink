@@ -82,8 +82,8 @@ def _read_rows(csv_path: Path) -> tuple[list[dict[str, str]], int]:
     return rows, len(rows)
 
 
-def _valid_rows(rows: Iterable[dict[str, str]], valid_region_postcodes: set[str]) -> tuple[list[tuple[str, float, int, int, str]], int, int]:
-    output: list[tuple[str, float, int, int, str]] = []
+def _valid_rows(rows: Iterable[dict[str, str]], valid_region_postcodes: set[str]) -> tuple[list[tuple], int, int]:
+    output: list[tuple] = []
     invalid_count = 0
     missing_fk_count = 0
 
@@ -93,6 +93,17 @@ def _valid_rows(rows: Iterable[dict[str, str]], valid_region_postcodes: set[str]
         irsd_decile = _to_int(row.get("irsd_decile", ""))
         total_population = _to_int(row.get("total_population", ""))
         regional_category = (row.get("regional_category", "") or "").strip()
+
+        unemployment_rate = _to_float(row.get("unemployment_rate", ""))
+        rent_to_income_ratio = _to_float(row.get("rent_to_income_ratio", ""))
+        unemployment_rate_sqrt = _to_float(row.get("unemployment_rate_sqrt", ""))
+        rent_to_income_ratio_log = _to_float(row.get("rent_to_income_ratio_log", ""))
+        unemployment_rate_log = _to_float(row.get("unemployment_rate_log", ""))
+        total_population_log = _to_float(row.get("total_population_log", ""))
+        single_parent_pct = _to_float(row.get("single_parent_pct", ""))
+        median_hhd_income_weekly = _to_float(row.get("median_hhd_income_weekly", ""))
+        median_rent_weekly = _to_float(row.get("median_rent_weekly", ""))
+        rent_to_income_final = _to_float(row.get("rent_to_income_final", ""))
 
         if (
             not postcode
@@ -112,7 +123,23 @@ def _valid_rows(rows: Iterable[dict[str, str]], valid_region_postcodes: set[str]
             missing_fk_count += 1
             continue
 
-        output.append((postcode, irsd_score, irsd_decile, total_population, regional_category))
+        output.append((
+            postcode,
+            irsd_score,
+            irsd_decile,
+            unemployment_rate,
+            rent_to_income_ratio,
+            unemployment_rate_sqrt,
+            rent_to_income_ratio_log,
+            unemployment_rate_log,
+            total_population_log,
+            single_parent_pct,
+            median_hhd_income_weekly,
+            median_rent_weekly,
+            rent_to_income_final,
+            total_population,
+            regional_category,
+        ))
 
     return output, invalid_count, missing_fk_count
 
@@ -128,15 +155,35 @@ def main() -> None:
             postcode,
             irsd_score,
             irsd_decile,
+            unemployment_rate,
+            rent_to_income_ratio,
+            unemployment_rate_sqrt,
+            rent_to_income_ratio_log,
+            unemployment_rate_log,
+            total_population_log,
+            single_parent_pct,
+            median_hhd_income_weekly,
+            median_rent_weekly,
+            rent_to_income_final,
             total_population,
             regional_category,
             last_updated
         )
-        VALUES (%s, %s, %s, %s, %s, CURRENT_DATE)
+        VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, CURRENT_DATE)
         ON CONFLICT (postcode) DO UPDATE
         SET
             irsd_score = EXCLUDED.irsd_score,
             irsd_decile = EXCLUDED.irsd_decile,
+            unemployment_rate = EXCLUDED.unemployment_rate,
+            rent_to_income_ratio = EXCLUDED.rent_to_income_ratio,
+            unemployment_rate_sqrt = EXCLUDED.unemployment_rate_sqrt,
+            rent_to_income_ratio_log = EXCLUDED.rent_to_income_ratio_log,
+            unemployment_rate_log = EXCLUDED.unemployment_rate_log,
+            total_population_log = EXCLUDED.total_population_log,
+            single_parent_pct = EXCLUDED.single_parent_pct,
+            median_hhd_income_weekly = EXCLUDED.median_hhd_income_weekly,
+            median_rent_weekly = EXCLUDED.median_rent_weekly,
+            rent_to_income_final = EXCLUDED.rent_to_income_final,
             total_population = EXCLUDED.total_population,
             regional_category = EXCLUDED.regional_category,
             last_updated = CURRENT_DATE;
