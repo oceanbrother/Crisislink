@@ -124,6 +124,13 @@ export const DIETARY_OPTIONS = [
   { value: 'non-vegetarian', key: 'nonVegetarian' },
 ]
 
+export const DIETARY_FILTER_OPTIONS = [
+  { value: 'all', key: 'all' },
+  ...DIETARY_OPTIONS.filter((option) => option.value !== 'none'),
+  { value: 'dairy-free', key: 'dairyFree' },
+  { value: 'gluten-free', key: 'glutenFree' },
+]
+
 export function getPrimaryDietaryChoice(tags = []) {
   if (Array.isArray(tags) === false || tags.length === 0) {
     return 'none'
