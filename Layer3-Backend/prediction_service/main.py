@@ -116,7 +116,7 @@ async def _weekly_prediction_job():
 	"""
 	for chunk_start in range(0, len(postcodes), 200):
 		chunk = postcodes[chunk_start:chunk_start+200]
-		rows = await database.fetch(features_query, {"postcodes": chunk})
+		rows = await database.fetch_all(features_query, {"postcodes": chunk})
 		df = pd.DataFrame(rows)
 		if df.empty:
 			continue
@@ -304,7 +304,7 @@ async def get_risk_scores(
 		LIMIT 1;
 	"""
     
-	rows = await database.fetch(query, {"postcodes": postcodes})
+	rows = await database.fetch_all(query, {"postcodes": postcodes})
     
 	return [
 		DemandForecastResponse(
@@ -388,7 +388,7 @@ async def get_supply_gaps(region_category: Optional[str] = None):
 		LIMIT 50;
 	"""
     
-	rows = await database.fetch(query, params)
+	rows = await database.fetch_all(query, params)
     
 	return [
 		{
@@ -461,7 +461,7 @@ async def api_hotspots(limit: int = 50):
 		ORDER BY (COALESCE(MAX(prs.demand_risk_score),0) - LEAST(COALESCE(SUM(CASE WHEN fl.status = 'available' THEN fl.quantity ELSE 0 END),0), 100)/100.0) DESC
 		LIMIT :limit;
 	"""
-	rows = await database.fetch(query, {"limit": limit})
+	rows = await database.fetch_all(query, {"limit": limit})
 
 	hotspots = []
 	for row in rows:

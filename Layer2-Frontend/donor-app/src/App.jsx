@@ -8,6 +8,7 @@ import HomePage from './pages/HomePage'
 import PostcodeInputPage from './pages/PostcodeInputPage'
 import PostFeedPage from './pages/PostFeedPage'
 import DonationFormPage from './pages/DonationFormPage'
+import DonorDashboardPage from './pages/DonorDashboardPage'
 import DonorHotspotsPage from './pages/DonorHotspotsPage'
 
 // Pages - Organization Flow
@@ -100,8 +101,12 @@ function AppRoutes() {
       {/* Home page - role selection */}
       <Route path="/" element={<HomePage />} />
 
-      {/* Donor flow: postcode -> feed -> form */}
+      {/* Donor flow: workspace -> post / hotspots / listings */}
       <Route path="/postcode" element={<PostcodeInputPage />} />
+      <Route path="/donor" element={<DonorDashboardPage />} />
+      <Route path="/donor/post" element={<DonationFormPage />} />
+      <Route path="/donor/listings" element={<PostFeedPage />} />
+      <Route path="/donor/hotspots" element={<DonorHotspotsPage />} />
       <Route path="/feed/:postcode" element={<PostFeedPage />} />
       <Route path="/hotspots/:postcode" element={<DonorHotspotsPage />} />
 

@@ -405,7 +405,10 @@ const DonationForm = () => {
               onClick={() => {
                 if (orgMode) {
                   navigate('/org/listings', {
-                    state: { orgCode: initialOrgCode || successListing.orgCode || '' },
+                    state: {
+                      orgCode: initialOrgCode || successListing.orgCode || '',
+                      filterStatus: 'posted',
+                    },
                   })
                 } else {
                   navigate('/donor/listings', { state: { postcode: successListing.postcode } })

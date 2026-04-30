@@ -143,7 +143,7 @@ const LiveListingBoard = () => {
   const [success, setSuccess] = useState('')
   const [searchTerm, setSearchTerm] = useState('')
   const [filterCategory, setFilterCategory] = useState('All')
-  const [filterStatus, setFilterStatus] = useState('all')
+  const [filterStatus, setFilterStatus] = useState(location.state?.filterStatus || 'all')
   const [claimDialogListing, setClaimDialogListing] = useState(null)
   const [claimQuantity, setClaimQuantity] = useState('1')
   const [claimError, setClaimError] = useState('')
