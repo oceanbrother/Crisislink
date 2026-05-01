@@ -67,6 +67,35 @@
   --shadow-card:   0 20px 40px rgba(28, 28, 23, 0.04);
   --shadow-navbar: 0 20px 40px rgba(28, 28, 23, 0.04);
   --shadow-float:  0 8px 24px rgba(0, 105, 76, 0.2);
+
+  /* Role themes */
+  --org-primary:              #0b7b59;
+  --org-primary-dark:         #075540;
+  --org-primary-soft:         #edf8f3;
+  --org-surface:              #f6fcf9;
+  --org-border:               #b9ddce;
+  --org-border-strong:        #8dc3ae;
+  --org-muted:                #47695b;
+  --org-rgb:                  11, 123, 89;
+
+  --donor-primary:            #c78318;
+  --donor-primary-dark:       #9a5f0f;
+  --donor-primary-soft:       #fff4df;
+  --donor-surface:            #fffaf1;
+  --donor-border:             #ead2a4;
+  --donor-border-strong:      #ddb979;
+  --donor-muted:              #7c6442;
+  --donor-rgb:                199, 131, 24;
+
+  /* Default role = organisation */
+  --role-primary:             var(--org-primary);
+  --role-primary-dark:        var(--org-primary-dark);
+  --role-primary-rgb:         var(--org-rgb);
+  --role-border:              var(--org-border);
+  --role-border-strong:       var(--org-border-strong);
+  --role-surface-strong:      var(--org-primary-soft);
+  --role-muted:               var(--org-muted);
+  --role-text:                var(--on-surface);
 }
 
 /* Material Symbols */
@@ -108,6 +137,61 @@ body {
 }
 
 #root { min-height: 100vh; }
+
+.org-role-page,
+.org-role-board {
+  --role-primary:             var(--org-primary);
+  --role-primary-dark:        var(--org-primary-dark);
+  --role-primary-rgb:         var(--org-rgb);
+  --role-border:              var(--org-border);
+  --role-border-strong:       var(--org-border-strong);
+  --role-surface-strong:      var(--org-primary-soft);
+  --role-muted:               var(--org-muted);
+  --role-text:                var(--on-surface);
+  --primary:                  var(--org-primary);
+  --primary-container:        #15936c;
+  --primary-fixed:            #9ff5c7;
+  --primary-fixed-dim:        #68dbae;
+  --on-primary:               #ffffff;
+  --secondary:                #0c815e;
+  --secondary-container:      #dff5eb;
+  --on-secondary:             #ffffff;
+  --bg:                       #f7fbf9;
+  --surface:                  #f7fbf9;
+  --surface-bright:           #ffffff;
+  --surface-low:              #eaf5ef;
+  --surface-container:        #edf7f2;
+  --surface-container-high:   #e7f4ee;
+  --surface-container-highest: #dcebE4;
+  --outline-variant:          #c8ddd3;
+}
+
+.donor-role-page {
+  --role-primary:             var(--donor-primary);
+  --role-primary-dark:        var(--donor-primary-dark);
+  --role-primary-rgb:         var(--donor-rgb);
+  --role-border:              var(--donor-border);
+  --role-border-strong:       var(--donor-border-strong);
+  --role-surface-strong:      var(--donor-primary-soft);
+  --role-muted:               var(--donor-muted);
+  --role-text:                #332515;
+  --primary:                  var(--donor-primary);
+  --primary-container:        #d89427;
+  --primary-fixed:            #ffe2bd;
+  --primary-fixed-dim:        #f2bf69;
+  --on-primary:               #ffffff;
+  --secondary:                var(--donor-primary-dark);
+  --secondary-container:      #fff1d3;
+  --on-secondary:             #ffffff;
+  --bg:                       #fffbf5;
+  --surface:                  #fffbf5;
+  --surface-bright:           #ffffff;
+  --surface-low:              #faf1e2;
+  --surface-container:        #fff7eb;
+  --surface-container-high:   #f8efe0;
+  --surface-container-highest: #f2e5d1;
+  --outline-variant:          #ead7b7;
+}
 
 button {
   font-family: var(--font-body);

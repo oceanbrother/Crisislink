@@ -17,7 +17,7 @@ import LiveListingBoard from './pages/LiveListingBoard'
 import OrgAlertsPage from './pages/OrgAlertsPage'
 import OrgSupplyGapPage from './pages/OrgSupplyGapPage'
 
-const ACCESS_STORAGE_KEY = 'crisislink-site-access-granted'
+const ACCESS_STORAGE_KEY = 'crisislink-site-access-granted-v2'
 
 function PasswordGate({ expectedPassword, children }) {
   const { t } = useTranslation()
