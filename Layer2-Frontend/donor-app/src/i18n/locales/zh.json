@@ -260,6 +260,12 @@
     "error": "密码错误，请重试。",
     "heroTitle": "在食物被浪费前，把本地剩余资源先协调起来。",
     "heroCopy": "OutBackShare 连接本地食物捐赠者与已认证的社区组织，帮助剩余食物更快送达附近社区。",
+    "highlightsLabel": "平台亮点",
+    "bullets": {
+      "post": "快速发布剩余食物",
+      "coordinate": "协调附近取货与分发",
+      "spot": "提前识别本地短缺信号"
+    },
     "builtFor": "适用角色",
     "donorRole": "分享剩余食物的捐赠者",
     "orgRole": "协调本地分发的社区组织",

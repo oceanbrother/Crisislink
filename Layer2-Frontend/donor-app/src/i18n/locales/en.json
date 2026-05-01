@@ -259,6 +259,12 @@
     "error": "Incorrect password. Please try again.",
     "heroTitle": "Local surplus food, coordinated before it goes to waste.",
     "heroCopy": "OutBackShare connects local food donors with approved community organisations, helping surplus food reach nearby communities faster.",
+    "highlightsLabel": "Platform highlights",
+    "bullets": {
+      "post": "Post surplus food quickly",
+      "coordinate": "Coordinate nearby collection",
+      "spot": "Spot local shortage signals early"
+    },
     "builtFor": "Built for",
     "donorRole": "Donors sharing surplus food",
     "orgRole": "Community organisations coordinating collection",
