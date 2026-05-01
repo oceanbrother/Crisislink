@@ -6,6 +6,7 @@ import { buildSupplyGapInsights } from '../constants/supplyGapInsights'
 import { buildCoverageInsightsFromGapPostcodes } from '../utils/predictionAdapters'
 import OrgFeatureNav from '../components/OrgFeatureNav'
 import PostcodeMap from '../components/PostcodeMap'
+import WorkspaceHeader from '../components/WorkspaceHeader'
 import '../styles/LiveListingBoard.css'
 
 const FILTER_OPTIONS = ['all', 'critical', 'low', 'watch']
@@ -125,22 +126,26 @@ const OrgSupplyGapPage = () => {
   }
 
   const handleRespondToNeed = (zone) => {
-    navigate('/form', { state: { orgMode: true, orgCode, orgName: `Organization ${orgCode}`, focusPostcode: zone?.postcode || '' } })
+    navigate('/form', {
+      state: {
+        orgMode: true,
+        orgCode,
+        orgName: `Organisation ${orgCode}`,
+        focusPostcode: zone?.postcode || '',
+      },
+    })
   }
 
   return (
-    <div className="live-listing-board org-role-board">
-      <header className="navbar org-navbar">
-        <div className="navbar-inner org-navbar-inner">
-          <button className="brand-home-btn org-brand-btn" type="button" onClick={() => navigate('/')}>
-            <span className="brand-home-title">{t('appName')}</span>
-          </button>
-        </div>
-        <div className="navbar-divider" />
-      </header>
+    <div className="live-listing-board org-role-board org-role-page">
+      <WorkspaceHeader
+        role="org"
+        onBackClick={() => navigate('/org/listings', { state: { orgCode } })}
+        onBrandClick={() => navigate('/org/listings', { state: { orgCode } })}
+      />
 
       <main className="feed-content org-feed-content">
-        <div className="org-area-nav-row">
+        <div className="workspace-nav-row org-area-nav-row">
           <OrgFeatureNav active="gaps" orgCode={orgCode} />
         </div>
 
@@ -149,8 +154,11 @@ const OrgSupplyGapPage = () => {
           <div className="org-page-heading-row">
             <div className="org-page-heading">
               <h1 className="board-title org-page-title">
-                {t('dashboard.coverageInsights.pageTitle', 'Supply gap watch')}
+                {t('dashboard.workspaceTitle', 'Organisation workspace')}
               </h1>
+              <p className="org-page-subtitle">
+                {t('dashboard.workspaceSubtitle', 'Review live supply and demand signals for nearby service areas.')}
+              </p>
               <div className="org-page-meta org-page-meta-pill">
                 <span className="material-symbols-outlined">domain</span>
                 <span>{t('dashboard.signedInAs', { orgCode, defaultValue: `Signed in as ${orgCode}` })}</span>

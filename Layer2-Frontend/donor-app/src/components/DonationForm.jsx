@@ -19,6 +19,8 @@ import {
   SIZE_CUE_OPTIONS,
 } from '../constants/listings'
 import DonorFeatureNav from './DonorFeatureNav'
+import OrgFeatureNav from './OrgFeatureNav'
+import WorkspaceHeader from './WorkspaceHeader'
 import { forgetDonorListing, getOrCreateDonorCode, rememberDonorListing } from '../utils/donorIdentity'
 import { resolveImageUrl } from '../utils/imageUrl'
 import { getSavedDonorPostcode, saveDonorPostcode } from '../utils/donorPostcode'
@@ -183,6 +185,17 @@ const DonationForm = () => {
   }, [editMode, t])
 
   const donorOrgCode = orgMode ? String(initialOrgCode || '').toUpperCase() : getOrCreateDonorCode()
+  const roleThemeClass = orgMode ? 'org-role-page' : 'donor-role-page'
+  const currentDonorPostcode = formData.postcode || postcode
+  const currentOrgCode = String(initialOrgCode || formData.orgCode || '').trim().toUpperCase()
+
+  const goToWorkspaceHome = () => {
+    if (orgMode) {
+      navigate('/org/listings', { state: { orgCode: currentOrgCode } })
+      return
+    }
+    navigate('/donor/listings', { state: { postcode: currentDonorPostcode } })
+  }
 
   useEffect(() => {
     setFormData(buildInitialState({ postcode, orgMode, initialOrgCode, listing: editingListing }))
@@ -221,7 +234,18 @@ const DonationForm = () => {
       navigate('/org/listings', { state: { orgCode: initialOrgCode } })
       return
     }
-    navigate('/donor', { state: { postcode: formData.postcode || postcode } })
+    if (editMode) {
+      navigate('/donor/listings', { state: { postcode: formData.postcode || postcode } })
+      return
+    }
+
+    const historyIndex = window.history.state?.idx ?? 0
+    if (historyIndex > 0) {
+      navigate(-1)
+      return
+    }
+
+    goToWorkspaceHome()
   }
 
   const handleFileChange = async (event) => {
@@ -381,7 +405,7 @@ const DonationForm = () => {
 
   if (successListing) {
     return (
-      <div className="success-container">
+      <div className={`success-container ${roleThemeClass}`.trim()}>
         <div className="success-card success-card-wide">
           <div className="success-icon">
             <span className="material-symbols-outlined">check_circle</span>
@@ -457,7 +481,7 @@ const DonationForm = () => {
               type="button"
               className="success-action-btn"
               onClick={() =>
-                navigate('/donor/post', {
+                navigate(orgMode ? '/form' : '/donor/post', {
                   state: {
                     postcode: successListing.postcode,
                     editMode: true,
@@ -475,9 +499,9 @@ const DonationForm = () => {
               <button
                 type="button"
                 className="success-action-btn"
-                onClick={() => navigate('/donor', { state: { postcode: successListing.postcode } })}
+                onClick={() => navigate('/donor/post', { state: { postcode: successListing.postcode } })}
               >
-                Back to donor workspace
+                {t('donation.actions.postAnother', 'Post another listing')}
               </button>
             ) : null}
             <button
@@ -494,30 +518,28 @@ const DonationForm = () => {
   }
 
   return (
-    <div className="donation-form-container">
-      <header className="form-header">
-        <div className="form-header-inner">
-          <div className="form-header-left">
-            <button className="btn-back" type="button" onClick={handleBack}>
-              <span className="material-symbols-outlined">arrow_back</span>
-            </button>
-            <span className="form-brand">{t('appName')}</span>
-          </div>
-          <div className="form-header-badge">
+    <div className={`donation-form-container ${roleThemeClass}`.trim()}>
+      <WorkspaceHeader
+        role={orgMode ? 'org' : 'donor'}
+        onBackClick={handleBack}
+        onBrandClick={goToWorkspaceHome}
+        utilityContent={(
+          <div className="workspace-header__utility-badge">
             <span className="material-symbols-outlined">auto_awesome</span>
             {orgMode ? t('donation.orgTitle') : t('donation.aiTitle')}
           </div>
-        </div>
-        <div className="form-header-divider" />
-      </header>
+        )}
+      />
 
-      {orgMode ? null : (
-        <div className="donor-form-nav-row">
-          <DonorFeatureNav active="post" postcode={formData.postcode || postcode} />
-        </div>
-      )}
+      <div className="workspace-nav-row workspace-form-nav-row">
+        {orgMode ? (
+          <OrgFeatureNav active="" orgCode={currentOrgCode} />
+        ) : (
+          <DonorFeatureNav active="" postcode={currentDonorPostcode} />
+        )}
+      </div>
 
-      <form onSubmit={handleSubmit}>
+      <form onSubmit={handleSubmit} className="donation-form-shell">
         <main className="form-content">
           <header className="form-hero">
             <h1>{pageTitle}</h1>

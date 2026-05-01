@@ -1,20 +1,21 @@
 {
-  "appName": "CrisisLink",
+  "appName": "OutBackShare",
   "tagline": "Food relief resource coordination platform",
   "home": {
-    "question": "Choose what you need to do today",
+    "eyebrow": "SELECT YOUR WORKSPACE",
+    "question": "Choose how you want to use OutBackShare",
     "donor": {
       "title": "I want to donate food",
-      "description": "Share surplus food with nearby community groups",
-      "button": "Post food"
+      "description": "Post surplus food quickly so nearby approved groups can collect it before it goes to waste.",
+      "button": "Continue as donor"
     },
     "organization": {
-      "title": "I manage a community group",
-      "description": "Browse available food or post surplus from your organization",
-      "button": "Continue as organization"
+      "title": "I manage a community organisation",
+      "description": "View available listings, coordinate collection, and identify local areas with higher food need.",
+      "button": "Continue as organisation"
     },
-    "eyebrow": "Local food sharing",
-    "support": "Post surplus food for your community, or browse available food to claim."
+    "support": "Select a donor or community organisation workspace to continue.",
+    "about": "Post surplus food, manage listings, or check local shortage hotspots from the right workspace."
   },
   "donorNav": {
     "post": "Post food",
@@ -23,7 +24,7 @@
   },
   "donorWorkspace": {
     "title": "Donor workspace",
-    "subtitle": "Post surplus food, view local hotspots, and manage your listings.",
+    "subtitle": "Post surplus food, see where food is needed, and manage your listings.",
     "currentPostcodeAria": "Current donor postcode",
     "currentPostcodeLabel": "Current postcode",
     "currentPostcodeFallback": "Add when you post food",
@@ -33,19 +34,19 @@
         "eyebrow": "Post food",
         "title": "Post surplus food",
         "description": "Share food you have available.",
-        "button": "Open posting form"
+        "button": "Post food"
       },
       "hotspots": {
-        "eyebrow": "Decision support",
+        "eyebrow": "Need hotspots",
         "title": "See where food is needed",
         "description": "Check nearby food shortage hotspots before you donate.",
-        "button": "Open hotspot map"
+        "button": "View hotspot map"
       },
       "listings": {
-        "eyebrow": "My activity",
-        "title": "Manage my listings",
-        "description": "View or edit your posts.",
-        "button": "Open my listings"
+        "eyebrow": "My listings",
+        "title": "Manage your listings",
+        "description": "View, edit, or track your posts.",
+        "button": "View my listings"
       }
     }
   },
@@ -123,8 +124,8 @@
     "shortageAmount": "{{count}} portions short"
   },
   "postcode": {
-    "title": "Enter your postcode",
-    "subtitle": "Help us find food near you",
+    "title": "What is your postcode?",
+    "subtitle": "Enter your postcode to view nearby community organisations and local food shortage hotspots.",
     "placeholder": "e.g., 3000",
     "button": "Continue",
     "example": "e.g. Postcode 3000",
@@ -152,6 +153,11 @@
     "homeLink": "Back to home",
     "kicker": "Donor preview",
     "pageTitle": "My listings",
+    "quickPost": "Post food",
+    "quickPostTooltip": "Post surplus food",
+    "postcodeHint": "Used for nearby listings and hotspots.",
+    "editableListings": "Editable listings",
+    "lockedListings": "Claimed / locked",
     "filterHint": "Search by food name, notes, size, or postcode.",
     "searchingFor": "Searching for",
     "filteringCategory": "Category",
@@ -166,7 +172,7 @@
     "title": "Post Surplus",
     "subtitle": "Let AI do the heavy lifting. Just snap a photo of the food you'd like to share.",
     "aiTitle": "AI Assisted Listing",
-    "orgTitle": "Organization Posting",
+    "orgTitle": "Organisation posting",
     "takePhoto": "Take a photo or upload one",
     "uploadSubtitle": "we will fill in the details",
     "changePhoto": "Change photo",
@@ -200,7 +206,7 @@
     "editTitle": "Edit listing",
     "sizeCue": "Size or weight",
     "sizeCuePlaceholder": "e.g. small bag, medium tray, 500g bottle",
-    "sizeCueHint": "Pick the closest size range so recipients can judge pickup volume more easily.",
+    "sizeCueHint": "Select the estimated number of serves, not exact weight.",
     "dietary": "Dietary tag",
     "bestBefore": "Best before",
     "openDatePicker": "Open calendar",
@@ -216,7 +222,8 @@
       "viewOrgGaps": "Review supply gaps",
       "viewHotspots": "See where food is needed",
       "editListing": "Edit this listing",
-      "removeListing": "Remove this listing"
+      "removeListing": "Remove this listing",
+      "postAnother": "Post another listing"
     },
     "reviewTitle": "Suggested details — please review before posting.",
     "reviewHintFood": "Check the food name and category.",
@@ -226,44 +233,49 @@
     "bestBeforePlaceholder": "DD/MM/YYYY",
     "sizeOptions": {
       "none": "Select one",
-      "small": "Small",
-      "medium": "Medium",
-      "large": "Large",
-      "extraLarge": "Extra large",
-      "bulkHeavy": "Bulk / heavy"
+      "small": "Small - around 1 serve",
+      "medium": "Medium - around 2-3 serves",
+      "large": "Large - around 4-6 serves",
+      "extraLarge": "Extra large - 7+ serves",
+      "bulkHeavy": "Bulk / heavy - trays or cartons"
     }
   },
   "orgCode": {
-    "title": "Find your organization",
-    "subtitle": "Enter your organization code or name to continue.",
-    "label": "Organization code or name",
+    "title": "Find your organisation",
+    "subtitle": "Enter your organisation code or name to access live listings and organisation tools.",
+    "label": "Organisation code or name",
     "placeholder": "e.g., HCFB-2841 or Helping Hands",
     "button": "Continue",
-    "example": "Enter an organization code or name to continue",
-    "note": "Only approved community groups can access live listings."
+    "example": "Enter an organisation code or name to continue",
+    "note": "Only approved community organisations can access live listings."
   },
   "accessGate": {
-    "badge": "Restricted access",
-    "title": "Access CrisisLink",
-    "subtitle": "For community groups and food partners.",
-    "label": "Enter password",
-    "placeholder": "Access password",
+    "badge": "Project access",
+    "title": "Access OutBackShare",
+    "subtitle": "For approved partners and demonstration users.",
+    "label": "Password",
+    "placeholder": "",
     "button": "Continue",
     "error": "Incorrect password. Please try again.",
-    "heroTitle": "Share food. Support your community.",
-    "heroCopy": "Coordinate local food supply and respond to demand in real time.",
-    "highlightsLabel": "CrisisLink highlights",
+    "heroTitle": "Local surplus food, coordinated before it goes to waste.",
+    "heroCopy": "OutBackShare connects local food donors with approved community organisations, helping surplus food reach nearby communities faster.",
+    "highlightsLabel": "Platform highlights",
     "bullets": {
-      "post": "Post surplus food",
-      "coordinate": "Coordinate with community groups",
-      "spot": "Spot demand early"
+      "post": "Post surplus food quickly",
+      "coordinate": "Coordinate nearby collection",
+      "spot": "Spot local shortage signals early"
     },
-    "trust": "Secure civic platform · Access restricted to approved users"
+    "builtFor": "Built for",
+    "donorRole": "Donors sharing surplus food",
+    "orgRole": "Community organisations coordinating collection",
+    "trust": "Access is limited to approved partners and demonstration users."
   },
   "dashboard": {
     "title": "Food listings",
+    "subtitle": "Claim available food or manage your organisation listings.",
     "serviceArea": "Service area",
-    "orgCodeLabel": "Organization code",
+    "orgCodeLabel": "Organisation code",
+    "orgCodeHint": "Used to manage live listings and collection tools.",
     "signedInAs": "Signed in as {{orgCode}}",
     "donorCodeLabel": "Donor code",
     "communityFallback": "Community",
@@ -272,6 +284,7 @@
     "shareButton": "Post food",
     "tabs": {
       "all": "All",
+      "allTypes": "All types",
       "bakery": "Bakery",
       "bakedGoods": "Baked goods",
       "produce": "Fruit & veg",
@@ -281,6 +294,10 @@
       "grocery": "Grocery",
       "vegan": "Vegan",
       "vegetarian": "Vegetarian",
+      "nonVegetarian": "Non-vegetarian",
+      "dairyFree": "Lactose-free / dairy-free",
+      "glutenFree": "Gluten-free",
+      "halal": "Halal",
       "expiringSoon": "Expiring soon",
       "pantry": "Pantry",
       "other": "Other"
@@ -288,6 +305,7 @@
     "filterLabels": {
       "category": "Food category",
       "allCategories": "All categories",
+      "foodType": "Food type",
       "status": "Listing status"
     },
     "statusPills": {
@@ -318,7 +336,7 @@
     "clearFilters": "Clear filters",
     "showingMatches": "Showing {{count}} matching listings",
     "emptyTitle": "No listings yet",
-    "emptyHint": "Listings from donors and organizations will appear here as soon as they are posted.",
+    "emptyHint": "Listings from donors and organisations will appear here as soon as they are posted.",
     "emptySearchTitle": "No matching listings",
     "emptySearchHint": "Try another search term or clear the active category and status filters.",
     "intelligence": {
@@ -381,16 +399,19 @@
       "noDataHint": "Coverage hotspots will appear here once enough listing data is available.",
       "loadErrorTitle": "Unable to load coverage insights",
       "loadErrorHint": "We could not load listing data required for postcode coverage analysis. Please try again."
-    }
+    },
+    "workspaceTitle": "Organisation workspace",
+    "workspaceSubtitle": "Review live supply and demand signals for nearby service areas."
   },
   "listing": {
-    "itemsAvailable": "{{count}} items available",
+    "itemsAvailable_one": "{{count}} item available",
+    "itemsAvailable_other": "{{count}} items available",
     "location": "Location: ",
     "expiresIn": "Expires in {{time}}",
     "from": "From",
     "fromCode": "From {{code}}",
     "fromDonorCode": "From donor",
-    "fromOrganizationCode": "From organization",
+    "fromOrganizationCode": "From organisation",
     "postcode": "Postcode",
     "claimingButton": "Claiming...",
     "claimThisButton": "Claim food",
@@ -403,8 +424,9 @@
       "vegetarian": "Vegetarian",
       "vegan": "Vegan",
       "glutenFree": "Gluten Free",
-      "dairyFree": "Dairy Free",
+      "dairyFree": "Lactose-free / dairy-free",
       "nonVegetarian": "Non-vegetarian",
+      "halal": "Halal",
       "none": "No dietary tag"
     },
     "units": {

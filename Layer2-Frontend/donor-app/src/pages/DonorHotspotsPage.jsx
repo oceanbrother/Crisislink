@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate, useParams } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
+import WorkspaceHeader from '../components/WorkspaceHeader'
 import DonorFeatureNav from '../components/DonorFeatureNav'
 import PostcodeMap from '../components/PostcodeMap'
 import { getHotspots } from '../services/api'
@@ -10,11 +11,11 @@ import {
   getNeededItems,
   getPriorityBand,
 } from '../constants/hotspotInsights'
+import { getSavedDonorPostcode, saveDonorPostcode } from '../utils/donorPostcode'
 import { hotspotSampleZones } from '../utils/hotspotSampleData'
 import { buildHotspotsFromPredictionData } from '../utils/predictionAdapters'
 import '../styles/PostFeedPage.css'
 
-const STORAGE_KEY = 'crisislink-donor-postcode'
 const SHOW_SAMPLE_HINT = Boolean(import.meta.env.DEV)
 
 const DonorHotspotsPage = () => {
@@ -23,7 +24,10 @@ const DonorHotspotsPage = () => {
   const { postcode: postcodeFromPath } = useParams()
   const { t } = useTranslation()
 
-  const focusPostcode = String(location.state?.postcode || postcodeFromPath || '').trim()
+  const focusPostcode = String(
+    location.state?.postcode || postcodeFromPath || getSavedDonorPostcode() || '',
+  ).trim()
+
   const [regionFilter, setRegionFilter] = useState('all')
   const [distanceFilter, setDistanceFilter] = useState('all')
   const [priorityFilter, setPriorityFilter] = useState('all')
@@ -33,12 +37,14 @@ const DonorHotspotsPage = () => {
   const [selectedPostcode, setSelectedPostcode] = useState(hotspotSampleZones[0]?.postcode || '')
 
   useEffect(() => {
-    if (!focusPostcode) return
-    window.localStorage.setItem(STORAGE_KEY, focusPostcode)
+    if (focusPostcode) {
+      saveDonorPostcode(focusPostcode)
+    }
   }, [focusPostcode])
 
   useEffect(() => {
     let isCancelled = false
+
     const loadHotspots = async () => {
       try {
         const hotspotData = await getHotspots()
@@ -51,13 +57,17 @@ const DonorHotspotsPage = () => {
       } catch {
         // prediction service is optional during frontend-only development
       }
+
       if (!isCancelled) {
         setHotspotZones(hotspotSampleZones)
         setHotspotSource('sample')
       }
     }
+
     loadHotspots()
-    return () => { isCancelled = true }
+    return () => {
+      isCancelled = true
+    }
   }, [focusPostcode])
 
   const enrichedHotspots = useMemo(() => {
@@ -74,34 +84,49 @@ const DonorHotspotsPage = () => {
   }, [hotspotZones])
 
   const regions = useMemo(() => {
-    return ['all', ...new Set(enrichedHotspots.map((z) => z.region))]
+    return ['all', ...new Set(enrichedHotspots.map((zone) => zone.region))]
   }, [enrichedHotspots])
 
   const visibleHotspots = useMemo(() => {
     let zones = [...enrichedHotspots]
-    if (regionFilter !== 'all') zones = zones.filter((z) => z.region === regionFilter)
-    if (distanceFilter !== 'all') zones = zones.filter((z) => Number(z.distanceToDonorKm || 0) <= Number(distanceFilter))
-    if (priorityFilter !== 'all') zones = zones.filter((z) => z.priorityBand.tone === priorityFilter)
+
+    if (regionFilter !== 'all') {
+      zones = zones.filter((zone) => zone.region === regionFilter)
+    }
+
+    if (distanceFilter !== 'all') {
+      zones = zones.filter((zone) => Number(zone.distanceToDonorKm || 0) <= Number(distanceFilter))
+    }
+
+    if (priorityFilter !== 'all') {
+      zones = zones.filter((zone) => zone.priorityBand.tone === priorityFilter)
+    }
+
     return sortMode === 'distance'
       ? zones.sort((a, b) => Number(a.distanceToDonorKm || 0) - Number(b.distanceToDonorKm || 0))
       : zones.sort((a, b) => b.priorityScore - a.priorityScore)
   }, [distanceFilter, enrichedHotspots, priorityFilter, regionFilter, sortMode])
 
   useEffect(() => {
-    setSelectedPostcode((cur) => {
-      if (visibleHotspots.some((z) => z.postcode === cur)) return cur
+    setSelectedPostcode((currentSelection) => {
+      if (visibleHotspots.some((zone) => zone.postcode === currentSelection)) {
+        return currentSelection
+      }
       return visibleHotspots[0]?.postcode || ''
     })
   }, [visibleHotspots])
 
   const selectedHotspot = useMemo(() => {
     if (!selectedPostcode) return null
-    return visibleHotspots.find((z) => z.postcode === selectedPostcode) || null
+    return visibleHotspots.find((zone) => zone.postcode === selectedPostcode) || null
   }, [selectedPostcode, visibleHotspots])
 
   const priorityCounts = useMemo(() => {
     return enrichedHotspots.reduce(
-      (counts, zone) => { counts[zone.priorityBand.tone] = (counts[zone.priorityBand.tone] || 0) + 1; return counts },
+      (counts, zone) => {
+        counts[zone.priorityBand.tone] = (counts[zone.priorityBand.tone] || 0) + 1
+        return counts
+      },
       { critical: 0, high: 0, watch: 0 },
     )
   }, [enrichedHotspots])
@@ -115,74 +140,105 @@ const DonorHotspotsPage = () => {
     }))
   }, [visibleHotspots])
 
+  const topPriorityHotspot = useMemo(() => {
+    if (visibleHotspots.length === 0) return null
+    const ranked = [...visibleHotspots].sort((a, b) => {
+      if (b.priorityScore !== a.priorityScore) {
+        return b.priorityScore - a.priorityScore
+      }
+      return Number(a.distanceToDonorKm || 0) - Number(b.distanceToDonorKm || 0)
+    })
+    return ranked[0]
+  }, [visibleHotspots])
+
   return (
     <div className="post-feed-page donor-role-page donor-hotspots-page">
-      <header className="navbar donor-navbar">
-        <div className="navbar-inner donor-navbar-inner">
-          <button className="brand-home-btn" type="button" onClick={() => navigate('/')}>
-            <span className="brand-home-title">{t('appName')}</span>
-          </button>
-          <div className="nav-actions donor-nav-actions">
-            <button className="post-action-btn" type="button" onClick={() => navigate('/form/' + focusPostcode)}>
-              <span className="material-symbols-outlined">add</span>
-              {t('feed.shareButton', 'Post surplus')}
-            </button>
-          </div>
-        </div>
-        <div className="navbar-divider" />
-      </header>
+      <WorkspaceHeader
+        role="donor"
+        onBackClick={() => navigate('/donor/listings', { state: { postcode: focusPostcode } })}
+        onBrandClick={() => navigate('/roles')}
+      />
 
       <main className="feed-content donor-feed-content">
-        <section className="donor-page-intro">
-          <div className="donor-page-heading">
-            <h1 className="board-title donor-page-title">{t('hotspots.pageTitle', 'Donation hotspots')}</h1>
-            <div className="donor-page-location-card" role="group" aria-label={t('listing.postcode', 'Postcode')}>
-              <div className="donor-page-location-badge">
-                <span className="material-symbols-outlined donor-page-location-icon">location_on</span>
-              </div>
-              <div className="donor-page-location-copy">
-                <span className="donor-page-location-label">{t('listing.postcode', 'Postcode')}</span>
-                <span className="donor-page-location-value">{focusPostcode || 'VIC'}</span>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        <div className="donor-area-nav-row">
+        <div className="workspace-nav-row donor-area-nav-row">
           <DonorFeatureNav active="hotspots" postcode={focusPostcode} />
         </div>
 
         <section className="hotspot-board" aria-label={t('hotspots.ariaLabel', 'Hotspot priority board')}>
-          <div className="hotspot-chip-filter-group hotspot-chip-filter-group--compact">
-            <div className="hotspot-chip-row">
-              <button
-                type="button"
-                className={`hotspot-chip hotspot-chip--neutral${priorityFilter === 'all' ? ' active' : ''}`}
-                onClick={() => setPriorityFilter('all')}
-              >
-                {t('hotspots.chips.all', 'All')}
-              </button>
-              <button
-                type="button"
-                className={`hotspot-chip hotspot-chip--critical${priorityFilter === 'critical' ? ' active' : ''}`}
-                onClick={() => setPriorityFilter('critical')}
-              >
-                {t('hotspots.chips.critical', { count: priorityCounts.critical, defaultValue: 'Critical · {{count}}' })}
-              </button>
-              <button
-                type="button"
-                className={`hotspot-chip hotspot-chip--high${priorityFilter === 'high' ? ' active' : ''}`}
-                onClick={() => setPriorityFilter('high')}
-              >
-                {t('hotspots.chips.high', { count: priorityCounts.high, defaultValue: 'High · {{count}}' })}
-              </button>
-              <button
-                type="button"
-                className={`hotspot-chip hotspot-chip--watch${priorityFilter === 'watch' ? ' active' : ''}`}
-                onClick={() => setPriorityFilter('watch')}
-              >
-                {t('hotspots.chips.watch', { count: priorityCounts.watch, defaultValue: 'Watch · {{count}}' })}
-              </button>
+          <div className="hotspot-board-header">
+            <div className="hotspot-board-title-wrap">
+              <p className="hotspot-eyebrow">{t('hotspots.eyebrow', 'Hotspot map')}</p>
+              <h2 className="hotspot-title">{t('hotspots.title', 'Where food is needed most')}</h2>
+              <p className="hotspot-subtitle">
+                {t('hotspots.subtitle', 'Food shortage hotspots near your reference postcode.')}
+              </p>
+              <p className="hotspot-reference-anchor">
+                <span className="material-symbols-outlined">location_on</span>
+                <span>
+                  {focusPostcode
+                    ? t('hotspots.referencePostcode', {
+                        postcode: focusPostcode,
+                        defaultValue: 'Based on postcode {{postcode}}',
+                      })
+                    : t('hotspots.referenceStatewide', 'Based on state-wide baseline')}
+                </span>
+              </p>
+              <p className="hotspot-helper-copy">
+                {t(
+                  'hotspots.helper',
+                  'Use the map to inspect where food is most needed, then open a postcode panel to see shortage detail.',
+                )}
+              </p>
+              {topPriorityHotspot ? (
+                <p className="hotspot-top-priority-copy">
+                  <strong>{t('hotspots.topPriorityLabel', 'Top priority right now:')}</strong>{' '}
+                  {t('hotspots.topPriorityHint', {
+                    name: topPriorityHotspot.nearestHub?.name || topPriorityHotspot.region,
+                    distance: topPriorityHotspot.distanceToDonorKm,
+                    shortfall: topPriorityHotspot.totalShortfall,
+                    defaultValue: '{{name}} ({{distance}} km) - {{shortfall}} portions short',
+                  })}
+                </p>
+              ) : null}
+            </div>
+
+            <div className="hotspot-chip-filter-group hotspot-chip-filter-group--compact">
+              <div className="hotspot-chip-row">
+                <button
+                  type="button"
+                  className={`hotspot-chip hotspot-chip--neutral${priorityFilter === 'all' ? ' active' : ''}`}
+                  onClick={() => setPriorityFilter('all')}
+                >
+                  {t('hotspots.chips.all', 'All')}
+                </button>
+                <button
+                  type="button"
+                  className={`hotspot-chip hotspot-chip--critical${priorityFilter === 'critical' ? ' active' : ''}`}
+                  onClick={() => setPriorityFilter('critical')}
+                >
+                  {t('hotspots.chips.critical', {
+                    count: priorityCounts.critical,
+                    defaultValue: 'Critical · {{count}}',
+                  })}
+                </button>
+                <button
+                  type="button"
+                  className={`hotspot-chip hotspot-chip--high${priorityFilter === 'high' ? ' active' : ''}`}
+                  onClick={() => setPriorityFilter('high')}
+                >
+                  {t('hotspots.chips.high', { count: priorityCounts.high, defaultValue: 'High · {{count}}' })}
+                </button>
+                <button
+                  type="button"
+                  className={`hotspot-chip hotspot-chip--watch${priorityFilter === 'watch' ? ' active' : ''}`}
+                  onClick={() => setPriorityFilter('watch')}
+                >
+                  {t('hotspots.chips.watch', {
+                    count: priorityCounts.watch,
+                    defaultValue: 'Watch · {{count}}',
+                  })}
+                </button>
+              </div>
             </div>
           </div>
 
@@ -205,17 +261,21 @@ const DonorHotspotsPage = () => {
                     {t('hotspots.controls.sortDistance', 'Distance')}
                   </button>
                 </div>
+
                 <label className="hotspot-control">
                   <span>{t('hotspots.controls.region', 'Region')}</span>
-                  <select value={regionFilter} onChange={(e) => setRegionFilter(e.target.value)}>
-                    {regions.map((r) => (
-                      <option key={r} value={r}>{r === 'all' ? t('common.all', 'All') : r}</option>
+                  <select value={regionFilter} onChange={(event) => setRegionFilter(event.target.value)}>
+                    {regions.map((region) => (
+                      <option key={region} value={region}>
+                        {region === 'all' ? t('common.all', 'All') : region}
+                      </option>
                     ))}
                   </select>
                 </label>
+
                 <label className="hotspot-control">
                   <span>{t('hotspots.controls.distance', 'Dist.')}</span>
-                  <select value={distanceFilter} onChange={(e) => setDistanceFilter(e.target.value)}>
+                  <select value={distanceFilter} onChange={(event) => setDistanceFilter(event.target.value)}>
                     <option value="all">{t('common.all', 'All')}</option>
                     <option value="10">≤ 10 km</option>
                     <option value="25">≤ 25 km</option>
@@ -240,9 +300,11 @@ const DonorHotspotsPage = () => {
                 <span className="hotspot-legend-label">Watch</span>
               </div>
 
-              {SHOW_SAMPLE_HINT && hotspotSource !== 'prediction' && (
-                <p className="hotspot-sample-note">Preview mode · sample data</p>
-              )}
+              {SHOW_SAMPLE_HINT && hotspotSource !== 'prediction' ? (
+                <p className="hotspot-sample-note">
+                  {t('hotspots.sampleNote', 'Sample data only. Live hotspot scoring will be connected after database integration.')}
+                </p>
+              ) : null}
             </div>
 
             <aside className="hotspot-detail-panel">
@@ -257,7 +319,7 @@ const DonorHotspotsPage = () => {
 
                   <p className="hotspot-detail-hub">
                     <span className="material-symbols-outlined">store</span>
-                    {selectedHotspot.nearestHub.name}
+                    {selectedHotspot.nearestHub?.name || selectedHotspot.region}
                   </p>
 
                   <div className="hotspot-detail-stats">
@@ -292,7 +354,15 @@ const DonorHotspotsPage = () => {
                   <button
                     type="button"
                     className="hotspot-post-cta"
-                    onClick={() => navigate('/form/' + focusPostcode, { state: { targetPostcode: selectedHotspot.postcode } })}
+                    onClick={() =>
+                      navigate('/donor/post', {
+                        state: {
+                          postcode: focusPostcode,
+                          targetPostcode: selectedHotspot.postcode,
+                          orgMode: false,
+                        },
+                      })
+                    }
                   >
                     <span className="material-symbols-outlined">volunteer_activism</span>
                     {t('hotspots.postHere', 'Post food here')}
