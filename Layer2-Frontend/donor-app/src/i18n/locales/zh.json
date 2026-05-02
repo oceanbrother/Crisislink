@@ -456,5 +456,25 @@
   "lang": {
     "en": "English",
     "zh": "中文"
+  },
+  "coverageMap": {
+    "navLabel": "附近区域",
+    "legend": "风险等级",
+    "summary": "高风险邮编",
+    "riskCountHint": "需求风险 > 0.5",
+    "postcode": "邮编",
+    "riskScore": "需求风险",
+    "seifaScore": "SEIFA IRSD",
+    "activeListings": "活跃物品",
+    "totalSupply": "总供给",
+    "noScore": "尚未评分",
+    "clickHint": "点击地图上的邮编查看详情。",
+    "risk": {
+      "high": "高风险 (≥0.75)",
+      "mediumhigh": "中高风险 (≥0.50)",
+      "mediumlow": "中低风险 (≥0.25)",
+      "low": "低风险 (<0.25)",
+      "none": "暂无评分"
+    }
   }
 }

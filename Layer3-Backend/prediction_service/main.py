@@ -9,6 +9,7 @@ Endpoints:
 """
 
 import asyncio
+import json
 import os
 from datetime import date, datetime, timedelta
 from typing import Optional
@@ -49,6 +50,16 @@ risk_scorer: Optional[RiskScorer] = None
 scheduler: Optional[AsyncIOScheduler] = None
 
 
+def _risk_label(score: float) -> str:
+	if score >= 0.75:
+		return "high"
+	if score >= 0.5:
+		return "medium-high"
+	if score >= 0.25:
+		return "medium-low"
+	return "low"
+
+
 # ─── Startup / Shutdown ──────────────────────────────────────────────────
 @app.on_event("startup")
 async def startup():
@@ -60,7 +71,9 @@ async def startup():
 
 	# Load ML models (singleton). If any model fails to load, mark risk_scorer None.
 	try:
-		risk_scorer = RiskScorer()
+		from pathlib import Path as _Path
+		_models_dir = _Path(__file__).parent / "models"
+		risk_scorer = RiskScorer(models_dir=_models_dir)
 		print("✓ Risk scorer models loaded successfully")
 	except Exception as e:
 		print(f"⚠ Risk scorer models not available: {e}")
@@ -90,6 +103,42 @@ async def shutdown():
 		await database.disconnect()
 
 
+_UPSERT_RISK_SCORES = """
+	INSERT INTO postcode_risk_scores (
+		postcode, week_start, demand_risk_score, risk_label,
+		confidence, predicted_window_start, predicted_window_end,
+		top_features, generated_at
+	)
+	VALUES (
+		:postcode, :week_start, :score, :risk_label,
+		:confidence, :window_start, :window_end,
+		:top_features, :generated_at
+	)
+	ON CONFLICT (postcode, week_start) DO UPDATE
+	SET demand_risk_score      = EXCLUDED.demand_risk_score,
+		risk_label             = EXCLUDED.risk_label,
+		confidence             = EXCLUDED.confidence,
+		predicted_window_start = EXCLUDED.predicted_window_start,
+		predicted_window_end   = EXCLUDED.predicted_window_end,
+		top_features           = EXCLUDED.top_features,
+		generated_at           = EXCLUDED.generated_at;
+"""
+
+
+def _upsert_params(postcode: str, week_start: date, score: float, top_features=None, confidence: float = 0.92) -> dict:
+	return {
+		"postcode": postcode,
+		"week_start": week_start,
+		"score": score,
+		"risk_label": _risk_label(score),
+		"confidence": confidence,
+		"window_start": week_start,
+		"window_end": week_start + timedelta(days=6),
+		"top_features": json.dumps(top_features) if top_features is not None else None,
+		"generated_at": datetime.utcnow(),
+	}
+
+
 async def _weekly_prediction_job():
 	"""Weekly job: score all postcodes and perform online learning if supported."""
 	global risk_scorer, database
@@ -105,7 +154,6 @@ async def _weekly_prediction_job():
 	rows = await database.fetch_all(query)
 	postcodes = [r["postcode"] for r in rows]
 
-	# Fetch feature rows in batches
 	features_query = """
 		SELECT postcode, unemployment_rate, rent_to_income_ratio,
 			unemployment_rate_sqrt, rent_to_income_ratio_log,
@@ -114,31 +162,28 @@ async def _weekly_prediction_job():
 		FROM postcode_seifa
 		WHERE postcode = ANY(:postcodes);
 	"""
+	week_start = date.today() - timedelta(days=date.today().weekday())
+
 	for chunk_start in range(0, len(postcodes), 200):
-		chunk = postcodes[chunk_start:chunk_start+200]
+		chunk = postcodes[chunk_start:chunk_start + 200]
 		rows = await database.fetch_all(features_query, {"postcodes": chunk})
 		df = pd.DataFrame(rows)
 		if df.empty:
 			continue
 		scored = risk_scorer.score(df)
-		week_start = date.today() - timedelta(days=date.today().weekday())
-		upsert_query = """
-			INSERT INTO postcode_risk_scores (postcode, week_start, demand_risk_score, created_at)
-			VALUES (:postcode, :week_start, :score, :created_at)
-			ON CONFLICT (postcode, week_start) DO UPDATE
-			SET demand_risk_score = :score, created_at = :created_at;
-		"""
 		for _, row in scored.iterrows():
+			score = float(row["demand_risk_score"])
 			await database.execute(
-				upsert_query,
-				{
-					"postcode": row["postcode"],
-					"week_start": week_start,
-					"score": float(row["demand_risk_score"]),
-					"created_at": datetime.utcnow(),
-				},
+				_UPSERT_RISK_SCORES,
+				_upsert_params(
+					postcode=row["postcode"],
+					week_start=week_start,
+					score=score,
+					top_features=row.get("top_features"),
+					confidence=float(row.get("confidence", 0.92)),
+				),
 			)
-		print(f"Weekly job: processed chunk {chunk_start}..{chunk_start+len(chunk)}")
+		print(f"Weekly job: processed chunk {chunk_start}..{chunk_start + len(chunk)}")
 
 	# Optionally perform online learning with river models if implemented
 	try:
@@ -152,7 +197,7 @@ async def _weekly_prediction_job():
 
 
 async def _daily_gap_detection_job():
-	"""Daily job: detect postcodes with high vulnerability and zero supply."""
+	"""Daily job: detect postcodes in the two most disadvantaged deciles with zero supply."""
 	global database
 	if not database:
 		print("Daily gap detection skipped: database not configured")
@@ -160,16 +205,17 @@ async def _daily_gap_detection_job():
 
 	print("Starting daily gap detection job...")
 	query = """
-		SELECT ps.postcode, ps.total_population, COALESCE(SUM(CASE WHEN fl.status = 'available' THEN fl.quantity ELSE 0 END),0) as total_supply
+		SELECT ps.postcode, ps.total_population,
+			COALESCE(SUM(CASE WHEN fl.status = 'available' THEN fl.quantity ELSE 0 END), 0) AS total_supply
 		FROM postcode_seifa ps
 		LEFT JOIN food_listing fl ON ps.postcode = fl.postcode AND fl.status = 'available'
+		WHERE ps.irsd_decile <= 2
 		GROUP BY ps.postcode, ps.total_population
-		HAVING COALESCE(SUM(CASE WHEN fl.status = 'available' THEN fl.quantity ELSE 0 END),0) = 0
+		HAVING COALESCE(SUM(CASE WHEN fl.status = 'available' THEN fl.quantity ELSE 0 END), 0) = 0
 		ORDER BY ps.postcode;
 	"""
 	rows = await database.fetch_all(query)
-	# Cache results in memory (simple module-level variable)
-	app.state.gap_postcodes = [ {"postcode": r["postcode"], "total_population": int(r["total_population"])} for r in rows ]
+	app.state.gap_postcodes = [{"postcode": r["postcode"], "total_population": int(r["total_population"])} for r in rows]
 	print(f"Daily gap detection complete: found {len(rows)} postcodes")
 
 
@@ -218,17 +264,16 @@ class SupplyGapRequest(BaseModel):
 async def post_demand_forecast(req: DemandForecastRequest):
 	"""
 	Generate demand forecast for a postcode in a given week.
-    
+
 	Returns risk score (0-1) indicating expected demand pressure.
 	"""
 	if not risk_scorer:
 		raise HTTPException(status_code=503, detail="Models not loaded")
 	if not database:
 		raise HTTPException(status_code=503, detail="Database not configured")
-    
-	# Fetch SEIFA data
+
 	query = """
-		SELECT 
+		SELECT
 			postcode, unemployment_rate, rent_to_income_ratio,
 			unemployment_rate_sqrt, rent_to_income_ratio_log,
 			total_population_log, single_parent_pct,
@@ -236,42 +281,37 @@ async def post_demand_forecast(req: DemandForecastRequest):
 		FROM postcode_seifa
 		WHERE postcode = :postcode;
 	"""
-    
+
 	row = await database.fetch_one(query, {"postcode": req.postcode})
 	if not row:
 		raise HTTPException(status_code=404, detail=f"Postcode {req.postcode} not found")
-    
-	# Score the postcode
+
 	row_dict = dict(row)
 	result = risk_scorer.score_single(req.postcode, row_dict)
-    
+
 	if not result:
 		raise HTTPException(status_code=500, detail="Scoring failed")
-    
-	# Upsert into postcode_risk_scores
-	upsert_query = """
-		INSERT INTO postcode_risk_scores (postcode, week_start, demand_risk_score, created_at)
-		VALUES (:postcode, :week_start, :score, :created_at)
-		ON CONFLICT (postcode, week_start) DO UPDATE
-		SET demand_risk_score = :score, created_at = :created_at;
-	"""
-    
+
+	score = float(result["demand_risk_score"])
+	confidence = float(result.get("confidence", 0.92))
+
 	await database.execute(
-		upsert_query,
-		{
-			"postcode": req.postcode,
-			"week_start": req.week_start,
-			"score": float(result["demand_risk_score"]),
-			"created_at": datetime.utcnow(),
-		},
+		_UPSERT_RISK_SCORES,
+		_upsert_params(
+			postcode=req.postcode,
+			week_start=req.week_start,
+			score=score,
+			top_features=result.get("top_features"),
+			confidence=confidence,
+		),
 	)
-    
+
 	return DemandForecastResponse(
 		postcode=req.postcode,
 		week_start=req.week_start,
-		demand_risk_score=float(result["demand_risk_score"]),
+		demand_risk_score=score,
 		cluster_assignment=int(result["cluster_assignment"]),
-		confidence=0.92,  # Placeholder
+		confidence=confidence,
 	)
 
 
@@ -282,37 +322,36 @@ async def get_risk_scores(
 ):
 	"""
 	Fetch demand risk scores for postcodes.
-    
+
 	If week_start is not provided, returns latest scores.
 	"""
 	if not postcodes:
 		raise HTTPException(status_code=400, detail="At least one postcode required")
 	if not database:
 		raise HTTPException(status_code=503, detail="Database not configured")
-    
-	# Default to current week start
+
 	if week_start is None:
 		today = date.today()
 		week_start = today - timedelta(days=today.weekday())
-    
+
 	query = """
 		SELECT DISTINCT ON (postcode)
-			postcode, week_start, demand_risk_score
+			postcode, week_start, demand_risk_score, confidence
 		FROM postcode_risk_scores
 		WHERE postcode = ANY(:postcodes)
 		ORDER BY postcode, week_start DESC
 		LIMIT 1;
 	"""
-    
+
 	rows = await database.fetch_all(query, {"postcodes": postcodes})
-    
+
 	return [
 		DemandForecastResponse(
 			postcode=row["postcode"],
 			week_start=row["week_start"],
 			demand_risk_score=float(row["demand_risk_score"]),
-			cluster_assignment=0,  # Fetch from table if needed
-			confidence=0.92,
+			cluster_assignment=0,
+			confidence=float(row["confidence"]),
 		)
 		for row in rows
 	]
@@ -327,9 +366,9 @@ async def post_postcode_risk(postcode: str):
 		raise HTTPException(status_code=503, detail="Models not loaded")
 	if not database:
 		raise HTTPException(status_code=503, detail="Database not configured")
-    
+
 	query = """
-		SELECT 
+		SELECT
 			postcode, unemployment_rate, rent_to_income_ratio,
 			unemployment_rate_sqrt, rent_to_income_ratio_log,
 			total_population_log, single_parent_pct,
@@ -337,14 +376,14 @@ async def post_postcode_risk(postcode: str):
 		FROM postcode_seifa
 		WHERE postcode = :postcode;
 	"""
-    
+
 	row = await database.fetch_one(query, {"postcode": postcode})
 	if not row:
 		raise HTTPException(status_code=404, detail=f"Postcode {postcode} not found")
-    
+
 	row_dict = dict(row)
 	result = risk_scorer.score_single(postcode, row_dict)
-    
+
 	return {
 		"postcode": postcode,
 		"demand_risk_score": float(result["demand_risk_score"]),
@@ -356,40 +395,40 @@ async def post_postcode_risk(postcode: str):
 async def get_supply_gaps(region_category: Optional[str] = None):
 	"""
 	Identify supply gaps: postcodes with high risk but low active listings.
-    
+
 	Returns ranked list of high-need areas.
 	"""
 	if not database:
 		raise HTTPException(status_code=503, detail="Database not configured")
 
 	query = """
-		SELECT 
+		SELECT
 			ps.postcode,
 			ps.irsd_score,
-			MAX(prs.demand_risk_score) as latest_risk_score,
-			COUNT(CASE WHEN fl.status = 'available' THEN 1 END) as active_listings,
-			COALESCE(SUM(CASE WHEN fl.status = 'available' THEN fl.quantity ELSE 0 END), 0) as total_supply
+			MAX(prs.demand_risk_score) AS latest_risk_score,
+			COUNT(CASE WHEN fl.status = 'available' THEN 1 END) AS active_listings,
+			COALESCE(SUM(CASE WHEN fl.status = 'available' THEN fl.quantity ELSE 0 END), 0) AS total_supply
 		FROM postcode_seifa ps
 		LEFT JOIN postcode_risk_scores prs ON ps.postcode = prs.postcode
 		LEFT JOIN food_listing fl ON ps.postcode = fl.postcode AND fl.status = 'available'
 		WHERE 1=1
 	"""
-    
+
 	params = {}
-    
+
 	if region_category:
 		query += " AND ps.regional_category = :region"
 		params["region"] = region_category
-    
+
 	query += """
 		GROUP BY ps.postcode, ps.irsd_score
 		HAVING MAX(prs.demand_risk_score) > 0.5
 		ORDER BY latest_risk_score DESC, active_listings ASC
 		LIMIT 50;
 	"""
-    
+
 	rows = await database.fetch_all(query, params)
-    
+
 	return [
 		{
 			"postcode": row["postcode"],
@@ -397,6 +436,42 @@ async def get_supply_gaps(region_category: Optional[str] = None):
 			"demand_risk_score": float(row["latest_risk_score"]) if row["latest_risk_score"] else 0.0,
 			"active_listings": row["active_listings"],
 			"total_supply": float(row["total_supply"]),
+		}
+		for row in rows
+	]
+
+
+@app.get('/predictions/all-risk-scores')
+async def api_all_risk_scores():
+	"""Return the latest risk score for every scored postcode — used by the coverage map."""
+	if not database:
+		raise HTTPException(status_code=503, detail="Database not configured")
+
+	query = """
+		SELECT DISTINCT ON (prs.postcode)
+			prs.postcode,
+			prs.demand_risk_score,
+			prs.risk_label,
+			ps.irsd_score,
+			ps.regional_category,
+			COALESCE(SUM(CASE WHEN fl.status = 'available' THEN fl.quantity ELSE 0 END), 0) AS total_supply,
+			COUNT(CASE WHEN fl.status = 'available' THEN 1 END) AS active_listings
+		FROM postcode_risk_scores prs
+		JOIN postcode_seifa ps ON ps.postcode = prs.postcode
+		LEFT JOIN food_listing fl ON fl.postcode = prs.postcode
+		GROUP BY prs.postcode, prs.demand_risk_score, prs.risk_label, ps.irsd_score, ps.regional_category, prs.week_start
+		ORDER BY prs.postcode, prs.week_start DESC;
+	"""
+	rows = await database.fetch_all(query)
+	return [
+		{
+			"postcode": row["postcode"],
+			"demand_risk_score": float(row["demand_risk_score"]),
+			"risk_label": row["risk_label"],
+			"irsd_score": float(row["irsd_score"]),
+			"regional_category": row["regional_category"],
+			"total_supply": float(row["total_supply"]),
+			"active_listings": int(row["active_listings"]),
 		}
 		for row in rows
 	]
@@ -413,22 +488,19 @@ async def api_gap_postcodes(radius_km: Optional[float] = None, lat: Optional[flo
 	if not rows:
 		return results
 
-	# If no radius filter, return cached list.
 	if not (radius_km and lat is not None and lon is not None):
 		return rows
 
-	# Fetch locations for gap postcodes
 	postcodes = [r['postcode'] for r in rows]
 	placeholders = ','.join(['%s'] * len(postcodes))
 	query = f"SELECT postcode, latitude, longitude FROM location WHERE postcode IN ({placeholders})"
 	db_rows = await database.fetch_all(query, postcodes)
 
-	# Haversine filtering in Python
 	def haversine_km(lat1, lon1, lat2, lon2):
 		from math import radians, sin, cos, asin, sqrt
 		dlat = radians(lat2 - lat1)
 		dlon = radians(lon2 - lon1)
-		a = sin(dlat/2)**2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon/2)**2
+		a = sin(dlat / 2) ** 2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2) ** 2
 		return 2 * 6371 * asin(sqrt(a))
 
 	loc_map = {r['postcode']: (r['latitude'], r['longitude']) for r in db_rows}
@@ -451,29 +523,30 @@ async def api_hotspots(limit: int = 50):
 		raise HTTPException(status_code=503, detail="Database not configured")
 
 	query = """
-		SELECT ps.postcode, ps.irsd_score, COALESCE(MAX(prs.demand_risk_score),0) as risk_score,
-			COALESCE(SUM(CASE WHEN fl.status = 'available' THEN fl.quantity ELSE 0 END),0) as total_supply
+		SELECT ps.postcode, ps.irsd_score, ps.regional_category,
+			COALESCE(MAX(prs.demand_risk_score), 0) AS risk_score,
+			COALESCE(SUM(CASE WHEN fl.status = 'available' THEN fl.quantity ELSE 0 END), 0) AS total_supply
 		FROM postcode_seifa ps
 		LEFT JOIN postcode_risk_scores prs ON ps.postcode = prs.postcode
 		LEFT JOIN food_listing fl ON ps.postcode = fl.postcode
-		GROUP BY ps.postcode, ps.irsd_score
-		HAVING COALESCE(MAX(prs.demand_risk_score),0) > 0
-		ORDER BY (COALESCE(MAX(prs.demand_risk_score),0) - LEAST(COALESCE(SUM(CASE WHEN fl.status = 'available' THEN fl.quantity ELSE 0 END),0), 100)/100.0) DESC
+		GROUP BY ps.postcode, ps.irsd_score, ps.regional_category
+		HAVING COALESCE(MAX(prs.demand_risk_score), 0) > 0
+		ORDER BY (COALESCE(MAX(prs.demand_risk_score), 0) - LEAST(COALESCE(SUM(CASE WHEN fl.status = 'available' THEN fl.quantity ELSE 0 END), 0), 100) / 100.0) DESC
 		LIMIT :limit;
 	"""
 	rows = await database.fetch_all(query, {"limit": limit})
 
-	hotspots = []
-	for row in rows:
-		hotspots.append({
+	return [
+		{
 			'postcode': row['postcode'],
 			'irsd_score': float(row['irsd_score']),
+			'regional_category': row['regional_category'],
 			'risk_score': float(row['risk_score']),
 			'total_supply': float(row['total_supply']),
 			'top_shortage_categories': [],
-		})
-
-	return hotspots
+		}
+		for row in rows
+	]
 
 
 # ─── Batch Processing ────────────────────────────────────────────────────
@@ -481,55 +554,45 @@ async def api_hotspots(limit: int = 50):
 async def batch_score_all_postcodes():
 	"""
 	Score all postcodes in postcode_seifa for the current week.
-    
+
 	Long-running operation: use for weekly batch job.
 	"""
 	if not risk_scorer:
 		raise HTTPException(status_code=503, detail="Models not loaded")
 	if not database:
 		raise HTTPException(status_code=503, detail="Database not configured")
-    
-	# Fetch all SEIFA data
+
 	query = """
-		SELECT 
+		SELECT
 			postcode, unemployment_rate, rent_to_income_ratio,
 			unemployment_rate_sqrt, rent_to_income_ratio_log,
 			total_population_log, single_parent_pct,
 			median_hhd_income_weekly, median_rent_weekly
 		FROM postcode_seifa;
 	"""
-    
+
 	rows = await database.fetch_all(query)
-	# Convert asyncpg Record objects to plain dicts for pandas
 	df = pd.DataFrame([dict(row) for row in rows])
-    
+
 	if df.empty:
 		return {"processed": 0, "failed": 0}
-    
-	# Score all at once
+
 	results = risk_scorer.score(df)
-    
-	# Upsert all results
 	week_start = date.today() - timedelta(days=date.today().weekday())
-    
-	upsert_query = """
-		INSERT INTO postcode_risk_scores (postcode, week_start, demand_risk_score, created_at)
-		VALUES (:postcode, :week_start, :score, :created_at)
-		ON CONFLICT (postcode, week_start) DO UPDATE
-		SET demand_risk_score = :score, created_at = :created_at;
-	"""
-    
+
 	for _, row in results.iterrows():
+		score = float(row["demand_risk_score"])
 		await database.execute(
-			upsert_query,
-			{
-				"postcode": row["postcode"],
-				"week_start": week_start,
-				"score": float(row["demand_risk_score"]),
-				"created_at": datetime.utcnow(),
-			},
+			_UPSERT_RISK_SCORES,
+			_upsert_params(
+				postcode=row["postcode"],
+				week_start=week_start,
+				score=score,
+				top_features=row.get("top_features"),
+				confidence=float(row.get("confidence", 0.92)),
+			),
 		)
-    
+
 	return {
 		"processed": len(results),
 		"week_start": week_start.isoformat(),

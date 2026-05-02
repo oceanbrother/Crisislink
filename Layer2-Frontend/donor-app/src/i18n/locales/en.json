@@ -456,5 +456,25 @@
   "lang": {
     "en": "English",
     "zh": "中文"
+  },
+  "coverageMap": {
+    "navLabel": "Around me",
+    "legend": "Risk level",
+    "summary": "At-risk postcodes",
+    "riskCountHint": "with demand risk > 0.5",
+    "postcode": "Postcode",
+    "riskScore": "Demand risk",
+    "seifaScore": "SEIFA IRSD",
+    "activeListings": "Active listings",
+    "totalSupply": "Total supply",
+    "noScore": "Not scored yet",
+    "clickHint": "Click a postcode on the map to see details.",
+    "risk": {
+      "high": "High (≥0.75)",
+      "mediumhigh": "Medium-high (≥0.50)",
+      "mediumlow": "Medium-low (≥0.25)",
+      "low": "Low (<0.25)",
+      "none": "No score yet"
+    }
   }
 }
