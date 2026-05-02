@@ -34,6 +34,12 @@ const OrgFeatureNav = ({ active = 'listings', orgCode = '' }) => {
           active: active === 'gaps',
           onClick: () => goTo('/org/gaps'),
         },
+        {
+          key: 'coverage-map',
+          label: t('coverageMap.navLabel', 'Around me'),
+          active: active === 'coverage-map',
+          onClick: () => goTo('/org/coverage-map'),
+        },
       ]}
     />
   )

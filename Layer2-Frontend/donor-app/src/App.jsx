@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState, Component } from 'react'
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import './App.css'
@@ -10,12 +10,34 @@ import PostFeedPage from './pages/PostFeedPage'
 import DonationFormPage from './pages/DonationFormPage'
 import DonorDashboardPage from './pages/DonorDashboardPage'
 import DonorHotspotsPage from './pages/DonorHotspotsPage'
+import HotspotMap from './pages/HotspotMap'
 
 // Pages - Organization Flow
 import OrgCodeInputPage from './pages/OrgCodeInputPage'
 import LiveListingBoard from './pages/LiveListingBoard'
 import OrgAlertsPage from './pages/OrgAlertsPage'
 import OrgSupplyGapPage from './pages/OrgSupplyGapPage'
+import CoverageGapMap from './pages/CoverageGapMap'
+
+class MapErrorBoundary extends Component {
+  constructor(props) { super(props); this.state = { error: null } }
+  static getDerivedStateFromError(error) { return { error } }
+  render() {
+    if (this.state.error) {
+      return (
+        <div style={{ padding: '2rem', fontFamily: 'monospace' }}>
+          <strong>Map render error:</strong>
+          <pre style={{ marginTop: '1rem', color: 'red', whiteSpace: 'pre-wrap' }}>
+            {this.state.error.message}
+            {'\n\n'}
+            {this.state.error.stack}
+          </pre>
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
 
 const ACCESS_STORAGE_KEY = 'crisislink-site-access-granted-v2'
 
@@ -113,9 +135,9 @@ function AppRoutes() {
       <Route path="/donor" element={<DonorDashboardPage />} />
       <Route path="/donor/post" element={<DonationFormPage />} />
       <Route path="/donor/listings" element={<PostFeedPage />} />
-      <Route path="/donor/hotspots" element={<DonorHotspotsPage />} />
+      <Route path="/donor/hotspots" element={<MapErrorBoundary><HotspotMap /></MapErrorBoundary>} />
       <Route path="/feed/:postcode" element={<PostFeedPage />} />
-      <Route path="/hotspots/:postcode" element={<DonorHotspotsPage />} />
+      <Route path="/hotspots/:postcode" element={<MapErrorBoundary><HotspotMap /></MapErrorBoundary>} />
 
       {/* Form with optional postcode param so we can redirect back to feed */}
       <Route path="/form/:postcode" element={<DonationFormPage />} />
@@ -126,6 +148,7 @@ function AppRoutes() {
       <Route path="/org/listings" element={<LiveListingBoard />} />
       <Route path="/org/alerts" element={<OrgAlertsPage />} />
       <Route path="/org/gaps" element={<OrgSupplyGapPage />} />
+      <Route path="/org/coverage-map" element={<MapErrorBoundary><CoverageGapMap /></MapErrorBoundary>} />
 
       {/* Catch all - redirect to home */}
       <Route path="*" element={<Navigate to="/" replace />} />

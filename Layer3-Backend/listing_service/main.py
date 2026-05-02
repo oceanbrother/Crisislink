@@ -1,6 +1,6 @@
 """
-Listing Service — FastAPI backend for CrisisLink
-Backed by PostgreSQL (crisislink_db) via the `databases` async library.
+Listing Service — FastAPI backend for outbackshare
+Backed by PostgreSQL (outbackshare_db) via the `databases` async library.
 """
 
 import os
@@ -144,6 +144,7 @@ class Listing(ListingBase):
     claimedBy: Optional[str] = None
     claimedAt: Optional[datetime] = None
     hasClaims: bool = False
+    quantity: float = Field(..., ge=0, le=10000)  # 0 is valid for fully-claimed items
 
 
 class ClaimRequest(BaseModel):

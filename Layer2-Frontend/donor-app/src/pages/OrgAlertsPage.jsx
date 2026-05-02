@@ -1,13 +1,16 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useCallback, useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { getAvailableListings, getPredictionRiskScores } from '../services/api'
-import { buildDemandInsights } from '../constants/demandInsights'
-import { buildDemandInsightsFromRiskScores } from '../utils/predictionAdapters'
+import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet'
+import apiClient from '../services/api'
+import suburbLookup from '../data/vic_postcode_suburbs.json'
 import OrgFeatureNav from '../components/OrgFeatureNav'
-import PostcodeMap from '../components/PostcodeMap'
 import WorkspaceHeader from '../components/WorkspaceHeader'
 import '../styles/LiveListingBoard.css'
+
+function suburbName(postcode) {
+  return suburbLookup[String(postcode)] || `Postcode ${postcode}`
+}
 
 const DEMAND_SPIKE_THRESHOLD = 20
 const DEMAND_CRITICAL_THRESHOLD = 30
@@ -20,11 +23,19 @@ const OrgAlertsPage = () => {
   const location = useLocation()
   const { t } = useTranslation()
 
-  const [demandInsights, setDemandInsights] = useState(() => buildDemandInsights([]))
+  const [demandInsights, setDemandInsights] = useState({ source: 'loading', alerts: [], topAlert: null, fallbackTopAlert: null })
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   const [alertToneFilter, setAlertToneFilter] = useState('all')
   const [selectedAlertPostcode, setSelectedAlertPostcode] = useState('')
+  const [geojson, setGeojson] = useState(null)
+
+  useEffect(() => {
+    fetch('/vic_regional_postcodes.geojson')
+      .then(r => r.ok ? r.json() : null)
+      .then(data => { if (data) setGeojson(data) })
+      .catch(() => {})
+  }, [])
 
   const savedOrgSession = (() => {
     try {
@@ -38,32 +49,46 @@ const OrgAlertsPage = () => {
 
   useEffect(() => {
     window.localStorage.setItem('crisislink-org-session', JSON.stringify({ orgCode }))
-    loadDemandInsights()
   }, [orgCode])
 
-  const loadDemandInsights = async () => {
+  useEffect(() => {
+    let isCancelled = false
     setLoading(true)
     setError('')
-    try {
-      try {
-        const riskScoreData = await getPredictionRiskScores()
-        const predictionInsights = buildDemandInsightsFromRiskScores(riskScoreData)
-        if (predictionInsights.alerts.length > 0) {
-          setDemandInsights(predictionInsights)
-          return
-        }
-      } catch {
-        // prediction service optional
-      }
-      const availableData = await getAvailableListings({ status: 'available' })
-      setDemandInsights(buildDemandInsights(Array.isArray(availableData) ? availableData : []))
-    } catch {
-      setError('alerts-load-failed')
-      setDemandInsights(buildDemandInsights([]))
-    } finally {
-      setLoading(false)
-    }
-  }
+
+    apiClient.get('/predictions/all-risk-scores')
+      .then(res => {
+        if (isCancelled) return
+        const rows = res.data || []
+        const alerts = rows
+          .filter(item => item.demand_risk_score >= 0.5)
+          .map(item => {
+            const score = item.demand_risk_score
+            // Scale so 0.62 (medium-high) → ~17% watch, 0.82 (high) → ~32% critical
+            const demandLift = Math.max(0, Math.round((score - 0.4) * 75))
+            const name = suburbName(item.postcode)
+            return {
+              postcode: item.postcode,
+              suburb: name,
+              council: item.regional_category || 'Service area',
+              demandLift,
+              confidence: Math.round(60 + score * 30),
+              pressureScore: Math.round(score * 100),
+              householdsAtRisk: Math.round(score * 400),
+              contributingFactors: ['Socioeconomic disadvantage', 'Low food supply'],
+              alertReason: `Demand risk ${(score * 100).toFixed(0)}% — SEIFA IRSD ${Math.round(item.irsd_score || 950)}`,
+              activePortions: item.total_supply || 0,
+              predictedWindow: 'Next 7 days',
+            }
+          })
+          .sort((a, b) => b.demandLift - a.demandLift)
+        setDemandInsights({ source: 'prediction', alerts, topAlert: alerts[0] || null, fallbackTopAlert: alerts[0] || null })
+      })
+      .catch(() => setError('alerts-load-failed'))
+      .finally(() => { if (!isCancelled) setLoading(false) })
+
+    return () => { isCancelled = true }
+  }, [])
 
   const demandAlerts = useMemo(() => {
     if (Array.isArray(demandInsights.alerts) && demandInsights.alerts.length > 0) {
@@ -141,6 +166,27 @@ const OrgAlertsPage = () => {
     })),
     [filteredDemandAlerts]
   )
+
+  const alertToneColors = { critical: '#e53e3e', high: '#dd6b20', watch: '#d69e2e' }
+
+  const styleAlertFeature = useCallback((feature) => {
+    const pc = String(feature?.properties?.POA_CODE21 ?? feature?.properties?.postcode ?? '')
+    const alert = filteredDemandAlerts.find(a => String(a.postcode) === pc)
+    if (!alert) return { color: '#cbd5e0', weight: 0.5, fillColor: '#f7fafc', fillOpacity: 0.2 }
+    const tone = getDemandTone(alert.demandLift)
+    return { color: '#555', weight: 0.8, fillColor: alertToneColors[tone] || '#d69e2e', fillOpacity: 0.65 }
+  }, [filteredDemandAlerts])
+
+  const onEachAlertFeature = useCallback((feature, layer) => {
+    const pc = String(feature?.properties?.POA_CODE21 ?? feature?.properties?.postcode ?? '')
+    const alert = filteredDemandAlerts.find(a => String(a.postcode) === pc)
+    if (alert) {
+      layer.bindTooltip(`${pc} — +${alert.demandLift}% demand`, { sticky: true })
+      layer.on('click', () => setSelectedAlertPostcode(alert.postcode))
+    } else {
+      layer.bindTooltip(pc, { sticky: true })
+    }
+  }, [filteredDemandAlerts])
 
   function getConfidenceLevel(confidence) {
     const v = Number(confidence || 0)
@@ -261,12 +307,26 @@ const OrgAlertsPage = () => {
                   </button>
                 </div>
 
-                <PostcodeMap
-                  zones={mapZones}
-                  selectedPostcode={selectedAlertPostcode}
-                  onSelect={setSelectedAlertPostcode}
-                  height={340}
-                />
+                <div style={{ height: '340px', borderRadius: '8px', overflow: 'hidden', marginBottom: '1rem' }}>
+                  <MapContainer
+                    center={[-36.8, 144.8]}
+                    zoom={7}
+                    style={{ height: '340px', width: '100%' }}
+                  >
+                    <TileLayer
+                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
+                      attribution='&copy; OpenStreetMap contributors'
+                    />
+                    {geojson && (
+                      <GeoJSON
+                        key={filteredDemandAlerts.length + alertToneFilter}
+                        data={geojson}
+                        style={styleAlertFeature}
+                        onEachFeature={onEachAlertFeature}
+                      />
+                    )}
+                  </MapContainer>
+                </div>
 
                 <div className="org-demand-alert-grid" role="list" aria-label={t('dashboard.intelligence.postcodeAlerts', 'Postcode alerts')}>
                   {filteredDemandAlerts.map((alert) => {

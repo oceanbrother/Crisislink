@@ -28,12 +28,16 @@ CREATE TABLE postcode_seifa (
 );
 
 CREATE TABLE postcode_risk_scores (
-    risk_score_id      BIGSERIAL    PRIMARY KEY,
-    postcode           VARCHAR(10)  NOT NULL,
-    week_start         DATE         NOT NULL,
-    demand_risk_score  NUMERIC(4,3) NOT NULL CHECK (demand_risk_score >= 0 AND demand_risk_score <= 1),
-    top_features       JSONB,
-    created_at         TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    risk_score_id          BIGSERIAL    PRIMARY KEY,
+    postcode               VARCHAR(10)  NOT NULL,
+    week_start             DATE         NOT NULL,
+    demand_risk_score      NUMERIC(4,3) NOT NULL CHECK (demand_risk_score >= 0 AND demand_risk_score <= 1),
+    risk_label             VARCHAR(20)  NOT NULL CHECK (risk_label IN ('low', 'medium-low', 'medium-high', 'high')),
+    confidence             NUMERIC(4,3) NOT NULL CHECK (confidence >= 0 AND confidence <= 1),
+    predicted_window_start DATE         NOT NULL,
+    predicted_window_end   DATE         NOT NULL,
+    top_features           JSONB,
+    generated_at           TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (postcode) REFERENCES region_categories(postcode),
     UNIQUE (postcode, week_start)
 );
