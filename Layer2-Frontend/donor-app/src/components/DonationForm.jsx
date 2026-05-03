@@ -110,6 +110,31 @@ function formatDateForTextInput(value) {
   return raw
 }
 
+const ALLERGEN_PRESETS = [
+  { key: 'nuts', label: 'Nuts' },
+  { key: 'dairy', label: 'Dairy' },
+  { key: 'gluten', label: 'Gluten' },
+  { key: 'eggs', label: 'Eggs' },
+  { key: 'soy', label: 'Soy' },
+  { key: 'sesame', label: 'Sesame' },
+  { key: 'shellfish', label: 'Shellfish' },
+  { key: 'no known allergens', label: 'No known allergens' },
+]
+
+const STORAGE_OPTIONS = [
+  { value: '', label: 'Select storage condition' },
+  { value: 'room_temp', label: 'Room temperature' },
+  { value: 'refrigerated', label: 'Refrigerated (2–8°C)' },
+  { value: 'frozen', label: 'Frozen (<0°C)' },
+  { value: 'keep_dry', label: 'Keep dry' },
+]
+
+function isExpiryPast(value) {
+  const normalized = normalizeDateInput(value)
+  if (!normalized) return false
+  return new Date(normalized) < new Date(new Date().toDateString())
+}
+
 function buildInitialState({ postcode, orgMode, initialOrgCode, listing }) {
   if (listing) {
     return {
@@ -127,6 +152,8 @@ function buildInitialState({ postcode, orgMode, initialOrgCode, listing }) {
           : inferDietaryChoiceFromFoodName(listing.foodType),
       description: listing.description || '',
       nameSuggestions: [],
+      allergenTags: listing.allergenTags || [],
+      storageCondition: listing.storageCondition || '',
     }
   }
 
@@ -142,6 +169,8 @@ function buildInitialState({ postcode, orgMode, initialOrgCode, listing }) {
     dietaryChoice: 'none',
     description: '',
     nameSuggestions: [],
+    allergenTags: [],
+    storageCondition: '',
   }
 }
 
@@ -178,6 +207,7 @@ const DonationForm = () => {
   const [aiWarning, setAiWarning] = useState('')
   const [successListing, setSuccessListing] = useState(null)
   const [previewLoadFailed, setPreviewLoadFailed] = useState(false)
+  const [disclaimerChecked, setDisclaimerChecked] = useState(false)
 
   const pageTitle = useMemo(() => {
     if (editMode) return t('donation.editTitle', 'Edit listing')
@@ -203,6 +233,7 @@ const DonationForm = () => {
     setAiWarning('')
     setSuccessListing(null)
     setPreviewLoadFailed(false)
+    setDisclaimerChecked(false)
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
@@ -352,8 +383,23 @@ const DonationForm = () => {
       if (String(formData.postcode).trim() === '') {
         throw new Error(t('donation.errors.postcode'))
       }
+      if (!editMode && String(formData.expiryDate || '').trim() === '') {
+        throw new Error(t('donation.errors.expiryRequired', 'Best before date is required'))
+      }
       if (String(formData.expiryDate || '').trim() !== '' && expiryDateValue === null) {
         throw new Error(t('donation.errors.bestBefore', 'Please enter the best before date as DD/MM/YYYY'))
+      }
+      if (expiryDateValue && new Date(expiryDateValue) < new Date(new Date().toDateString())) {
+        throw new Error(t('donation.errors.expiryPast', 'Best before date cannot be in the past'))
+      }
+      if (!editMode && formData.allergenTags.length === 0) {
+        throw new Error(t('donation.errors.allergenRequired', 'Please select at least one allergen tag (or "No known allergens")'))
+      }
+      if (!editMode && !formData.storageCondition) {
+        throw new Error(t('donation.errors.storageRequired', 'Please select a storage condition'))
+      }
+      if (!disclaimerChecked) {
+        throw new Error(t('donation.errors.disclaimerRequired', 'Please confirm the accuracy declaration before posting'))
       }
 
       let permanentPhotoUrl = editingListing?.photoUrl || null
@@ -383,6 +429,8 @@ const DonationForm = () => {
         photoUrl: permanentPhotoUrl,
         sizeCue: String(formData.sizeCue || '').trim(),
         expiryDate: expiryDateValue,
+        allergenTags: formData.allergenTags,
+        storageCondition: formData.storageCondition || null,
       }
 
       let savedListing = null
@@ -422,6 +470,36 @@ const DonationForm = () => {
               <p>{t('donation.success.nextStepHint', 'Check nearby food shortage hotspots to see where your donation can help most.')}</p>
             </div>
           ) : null}
+
+          <div style={{
+            background: '#fffbeb',
+            border: '1px solid rgba(221,107,32,0.25)',
+            borderRadius: '0.75rem',
+            padding: '0.9rem 1rem',
+            marginBottom: '0.5rem',
+            textAlign: 'left',
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '0.55rem' }}>
+              <span className="material-symbols-outlined" style={{ color: '#dd6b20', fontSize: '1.1rem' }}>
+                shield
+              </span>
+              <strong style={{ fontSize: '0.8rem', color: '#92400e', letterSpacing: '0.01em' }}>
+                {t('donation.safety.title')}
+              </strong>
+            </div>
+            <ul style={{ margin: 0, paddingLeft: '1.1rem', display: 'flex', flexDirection: 'column', gap: '0.35rem' }}>
+              <li style={{ fontSize: '0.75rem', color: '#78350f', lineHeight: 1.55 }}>
+                {t('donation.safety.accuracy')}
+              </li>
+              <li style={{ fontSize: '0.75rem', color: '#78350f', lineHeight: 1.55 }}>
+                {t('donation.safety.allergen')}
+              </li>
+              <li style={{ fontSize: '0.75rem', color: '#78350f', lineHeight: 1.55 }}>
+                {t('donation.safety.platform')}
+              </li>
+            </ul>
+          </div>
+
           <div className="success-action-stack">
             <button
               type="button"
@@ -714,7 +792,10 @@ const DonationForm = () => {
               </div>
 
               <div className="ai-field">
-                <label className="field-label" htmlFor="expiryDate">{t('donation.bestBefore', 'Best before')}</label>
+                <label className="field-label" htmlFor="expiryDate">
+                  {t('donation.bestBefore', 'Best before')}
+                  {!editMode && <span style={{ color: '#e53e3e', marginLeft: 2 }}>*</span>}
+                </label>
                 <div className="date-input-wrapper">
                   <input
                     id="expiryDate"
@@ -749,11 +830,85 @@ const DonationForm = () => {
                     onChange={(event) => handleChange('expiryDate', formatDateForDisplay(event.target.value))}
                   />
                 </div>
-                {showQuantityWarning || aiWarning ? (
+                {isExpiryPast(formData.expiryDate) ? (
+                  <p className="field-warning" style={{ color: '#e53e3e' }}>
+                    {t('donation.errors.expiryPast', 'Best before date cannot be in the past')}
+                  </p>
+                ) : (showQuantityWarning || aiWarning) ? (
                   <p className="field-warning">
                     {aiWarning || t('donation.quantityWarning', { count: quantityValue })}
                   </p>
                 ) : null}
+              </div>
+
+              <div className="ai-field full">
+                <label className="field-label">
+                  {t('donation.allergenTags', 'Allergen information')}
+                  {!editMode && <span style={{ color: '#e53e3e', marginLeft: 2 }}>*</span>}
+                </label>
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '4px' }}>
+                  {ALLERGEN_PRESETS.map(({ key, label }) => {
+                    const active = formData.allergenTags.includes(key)
+                    const isNoKnown = key === 'no known allergens'
+                    return (
+                      <button
+                        key={key}
+                        type="button"
+                        onClick={() => {
+                          setFormData(prev => {
+                            if (isNoKnown) {
+                              return { ...prev, allergenTags: active ? [] : [key] }
+                            }
+                            const without = prev.allergenTags.filter(t => t !== 'no known allergens')
+                            return {
+                              ...prev,
+                              allergenTags: active
+                                ? without.filter(t => t !== key)
+                                : [...without, key],
+                            }
+                          })
+                        }}
+                        style={{
+                          padding: '4px 10px',
+                          borderRadius: '999px',
+                          border: `1.5px solid ${active ? '#e53e3e' : '#cbd5e0'}`,
+                          background: active ? '#fff5f5' : '#fff',
+                          color: active ? '#c53030' : '#4a5568',
+                          fontSize: '0.75rem',
+                          fontWeight: active ? 700 : 400,
+                          cursor: 'pointer',
+                        }}
+                      >
+                        {label}
+                      </button>
+                    )
+                  })}
+                </div>
+                <p className="field-hint">
+                  {t('donation.allergenHint', 'Select all allergens present. Choose "No known allergens" if none apply.')}
+                </p>
+              </div>
+
+              <div className="ai-field">
+                <label className="field-label" htmlFor="storageCondition">
+                  {t('donation.storageCondition', 'Storage condition')}
+                  {!editMode && <span style={{ color: '#e53e3e', marginLeft: 2 }}>*</span>}
+                </label>
+                <div className="form-select-wrapper">
+                  <select
+                    id="storageCondition"
+                    className="form-select"
+                    value={formData.storageCondition}
+                    onChange={(event) => handleChange('storageCondition', event.target.value)}
+                  >
+                    {STORAGE_OPTIONS.map((opt) => (
+                      <option key={opt.value} value={opt.value} disabled={opt.value === ''}>
+                        {opt.label}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="material-symbols-outlined select-arrow">expand_more</span>
+                </div>
               </div>
 
               <div className="ai-field">
@@ -794,7 +949,23 @@ const DonationForm = () => {
 
         <footer className="form-footer">
           <div className="form-footer-inner">
-            <button type="submit" className="btn-submit" disabled={loading || aiProcessing}>
+            <label style={{
+              display: 'flex', alignItems: 'flex-start', gap: '10px',
+              marginBottom: '0.9rem', cursor: 'pointer',
+            }}>
+              <input
+                type="checkbox"
+                checked={disclaimerChecked}
+                onChange={(e) => setDisclaimerChecked(e.target.checked)}
+                style={{ marginTop: '2px', width: 16, height: 16, flexShrink: 0, cursor: 'pointer' }}
+              />
+              <span style={{ fontSize: '0.78rem', color: '#4a5568', lineHeight: 1.55 }}>
+                {t('donation.disclaimerCheckbox',
+                  'I confirm the information in this listing is accurate to the best of my knowledge, and I understand CrisisLink acts as an intermediary only.'
+                )}
+              </span>
+            </label>
+            <button type="submit" className="btn-submit" disabled={loading || aiProcessing || !disclaimerChecked}>
               {loading
                 ? t('common.loading')
                 : editMode

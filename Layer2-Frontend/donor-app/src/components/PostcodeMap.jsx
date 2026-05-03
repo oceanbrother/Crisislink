@@ -7,8 +7,8 @@ import '../styles/PostcodeMap.css'
 const TILE_URL = 'https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png'
 
 const TONE_COLOR = {
-  none:     '#d93025',
-  critical: '#d93025',
+  none:     '#e53030',
+  critical: '#e53030',
   low:      '#e8711a',
   high:     '#e8711a',
   watch:    '#c5960e',
@@ -16,90 +16,195 @@ const TONE_COLOR = {
 }
 
 const TONE_RADIUS = {
-  none:     18,
-  critical: 18,
-  low:      14,
-  high:     14,
-  watch:    12,
-  healthy:  9,
+  none:     15,
+  critical: 15,
+  low:      12,
+  high:     12,
+  watch:    10,
+  healthy:  8,
 }
 
 const MELBOURNE = [-37.835, 144.975]
 
-export default function PostcodeMap({ zones, selectedPostcode, onSelect, height = 420, defaultCenter = MELBOURNE, defaultZoom = 12 }) {
-  const containerRef = useRef(null)
-  const mapRef = useRef(null)
-  const markersRef = useRef({})
-  const onSelectRef = useRef(onSelect)
+function markerStyle(tone, isSelected) {
+  const color = TONE_COLOR[tone] || '#888'
+  const base  = TONE_RADIUS[tone] || 10
+  return {
+    radius:      isSelected ? base + 5 : base,
+    fillColor:   color,
+    fillOpacity: isSelected ? 0.95 : 0.68,
+    color:       isSelected ? '#ffffff' : color,
+    weight:      isSelected ? 2.5 : 1.2,
+    opacity:     1,
+  }
+}
 
-  useEffect(() => {
-    onSelectRef.current = onSelect
-  }, [onSelect])
+function haloStyle(tone, radius) {
+  const color = TONE_COLOR[tone] || '#888'
+  return {
+    radius,
+    fillColor:   color,
+    fillOpacity: 0.13,
+    color:       color,
+    weight:      1.5,
+    opacity:     0.25,
+  }
+}
 
-  // Initialise map once
+export default function PostcodeMap({
+  zones,
+  selectedPostcode,
+  onSelect,
+  height = 420,
+  defaultCenter = MELBOURNE,
+  defaultZoom   = 12,
+}) {
+  const containerRef  = useRef(null)
+  const mapRef        = useRef(null)
+  const markersRef    = useRef({})
+  const halosRef      = useRef({})
+  const onSelectRef   = useRef(onSelect)
+  const zonesRef      = useRef(zones)
+  const selectedRef   = useRef(selectedPostcode)
+
+  useEffect(() => { onSelectRef.current = onSelect },        [onSelect])
+  useEffect(() => { zonesRef.current    = zones },           [zones])
+
+  // ── Init map once ─────────────────────────────────────────────────────────
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return
 
     const map = L.map(containerRef.current, {
-      center: defaultCenter,
-      zoom: defaultZoom,
-      scrollWheelZoom: false,
+      center:           defaultCenter,
+      zoom:             defaultZoom,
+      scrollWheelZoom:  false,
       attributionControl: false,
-      zoomControl: true,
+      zoomControl:      true,
+      zoomAnimation:    true,
+      fadeAnimation:    true,
     })
 
     L.tileLayer(TILE_URL, {
-      attribution: '© OpenStreetMap contributors © CARTO',
+      attribution: '© <a href="https://carto.com">CARTO</a>',
+      maxZoom: 19,
     }).addTo(map)
 
     mapRef.current = map
 
     return () => {
       map.remove()
-      mapRef.current = null
+      mapRef.current   = null
       markersRef.current = {}
+      halosRef.current   = {}
     }
-  }, [])
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Sync markers whenever zones or selected postcode change
+  // ── Rebuild all markers when zones change ─────────────────────────────────
   useEffect(() => {
     const map = mapRef.current
     if (!map) return
 
-    // Remove old markers
-    Object.values(markersRef.current).forEach((m) => m.remove())
+    Object.values(markersRef.current).forEach(m => m.remove())
+    Object.values(halosRef.current).forEach(m => m.remove())
     markersRef.current = {}
+    halosRef.current   = {}
 
-    zones.forEach((zone) => {
+    const curSelected = selectedRef.current
+
+    zones.forEach(zone => {
       const coords = POSTCODE_COORDS[zone.postcode]
       if (!coords) return
 
-      const tone = zone.tone || 'watch'
-      const isSelected = zone.postcode === selectedPostcode
-      const color = TONE_COLOR[tone] || '#888'
-      const radius = (TONE_RADIUS[tone] || 12) + (isSelected ? 5 : 0)
+      const tone       = zone.tone || 'watch'
+      const isSelected = zone.postcode === curSelected
+      const style      = markerStyle(tone, isSelected)
 
-      const marker = L.circleMarker(coords, {
-        radius,
-        fillColor: color,
-        fillOpacity: isSelected ? 1 : 0.72,
-        color: isSelected ? '#fff' : color,
-        weight: isSelected ? 3 : 1.5,
+      // Halo ring behind the selected marker
+      if (isSelected) {
+        const halo = L.circleMarker(coords, haloStyle(tone, style.radius + 9)).addTo(map)
+        halo.bringToBack()
+        halosRef.current[zone.postcode] = halo
+      }
+
+      const marker = L.circleMarker(coords, style)
+
+      marker.bindTooltip(buildTooltip(zone), {
+        sticky:    true,
+        className: 'pcmap-tip',
+        offset:    [0, -4],
       })
 
-      const tooltipHtml = `
-        <span class="postcode-map-tooltip">
-          <strong>${zone.suburb}</strong>
-          <span>${zone.postcode}</span>
-          ${zone.metric ? `<em>${zone.metric}</em>` : ''}
-        </span>`
-
-      marker.bindTooltip(tooltipHtml, { sticky: true })
       marker.on('click', () => onSelectRef.current(zone.postcode))
       marker.addTo(map)
+
+      if (isSelected) applyGlow(marker)
+
       markersRef.current[zone.postcode] = marker
     })
-  }, [zones, selectedPostcode])
+  }, [zones])
+
+  // ── Handle selection changes ───────────────────────────────────────────────
+  useEffect(() => {
+    selectedRef.current = selectedPostcode
+    const map = mapRef.current
+    if (!map || Object.keys(markersRef.current).length === 0) return
+
+    const curZones = zonesRef.current
+
+    // 1. Update every marker's visual style
+    curZones.forEach(zone => {
+      const marker = markersRef.current[zone.postcode]
+      if (!marker) return
+
+      const tone       = zone.tone || 'watch'
+      const isSelected = zone.postcode === selectedPostcode
+      const style      = markerStyle(tone, isSelected)
+
+      marker.setStyle({
+        fillColor:   style.fillColor,
+        fillOpacity: style.fillOpacity,
+        color:       style.color,
+        weight:      style.weight,
+        opacity:     style.opacity,
+      })
+      marker.setRadius(style.radius)
+
+      // Glow class
+      const el = marker.getElement()
+      if (el) {
+        el.classList.remove('pcmap-selected-glow')
+        if (isSelected) el.classList.add('pcmap-selected-glow')
+      }
+
+      // Rebuild halo
+      const oldHalo = halosRef.current[zone.postcode]
+      if (oldHalo) { oldHalo.remove(); delete halosRef.current[zone.postcode] }
+      if (isSelected) {
+        const halo = L.circleMarker(marker.getLatLng(), haloStyle(tone, style.radius + 9)).addTo(map)
+        halo.bringToBack()
+        halosRef.current[zone.postcode] = halo
+      }
+    })
+
+    // 2. Pan to selected marker
+    if (selectedPostcode) {
+      const coords = POSTCODE_COORDS[selectedPostcode]
+      if (coords) map.panTo(coords, { animate: true, duration: 0.45, easeLinearity: 0.4 })
+    }
+
+    // 3. Bounce animation on selected marker via setRadius sequence
+    const sel = markersRef.current[selectedPostcode]
+    if (sel) {
+      const tone  = curZones.find(z => z.postcode === selectedPostcode)?.tone || 'watch'
+      const baseR = (TONE_RADIUS[tone] || 10) + 5
+      const seq   = [[0, baseR + 8], [110, baseR - 2], [195, baseR + 3], [270, baseR]]
+      seq.forEach(([delay, r]) =>
+        setTimeout(() => {
+          if (markersRef.current[selectedPostcode] === sel) sel.setRadius(r)
+        }, delay)
+      )
+    }
+  }, [selectedPostcode])
 
   return (
     <div
@@ -108,4 +213,19 @@ export default function PostcodeMap({ zones, selectedPostcode, onSelect, height 
       style={{ height }}
     />
   )
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────
+
+function applyGlow(marker) {
+  const el = marker.getElement()
+  if (el) el.classList.add('pcmap-selected-glow')
+}
+
+function buildTooltip(zone) {
+  return `<span class="pcmap-tip-inner">
+    <strong>${zone.suburb}</strong>
+    <span>${zone.postcode}</span>
+    ${zone.metric ? `<em>${zone.metric}</em>` : ''}
+  </span>`
 }

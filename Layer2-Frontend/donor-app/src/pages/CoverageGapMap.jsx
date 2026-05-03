@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
+import { useNavigate } from 'react-router-dom'
 import OrgFeatureNav from '../components/OrgFeatureNav'
 import WorkspaceHeader from '../components/WorkspaceHeader'
 import PostcodeMap from '../components/PostcodeMap'
@@ -40,6 +41,7 @@ const LEGEND = [
 
 export default function CoverageGapMap() {
   const { t } = useTranslation()
+  const navigate = useNavigate()
   const [riskData, setRiskData] = useState({})
   const [selectedPostcode, setSelectedPostcode] = useState(null)
   const [loading, setLoading] = useState(true)
@@ -75,7 +77,7 @@ export default function CoverageGapMap() {
 
   return (
     <>
-      <WorkspaceHeader role="org" />
+      <WorkspaceHeader role="org" onBackClick={() => navigate(-1)} />
       <OrgFeatureNav active="coverage-map" />
 
       <div style={{ display: 'flex', height: MAP_HEIGHT }}>
@@ -159,6 +161,15 @@ export default function CoverageGapMap() {
                     {selected.demand_risk_score != null
                       ? `${(selected.demand_risk_score * 100).toFixed(0)}% — ${riskLabel(selected.demand_risk_score)}`
                       : t('coverageMap.noScore', 'Not scored yet')}
+                  </span>
+                </Row>
+                <Row label="Data source">
+                  <span style={{
+                    fontSize: '0.7rem', fontWeight: 600, padding: '2px 7px', borderRadius: '999px',
+                    background: selected.cold_start ? '#fff3cd' : selected.data_source === 'ai_forecast' ? '#e0f5ec' : '#edf2f7',
+                    color: selected.cold_start ? '#7d5a00' : selected.data_source === 'ai_forecast' ? '#1a7c54' : '#4a5568',
+                  }}>
+                    {selected.cold_start ? '⏳ Learning' : selected.data_source === 'ai_forecast' ? '✦ AI forecast' : '⊖ Rule-based'}
                   </span>
                 </Row>
                 {selected.irsd_score != null && (

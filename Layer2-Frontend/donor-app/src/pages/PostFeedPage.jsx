@@ -11,6 +11,7 @@ import WorkspaceSummaryCard from '../components/WorkspaceSummaryCard'
 import { forgetDonorListing, getOrCreateDonorCode, isRememberedDonorListing } from '../utils/donorIdentity'
 import { resolveImageUrl } from '../utils/imageUrl'
 import { getSavedDonorPostcode, saveDonorPostcode } from '../utils/donorPostcode'
+import HowItWorksStrip from '../components/HowItWorksStrip'
 import '../styles/PostFeedPage.css'
 
 function getDietaryClass(tag) {
@@ -285,6 +286,8 @@ const PostFeedPage = () => {
             </div>
           </div>
         </WorkspaceSummaryCard>
+
+        <HowItWorksStrip role="donor" onNavigate={navigate} />
 
         <WorkspaceFilterPanel role="donor" className="filter-section workspace-listings-filters workspace-listings-filters--donor donor-filter-section">
           <div className={hasActiveSearch ? 'search-wrapper donor-search-wrapper donor-search-wrapper--active' : 'search-wrapper donor-search-wrapper'}>

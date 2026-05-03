@@ -226,6 +226,12 @@
       "removeListing": "删除这条物品",
       "postAnother": "继续发布另一条物品"
     },
+    "safety": {
+      "title": "食品安全提醒",
+      "accuracy": "您需对本次发布的所有信息负责，包括数量、食品状态及过敏原声明。",
+      "allergen": "CrisisLink 无法独立核实过敏原信息，领取方须自行判断食品是否适合食用。",
+      "platform": "CrisisLink 仅作为协调平台，不检查捐赠食物，也不承担相关责任。"
+    },
     "reviewTitle": "以下是建议填写内容，发布前请再次确认。",
     "reviewHintFood": "检查食物名称和分类是否正确。",
     "reviewHintQuantity": "确认数量，以及大小或重量信息。",
@@ -360,7 +366,24 @@
       "noDataTitle": "目前还没有需求预警数据",
       "noDataHint": "等 forecasting 数据源接入后，这里会显示需求预警。",
       "loadErrorTitle": "无法加载预警页面",
-      "loadErrorHint": "当前无法读取该预警视图所需的实时列表数据，请稍后再试。"
+      "loadErrorHint": "当前无法读取该预警视图所需的实时列表数据，请稍后再试。",
+      "filterSpike": "峰值预警",
+      "filterWatch": "关注项目",
+      "spikeItem": "需求峰值",
+      "watchPrimaryLabel": "需求关注项",
+      "watchItem": "关注项目",
+      "priorityHigh": "高优先级",
+      "priorityRisk": "需求风险",
+      "emergingRisk": "新兴需求风险",
+      "confidenceHigh": "高置信度",
+      "confidenceMedium": "中置信度",
+      "confidenceLow": "低置信度",
+      "selected": "已选",
+      "postcodeAlerts": "邮编预警列表",
+      "nextSevenDays": "未来7天",
+      "factorSeifa": "社会经济弱势",
+      "factorLowSupply": "食物供应不足",
+      "alertReason": "需求风险 {{score}}% — SEIFA IRSD {{irsd}}"
     },
     "coverageInsights": {
       "title": "供给覆盖监测",
@@ -395,6 +418,7 @@
         "watch": "需关注",
         "healthy": "覆盖稳定"
       },
+      "navLabel": "供应缺口",
       "respondAction": "响应该邮编",
       "noDataTitle": "暂无覆盖数据",
       "noDataHint": "当列表数据足够时，这里会显示覆盖热点。",
@@ -451,7 +475,8 @@
     "success": "成功",
     "alerts": "通知",
     "profile": "我的",
-    "secure": "安全民众平台 • 数据已加密"
+    "secure": "安全民众平台 • 数据已加密",
+    "all": "全部"
   },
   "lang": {
     "en": "English",
@@ -475,6 +500,32 @@
       "mediumlow": "中低风险 (≥0.25)",
       "low": "低风险 (<0.25)",
       "none": "暂无评分"
+    }
+  },
+  "hiw": {
+    "label": "操作流程",
+    "dismiss": "知道了 ✕",
+    "donor": {
+      "step1Title": "发布食物",
+      "step1Desc": "拍照并发布你的剩余食物",
+      "step1Cta": "立即发布",
+      "step2Title": "等待认领",
+      "step2Desc": "附近的社区组织预约领取",
+      "step3Title": "安排取货",
+      "step3Desc": "告知取货时间和联系方式",
+      "step4Title": "食物已送达！",
+      "step4Desc": "你的捐赠帮助了有需要的人",
+      "step4Cta": "继续发布"
+    },
+    "org": {
+      "step1Title": "浏览食物",
+      "step1Desc": "查找附近可领取的剩余食物",
+      "step2Title": "认领物品",
+      "step2Desc": "为社区预约所需的食物",
+      "step3Title": "安排取货",
+      "step3Desc": "与捐赠者确认时间和联系方式",
+      "step4Title": "领取并分发",
+      "step4Desc": "取货后分发给有需要的人"
     }
   }
 }

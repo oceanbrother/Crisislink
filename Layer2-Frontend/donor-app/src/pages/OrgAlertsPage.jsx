@@ -67,10 +67,10 @@ const OrgAlertsPage = () => {
               confidence: Math.round(60 + score * 30),
               pressureScore: Math.round(score * 100),
               householdsAtRisk: Math.round(score * 400),
-              contributingFactors: ['Socioeconomic disadvantage', 'Low food supply'],
-              alertReason: `Demand risk ${(score * 100).toFixed(0)}% — SEIFA IRSD ${Math.round(item.irsd_score || 950)}`,
+              contributingFactors: [t('dashboard.intelligence.factorSeifa'), t('dashboard.intelligence.factorLowSupply')],
+              alertReason: t('dashboard.intelligence.alertReason', { score: (score * 100).toFixed(0), irsd: Math.round(item.irsd_score || 950) }),
               activePortions: item.total_supply || 0,
-              predictedWindow: 'Next 7 days',
+              predictedWindow: t('dashboard.intelligence.nextSevenDays'),
             }
           })
           .sort((a, b) => b.demandLift - a.demandLift)
@@ -91,7 +91,7 @@ const OrgAlertsPage = () => {
   }, [demandInsights])
 
   const spikeAlertCount = useMemo(
-    () => demandAlerts.filter((a) => Number(a.demandLift || 0) >= DEMAND_SPIKE_THRESHOLD).length,
+    () => demandAlerts.filter((a) => a.pressureScore >= 75).length,
     [demandAlerts]
   )
 
@@ -134,9 +134,8 @@ const OrgAlertsPage = () => {
 
   const filteredDemandAlerts = useMemo(() => {
     if (alertToneFilter === 'all') return demandAlerts
-    if (alertToneFilter === 'critical') return demandAlerts.filter((a) => getDemandTone(a.demandLift) === 'critical')
-    if (alertToneFilter === 'spike') return demandAlerts.filter((a) => Number(a.demandLift || 0) >= DEMAND_SPIKE_THRESHOLD)
-    return demandAlerts.filter((a) => Number(a.demandLift || 0) < DEMAND_SPIKE_THRESHOLD)
+    if (alertToneFilter === 'spike') return demandAlerts.filter((a) => a.pressureScore >= 75)
+    return demandAlerts.filter((a) => a.pressureScore < 75)
   }, [alertToneFilter, demandAlerts])
 
   useEffect(() => {
