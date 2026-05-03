@@ -1,9 +1,9 @@
-import React, { useCallback, useEffect, useState } from 'react'
-import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import OrgFeatureNav from '../components/OrgFeatureNav'
 import WorkspaceHeader from '../components/WorkspaceHeader'
-import apiClient from '../services/api'
+import PostcodeMap from '../components/PostcodeMap'
+import { predictionApiClient } from '../services/api'
 import suburbLookup from '../data/vic_postcode_suburbs.json'
 
 const RISK_COLORS = {
@@ -31,73 +31,43 @@ function riskLabel(score) {
 }
 
 const LEGEND = [
-  { key: 'high', min: 0.75, color: RISK_COLORS.high },
-  { key: 'medium-high', min: 0.5, color: RISK_COLORS['medium-high'] },
-  { key: 'medium-low', min: 0.25, color: RISK_COLORS['medium-low'] },
-  { key: 'low', min: 0, color: RISK_COLORS.low },
+  { key: 'high', color: RISK_COLORS.high },
+  { key: 'medium-high', color: RISK_COLORS['medium-high'] },
+  { key: 'medium-low', color: RISK_COLORS['medium-low'] },
+  { key: 'low', color: RISK_COLORS.low },
   { key: 'none', color: RISK_COLORS.none },
 ]
 
 export default function CoverageGapMap() {
   const { t } = useTranslation()
-  const [geojson, setGeojson] = useState(null)
   const [riskData, setRiskData] = useState({})
-  const [selected, setSelected] = useState(null)
+  const [selectedPostcode, setSelectedPostcode] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [geoError, setGeoError] = useState(false)
 
   useEffect(() => {
-    fetch('/vic_regional_postcodes.geojson')
-      .then(r => { if (!r.ok) throw new Error(); return r.json() })
-      .then(data => setGeojson(data))
-      .catch(() => setGeoError(true))
-      .finally(() => setLoading(false))
-
-    apiClient.get('/predictions/all-risk-scores')
+    predictionApiClient.get('/intelligence/supply-gaps')
       .then(res => {
         const map = {}
         for (const item of (res.data || [])) map[item.postcode] = item
         setRiskData(map)
       })
-      .catch(() => {
-        // fallback to supply-gaps if new endpoint not yet available
-        apiClient.get('/intelligence/supply-gaps')
-          .then(res => {
-            const map = {}
-            for (const item of (res.data || [])) map[item.postcode] = item
-            setRiskData(map)
-          })
-          .catch(() => {})
-      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
   }, [])
 
-  const styleFeature = useCallback((feature) => {
-    const pc = feature?.properties?.POA_CODE21 ?? feature?.properties?.postcode
-    const score = riskData[pc]?.demand_risk_score ?? null
-    return {
-      color: '#555555',
-      weight: 0.8,
-      fillColor: riskColor(score),
-      fillOpacity: score != null ? 0.65 : 0.25,
-    }
-  }, [riskData])
+  const mapZones = useMemo(() =>
+    Object.values(riskData).map(item => ({
+      postcode: item.postcode,
+      suburb: suburbLookup[String(item.postcode)] || String(item.postcode),
+      tone: item.demand_risk_score >= 0.75 ? 'critical'
+          : item.demand_risk_score >= 0.5 ? 'high'
+          : item.demand_risk_score >= 0.25 ? 'watch'
+          : 'healthy',
+      metric: `Risk: ${(item.demand_risk_score * 100).toFixed(0)}%`,
+    }))
+  , [riskData])
 
-  const onEachFeature = useCallback((feature, layer) => {
-    const pc = feature?.properties?.POA_CODE21 ?? feature?.properties?.postcode
-    const tipName = suburbLookup[String(pc)] || String(pc ?? '')
-    layer.bindTooltip(`${tipName} (${pc})`, { sticky: true })
-    layer.on('click', () => {
-      const info = riskData[pc]
-      setSelected({
-        postcode: pc,
-        demand_risk_score: info?.demand_risk_score ?? null,
-        irsd_score: info?.irsd_score ?? null,
-        regional_category: info?.regional_category ?? null,
-        active_listings: info?.active_listings ?? null,
-        total_supply: info?.total_supply ?? null,
-      })
-    })
-  }, [riskData])
+  const selected = selectedPostcode ? { postcode: selectedPostcode, ...riskData[selectedPostcode] } : null
 
   const atRiskCount = Object.keys(riskData).length
 
@@ -120,41 +90,14 @@ export default function CoverageGapMap() {
               <p style={{ color: '#4a5568' }}>{t('common.loading')}</p>
             </div>
           )}
-          {geoError ? (
-            <div style={{
-              position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
-              alignItems: 'center', justifyContent: 'center', zIndex: 10,
-              background: '#fff', padding: '2rem', textAlign: 'center',
-            }}>
-              <p style={{ fontWeight: 600, fontSize: '1rem', marginBottom: '0.5rem' }}>
-                GeoJSON boundaries not loaded
-              </p>
-              <p style={{ fontSize: '0.8rem', color: '#718096', maxWidth: '360px' }}>
-                Download the ABS Postal Areas GeoJSON, filter to the 495 regional Victorian
-                postcodes using <code>Layer5-Data/postgresql/setup/filter_geojson.py</code>,
-                and place the result at <code>donor-app/public/vic_regional_postcodes.geojson</code>.
-              </p>
-            </div>
-          ) : (
-            <MapContainer
-              center={[-36.8, 144.8]}
-              zoom={7}
-              style={{ height: MAP_HEIGHT, width: '100%' }}
-            >
-              <TileLayer
-                url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                attribution='&copy; OpenStreetMap contributors'
-              />
-              {geojson && (
-                <GeoJSON
-                  key={atRiskCount}
-                  data={geojson}
-                  style={styleFeature}
-                  onEachFeature={onEachFeature}
-                />
-              )}
-            </MapContainer>
-          )}
+          <PostcodeMap
+            zones={mapZones}
+            selectedPostcode={selectedPostcode}
+            onSelect={setSelectedPostcode}
+            height={MAP_HEIGHT}
+            defaultCenter={[-36.8, 144.9]}
+            defaultZoom={7}
+          />
         </div>
 
         {/* Side panel */}
@@ -173,11 +116,10 @@ export default function CoverageGapMap() {
                 <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ width: 14, height: 14, borderRadius: 3, background: color, flexShrink: 0 }} />
                   <span style={{ fontSize: '0.75rem', color: '#4a5568' }}>
-                    {t(`coverageMap.risk.${key.replace('-', '')}`,
-                      key === 'high' ? 'High (≥0.75)' :
-                      key === 'medium-high' ? 'Medium-high (≥0.50)' :
-                      key === 'medium-low' ? 'Medium-low (≥0.25)' :
-                      key === 'low' ? 'Low (<0.25)' : 'No score yet')}
+                    {key === 'high' ? 'High (≥0.75)' :
+                     key === 'medium-high' ? 'Medium-high (≥0.50)' :
+                     key === 'medium-low' ? 'Medium-low (≥0.25)' :
+                     key === 'low' ? 'Low (<0.25)' : 'No score yet'}
                   </span>
                 </div>
               ))}
@@ -203,12 +145,10 @@ export default function CoverageGapMap() {
                   <p style={{ fontWeight: 700, fontSize: '0.95rem' }}>
                     {suburbLookup[String(selected.postcode)] || `Postcode ${selected.postcode}`}
                   </p>
-                  <p style={{ fontSize: '0.72rem', color: '#718096' }}>
-                    {selected.postcode}{selected.regional_category ? ` · ${selected.regional_category}` : ''}
-                  </p>
+                  <p style={{ fontSize: '0.72rem', color: '#718096' }}>{selected.postcode}</p>
                 </div>
                 <button
-                  onClick={() => setSelected(null)}
+                  onClick={() => setSelectedPostcode(null)}
                   style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#a0aec0', fontSize: '1rem' }}
                   aria-label={t('common.close')}
                 >✕</button>

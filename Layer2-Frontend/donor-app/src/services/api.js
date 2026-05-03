@@ -20,6 +20,17 @@ const apiClient = axios.create({
   timeout: 120000,
 })
 
+// Prediction service always routes through the Vite proxy in dev (/api → port 8001)
+// so it is never affected by VITE_API_URL pointing at a production listing service.
+const PREDICTION_BASE_URL = import.meta.env.DEV
+  ? '/api'
+  : (String(import.meta.env.VITE_PREDICTION_URL || '').trim() || '/api')
+
+export const predictionApiClient = axios.create({
+  baseURL: PREDICTION_BASE_URL,
+  timeout: 120000,
+})
+
 apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
