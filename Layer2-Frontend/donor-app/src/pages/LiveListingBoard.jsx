@@ -4,12 +4,12 @@ import { useTranslation } from 'react-i18next'
 import { getAvailableListings, claimListing, unclaimListing, deleteListing, confirmPickup } from '../services/api'
 import { DIETARY_FILTER_OPTIONS, FILTER_OPTIONS, formatBestBeforeLabel, resolveListingCategory } from '../constants/listings'
 import OrgFeatureNav from '../components/OrgFeatureNav'
-import HowItWorksStrip from '../components/HowItWorksStrip'
 import LogisticsGuideCard from '../components/LogisticsGuideCard'
 import WorkspaceContextCard from '../components/WorkspaceContextCard'
 import WorkspaceFilterPanel from '../components/WorkspaceFilterPanel'
 import WorkspaceHeader from '../components/WorkspaceHeader'
 import WorkspaceSummaryCard from '../components/WorkspaceSummaryCard'
+import { mergeListingSafetyFallback } from '../utils/listingSafety'
 import '../styles/LiveListingBoard.css'
 
 const getTranslatedCategory = (category, foodType, t) => {
@@ -142,6 +142,97 @@ const formatQuantityValue = (value) => {
   return Number.isInteger(numeric) ? String(numeric) : String(numeric.toFixed(2)).replace(/\.00$/, '')
 }
 
+const normalizeDateOnly = (value) => {
+  const raw = String(value || '').trim()
+  if (!raw) return null
+  const parsed = new Date(raw)
+  if (Number.isNaN(parsed.getTime())) return null
+  parsed.setHours(0, 0, 0, 0)
+  return parsed
+}
+
+const getExpiryMeta = (expiryDate) => {
+  const parsed = normalizeDateOnly(expiryDate)
+  if (!parsed) {
+    return { hasDate: false, isToday: false, isExpired: false }
+  }
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const deltaDays = Math.round((parsed.getTime() - today.getTime()) / 86400000)
+  return {
+    hasDate: true,
+    isToday: deltaDays === 0,
+    isExpired: deltaDays < 0,
+  }
+}
+
+const formatStorageCondition = (storageCondition, t) => {
+  const value = String(storageCondition || '').trim()
+  if (!value) return t('listing.storage.unknown', 'Not provided')
+  return t(`listing.storage.${value}`, value)
+}
+
+const normalizeAllergenTag = (tag) => String(tag || '').trim().toLowerCase()
+
+const getAllergenTags = (listing) => {
+  if (Array.isArray(listing?.allergenTags)) return listing.allergenTags
+  if (Array.isArray(listing?.allergen_tags)) return listing.allergen_tags
+  return []
+}
+
+const getStorageCondition = (listing) => {
+  return String(listing?.storageCondition || listing?.storage_condition || '').trim()
+}
+
+const formatAllergenTag = (tag, t) => {
+  const normalized = normalizeAllergenTag(tag)
+  if (!normalized) return ''
+  if (normalized === 'no known allergens') {
+    return t('listing.allergens.noknownallergens', 'No known allergens')
+  }
+  const key = normalized.replace(/\s+/g, '')
+  return t(`listing.allergens.${key}`, tag)
+}
+
+const hasSafetyFields = (listing) => {
+  const allergenTags = getAllergenTags(listing).map((tag) => String(tag || '').trim()).filter(Boolean)
+  const hasAllergenInfo = allergenTags.length > 0
+  const hasStorageInfo = getStorageCondition(listing) !== ''
+  return {
+    hasAllergenInfo,
+    hasStorageInfo,
+    hasCompleteSafetyInfo: hasAllergenInfo && hasStorageInfo,
+  }
+}
+
+const getClaimBlockReason = (listing, t) => {
+  const expiryMeta = getExpiryMeta(listing?.expiryDate)
+  if (expiryMeta.isExpired) {
+    return t('listing.claimBlockedExpired', 'This listing is expired and can no longer be claimed.')
+  }
+  const safety = hasSafetyFields(listing)
+  if (!safety.hasCompleteSafetyInfo) {
+    return t('listing.claimBlockedMissingSafety', 'This listing is missing required food safety information.')
+  }
+  return ''
+}
+
+const formatApproxQuantityLabel = (listing, t) => {
+  const quantity = Number(listing?.quantity)
+  const formattedQuantity = formatQuantityValue(quantity)
+  const unit = String(listing?.unit || 'portions').trim().toLowerCase()
+
+  let displayUnit = t(`listing.units.${unit}`, unit)
+  if (Number.isFinite(quantity) && Math.abs(quantity - 1) < 0.00001) {
+    if (unit === 'portions') displayUnit = t('listing.units.portion', 'portion')
+    if (unit === 'meals') displayUnit = t('listing.units.meal', 'meal')
+    if (unit === 'items') displayUnit = t('listing.units.item', 'item')
+    if (unit === 'boxes') displayUnit = t('listing.units.box', 'box')
+  }
+
+  return t('listing.approxQuantity', { quantity: formattedQuantity, unit: displayUnit })
+}
+
 const formatSourceLabel = (listing, orgCode, t) => {
   const ownerCode = String(listing?.orgCode || '').trim()
   const currentOrgCode = String(orgCode || '').trim()
@@ -213,10 +304,13 @@ const LiveListingBoard = () => {
             String(listing.claimedBy || '').trim().toUpperCase() === String(orgCode || '').trim().toUpperCase(),
         ),
       ]
-      const formatted = mergedData.map(listing => ({
-        ...listing,
-        category: resolveListingCategory(listing.category, listing.foodType),
-      }))
+      const formatted = mergedData.map((listing) => {
+        const safeListing = mergeListingSafetyFallback(listing)
+        return {
+          ...safeListing,
+          category: resolveListingCategory(safeListing.category, safeListing.foodType),
+        }
+      })
       setListings(formatted)
     } catch (err) {
       setError(t('feed.noListings'))
@@ -257,14 +351,26 @@ const LiveListingBoard = () => {
     setFilteredListings(filtered)
   }
 
-  const handleClaim = async (listingId) => {
+  const handleClaim = async (listing) => {
+    if (!listing) return
+    const blockReason = getClaimBlockReason(listing, t)
+    if (blockReason) {
+      setError(blockReason)
+      setTimeout(() => setError(''), 3200)
+      return
+    }
+
+    const listingId = listing.id
+    const rawQuantity = Number(listing.quantity || 0)
+    const quickClaimQuantity = rawQuantity > 0 && rawQuantity < 1 ? rawQuantity : 1
+
     setClaimingId(listingId)
     setError('')
     setSuccess('')
-    
+
     try {
-      await claimListing(listingId, { orgId: orgCode })
-      setSuccess('Listing claimed successfully.')
+      await claimListing(listingId, { orgId: orgCode, quantity: quickClaimQuantity })
+      setSuccess(t('dashboard.claimQuickSuccess', 'Listing claimed successfully.'))
       await loadListings()
       setTimeout(() => setSuccess(''), 1500)
     } catch (err) {
@@ -355,6 +461,11 @@ const LiveListingBoard = () => {
     return Number(claimDialogListing.quantity || 0)
   }, [claimDialogListing])
 
+  const claimDialogBlockedReason = useMemo(() => {
+    if (!claimDialogListing) return ''
+    return getClaimBlockReason(claimDialogListing, t)
+  }, [claimDialogListing, t])
+
   const hasActiveSearch = searchTerm.trim() !== ''
   const hasActiveCategoryFilter = filterCategory !== 'All'
   const hasActiveFoodTypeFilter = filterFoodType !== 'all'
@@ -381,8 +492,10 @@ const LiveListingBoard = () => {
 
   const openClaimDialog = (listing) => {
     setClaimDialogListing(listing)
-    setClaimQuantity('1')
-    setClaimError('')
+    const quantity = Number(listing?.quantity || 0)
+    const initialQuantity = quantity > 0 && quantity < 1 ? quantity : 1
+    setClaimQuantity(formatQuantityValue(initialQuantity))
+    setClaimError(getClaimBlockReason(listing, t))
     setError('')
     setSuccess('')
   }
@@ -410,6 +523,12 @@ const LiveListingBoard = () => {
 
   const submitClaimQuantity = async () => {
     if (!claimDialogListing) return
+
+    const blockReason = getClaimBlockReason(claimDialogListing, t)
+    if (blockReason) {
+      setClaimError(blockReason)
+      return
+    }
 
     const requestedQuantity = parseClaimQuantityValue(claimQuantity)
     if (requestedQuantity === null || requestedQuantity <= 0) {
@@ -491,8 +610,6 @@ const LiveListingBoard = () => {
             ))}
           </div>
         </WorkspaceSummaryCard>
-
-        <HowItWorksStrip role="org" onNavigate={navigate} />
 
         <WorkspaceFilterPanel role="org" className="filter-section workspace-listings-filters workspace-listings-filters--org org-filter-section">
           <div className={hasActiveSearch ? 'search-wrapper org-search-wrapper org-search-wrapper--active' : 'search-wrapper org-search-wrapper'}>
@@ -618,10 +735,18 @@ const LiveListingBoard = () => {
               const viewState = getListingViewState(listing, orgCode)
               const isOwnOrgListing = viewState === 'posted'
               const isClaimedByCurrentOrg = viewState === 'claimed'
+              const expiryMeta = getExpiryMeta(listing.expiryDate)
+              const claimBlockReason = getClaimBlockReason(listing, t)
+              const isClaimBlocked = Boolean(claimBlockReason)
+              const isAvailableAndExpired = viewState === 'available' && expiryMeta.isExpired
               const bestBefore = formatBestBeforeLabel(listing.expiryDate, i18n.language === 'zh' ? 'zh-CN' : 'en-AU')
               const dietaryTags = Array.isArray(listing.dietary_tags) ? listing.dietary_tags : []
+              const allergenTags = getAllergenTags(listing).map((tag) => String(tag || '').trim()).filter(Boolean)
+              const storageCondition = getStorageCondition(listing)
+              const hasPickupNotes = String(listing.description || '').trim() !== ''
+              const hasPickupWindow = String(listing.pickupWindow || '').trim() !== ''
               return (
-              <article key={listing.id} className={`food-card org-card org-card--${viewState} ${isOwnOrgListing ? 'org-card--own' : ''} ${isClaimedByCurrentOrg ? 'food-card--claimed org-card--claimed' : ''} ${viewState === 'available' ? 'org-card--available' : ''}`.trim()}>
+              <article key={listing.id} className={`food-card org-card org-card--${viewState} ${isOwnOrgListing ? 'org-card--own' : ''} ${isClaimedByCurrentOrg ? 'food-card--claimed org-card--claimed' : ''} ${viewState === 'available' ? 'org-card--available' : ''} ${isAvailableAndExpired ? 'org-card--expired' : ''}`.trim()}>
                 {listing.photoUrl ? <img className="food-card-image" src={listing.photoUrl} alt={listing.foodType} /> : null}
 
                 <div className="food-card-header org-card-header">
@@ -647,14 +772,24 @@ const LiveListingBoard = () => {
                   </div>
                 )}
 
-                {viewState === 'available' && (
-                  <div className="listing-status-pill listing-status-pill--available">{t('dashboard.statusPills.available')}</div>
-                )}
+                {viewState === 'available' ? (
+                  isAvailableAndExpired ? (
+                    <div className="listing-status-pill listing-status-pill--expired">
+                      {t('dashboard.statusPills.expired', 'Expired — cannot claim')}
+                    </div>
+                  ) : isClaimBlocked ? (
+                    <div className="listing-status-pill listing-status-pill--warning">
+                      {t('dashboard.statusPills.safetyRequired', 'Food safety info required')}
+                    </div>
+                  ) : (
+                    <div className="listing-status-pill listing-status-pill--available">{t('dashboard.statusPills.available')}</div>
+                  )
+                ) : null}
 
                 <div className="food-card-details org-card-details">
                   <div className="food-card-detail-row org-card-detail-row">
                     <span className="material-symbols-outlined">inventory_2</span>
-                    <span>{t('listing.approxQuantity', { quantity: listing.quantity, unit: t(`listing.units.${listing.unit}`, listing.unit) })}</span>
+                    <span>{formatApproxQuantityLabel(listing, t)}</span>
                   </div>
                   {listing.sizeCue ? (
                     <div className="food-card-detail-row org-card-detail-row">
@@ -669,32 +804,63 @@ const LiveListingBoard = () => {
                   {bestBefore ? (
                     <div className="food-card-detail-row org-card-detail-row">
                       <span className="material-symbols-outlined">schedule</span>
-                      <span>{t('listing.bestBefore', 'Best before')} {bestBefore}</span>
+                      <span>
+                        {expiryMeta.isToday
+                          ? t('listing.bestBeforeToday', 'Best before today')
+                          : `${t('listing.bestBefore', 'Best before')} ${bestBefore}`}
+                      </span>
+                    </div>
+                  ) : null}
+                  <div className="food-card-detail-row org-card-detail-row">
+                    <span className="material-symbols-outlined">kitchen</span>
+                    <span>
+                      {t('listing.storageLabel', 'Storage')}: {formatStorageCondition(storageCondition, t)}
+                    </span>
+                  </div>
+                  {hasPickupWindow ? (
+                    <div className="food-card-detail-row org-card-detail-row">
+                      <span className="material-symbols-outlined">calendar_month</span>
+                      <span>
+                        {t('listing.pickupWindowLabel', 'Pickup window')}: {listing.pickupWindow}
+                      </span>
                     </div>
                   ) : null}
                 </div>
 
-                {(listing.description || dietaryTags.length > 0) ? (
-                  <div className="card-supporting-stack org-supporting-stack">
-                    {dietaryTags.length > 0 && (
-                      <div className="supporting-panel org-dietary-panel">
-                        <strong className="supporting-panel-label">{t('donation.dietary', 'Dietary tag')}</strong>
-                        <div className="tags-row org-tag-row supporting-tag-list">
-                          {dietaryTags.map((tag, i) => (
-                            <span key={i} className="tag-chip">{t(`listing.dietary.${resolveDietaryTranslationKey(tag)}`, tag)}</span>
-                          ))}
-                        </div>
+                <div className="card-supporting-stack org-supporting-stack">
+                  {dietaryTags.length > 0 && (
+                    <div className="supporting-panel org-dietary-panel">
+                      <strong className="supporting-panel-label">{t('listing.dietaryLabel', 'Dietary')}</strong>
+                      <div className="tags-row org-tag-row supporting-tag-list">
+                        {dietaryTags.map((tag, i) => (
+                          <span key={i} className="tag-chip">{t(`listing.dietary.${resolveDietaryTranslationKey(tag)}`, tag)}</span>
+                        ))}
                       </div>
-                    )}
+                    </div>
+                  )}
 
-                    {listing.description ? (
-                      <div className="org-extra-notes supporting-panel">
-                        <strong className="supporting-panel-label">{t('donation.extraNotes', 'Extra notes')}</strong>
-                        <p>{listing.description}</p>
+                  <div className="supporting-panel org-allergen-panel">
+                    <strong className="supporting-panel-label">{t('listing.allergenLabel', 'Allergens')}</strong>
+                    {allergenTags.length > 0 ? (
+                      <div className="tags-row org-tag-row supporting-tag-list">
+                        {allergenTags.map((tag, i) => (
+                          <span key={`${tag}-${i}`} className="tag-chip tag-chip--neutral">
+                            {formatAllergenTag(tag, t)}
+                          </span>
+                        ))}
                       </div>
-                    ) : null}
+                    ) : (
+                      <p className="org-supporting-text-warning">{t('listing.allergenRequired', 'Allergen info required')}</p>
+                    )}
                   </div>
-                ) : null}
+
+                  {hasPickupNotes ? (
+                    <div className="org-extra-notes supporting-panel">
+                      <strong className="supporting-panel-label">{t('listing.pickupNotesLabel', 'Pickup notes')}</strong>
+                      <p>{listing.description}</p>
+                    </div>
+                  ) : null}
+                </div>
 
                 {isOwnOrgListing ? (
                   <div className="food-card-actions donor-card-actions">
@@ -735,14 +901,26 @@ const LiveListingBoard = () => {
                     </button>
                   </div>
                 ) : (
-                  <button
-                    className="card-action-btn primary"
-                    onClick={() => openClaimDialog(listing)}
-                    disabled={claimingId === listing.id}
-                    type="button"
-                  >
-                    {claimingId === listing.id ? t('listing.claimingButton') : t('listing.claimThisButton')} →
-                  </button>
+                  <div className="food-card-actions org-card-actions org-card-actions--split">
+                    <button
+                      className="card-action-btn"
+                      onClick={() => openClaimDialog(listing)}
+                      type="button"
+                    >
+                      {t('listing.viewDetailsButton', 'View details')}
+                    </button>
+                    <button
+                      className="card-action-btn primary"
+                      onClick={() => handleClaim(listing)}
+                      disabled={claimingId === listing.id || isClaimBlocked}
+                      type="button"
+                    >
+                      {claimingId === listing.id ? t('listing.claimingButton') : t('listing.claimItemButton', 'Claim item')} →
+                    </button>
+                    {isClaimBlocked ? (
+                      <p className="org-card-claim-note">{claimBlockReason}</p>
+                    ) : null}
+                  </div>
                 )}
               </article>
             )})
@@ -771,7 +949,7 @@ const LiveListingBoard = () => {
                   type="button"
                   className="claim-step-btn"
                   onClick={() => handleClaimQuantityAdjust(-1)}
-                  disabled={claimingId === claimDialogListing.id}
+                  disabled={claimingId === claimDialogListing.id || Boolean(claimDialogBlockedReason)}
                 >
                   −
                 </button>
@@ -784,27 +962,29 @@ const LiveListingBoard = () => {
                     setClaimQuantity(event.target.value.replace(/[^0-9.]/g, ''))
                     if (claimError) setClaimError('')
                   }}
+                  disabled={Boolean(claimDialogBlockedReason)}
                 />
                 <button
                   type="button"
                   className="claim-step-btn"
                   onClick={() => handleClaimQuantityAdjust(1)}
-                  disabled={claimingId === claimDialogListing.id}
+                  disabled={claimingId === claimDialogListing.id || Boolean(claimDialogBlockedReason)}
                 >
                   +
                 </button>
               </div>
               <div className="claim-dialog-actions">
-                <button type="button" className="claim-all-btn" onClick={handleClaimAll} disabled={claimingId === claimDialogListing.id}>
+                <button type="button" className="claim-all-btn" onClick={handleClaimAll} disabled={claimingId === claimDialogListing.id || Boolean(claimDialogBlockedReason)}>
                   {t('dashboard.claimDialog.claimAll')}
                 </button>
               </div>
-              {claimError ? <div className="alert alert-error claim-dialog-error">{claimError}</div> : null}
+              {claimDialogBlockedReason ? <div className="alert alert-error claim-dialog-error">{claimDialogBlockedReason}</div> : null}
+              {claimError && !claimDialogBlockedReason ? <div className="alert alert-error claim-dialog-error">{claimError}</div> : null}
               <div className="claim-dialog-footer">
                 <button type="button" className="card-action-btn" onClick={closeClaimDialog} disabled={claimingId === claimDialogListing.id}>
                   {t('common.cancel', 'Cancel')}
                 </button>
-                <button type="button" className="card-action-btn primary" onClick={submitClaimQuantity} disabled={claimingId === claimDialogListing.id}>
+                <button type="button" className="card-action-btn primary" onClick={submitClaimQuantity} disabled={claimingId === claimDialogListing.id || Boolean(claimDialogBlockedReason)}>
                   {claimingId === claimDialogListing.id ? t('listing.claimingButton') : t('dashboard.claimDialog.confirm')}
                 </button>
               </div>

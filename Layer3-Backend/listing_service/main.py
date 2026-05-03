@@ -170,7 +170,16 @@ class ListingCreate(ListingBase):
 
 
 class ListingUpdate(ListingBase):
-    pass
+    expiryDate: date
+    allergenTags: list[str] = Field(..., min_length=1)
+    storageCondition: str = Field(..., min_length=1)
+
+    @field_validator("expiryDate")
+    @classmethod
+    def expiry_not_past(cls, value):
+        if value < date.today():
+            raise ValueError("expiryDate must not be in the past")
+        return value
 
 
 class Listing(ListingBase):

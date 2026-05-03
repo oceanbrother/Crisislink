@@ -140,6 +140,7 @@
     "shareButton": "Post food",
     "filter": "Filter by category",
     "search": "Search listings",
+    "searchDonor": "Search your listings",
     "subtitle": "Edit or remove the items you have posted.",
     "referenceOnly": "Community groups can claim these listings from their own board after contacting the donor.",
     "postedByYou": "Posted by you",
@@ -155,34 +156,36 @@
     "pageTitle": "My listings",
     "quickPost": "Post food",
     "quickPostTooltip": "Post surplus food",
-    "postcodeHint": "Used for nearby listings and hotspots.",
+    "postcodeHint": "Used to show nearby listings and hotspot insights.",
     "editableListings": "Editable listings",
     "lockedListings": "Claimed / locked",
-    "filterHint": "Search by food name, notes, size, or postcode.",
+    "filterHint": "Search by food name, notes, category, or postcode.",
     "searchingFor": "Searching for",
     "filteringCategory": "Category",
+    "scopeFilter": "Scope",
+    "scopeEditable": "Editable listings",
     "clearFilters": "Clear filters",
     "showingMatches": "Showing {{count}} matching listings",
     "emptyTitle": "No donor listings yet",
     "emptyHint": "Once you post surplus food from this postcode, it will appear here for you to manage.",
     "emptySearchTitle": "No matching listings",
-    "emptySearchHint": "Try another search term or clear the active category filter to see all of your listings again."
+    "emptySearchHint": "Try a different search term or clear your filters to see more listings."
   },
   "donation": {
     "title": "Post Surplus",
     "subtitle": "Let AI do the heavy lifting. Just snap a photo of the food you'd like to share.",
-    "aiTitle": "AI Assisted Listing",
+    "aiTitle": "AI-assisted listing",
     "orgTitle": "Organisation posting",
     "takePhoto": "Take a photo or upload one",
-    "uploadSubtitle": "we will fill in the details",
+    "uploadSubtitle": "We’ll suggest the listing details for you to review.",
     "changePhoto": "Change photo",
     "analyzing": "Analysing food...",
     "aiDetails": "Suggested details",
     "foodName": "Food Name",
     "quantity": "Estimated Quantity",
     "category": "Category",
-    "postcode": "Your postcode",
-    "postButton": "Post listing",
+    "postcode": "Postcode",
+    "postButton": "Post food",
     "errors": {
       "foodType": "Please enter a food type",
       "quantity": "Please enter a valid quantity (must be greater than 0)",
@@ -204,15 +207,17 @@
       "nextStepHint": "Check nearby food shortage hotspots to see where your donation can help most."
     },
     "editTitle": "Edit listing",
-    "sizeCue": "Size or weight",
+    "sizeCue": "Portion size",
     "sizeCuePlaceholder": "e.g. small bag, medium tray, 500g bottle",
-    "sizeCueHint": "Select the estimated number of serves, not exact weight.",
+    "sizeCueHint": "Select the estimated number of serves rather than an exact weight.",
     "dietary": "Dietary tag",
     "bestBefore": "Best before",
+    "expiryDateLabel": "Use-by / best-before date",
     "openDatePicker": "Open calendar",
     "extraNotes": "Extra notes",
-    "extraNotesPlaceholder": "Example: Pickup from front desk after 4pm. Keep refrigerated. Please bring a container.",
+    "extraNotesPlaceholder": "Example: Pickup from front desk after 4pm. Keep refrigerated. Please bring a container. Call on arrival if needed.",
     "saveButton": "Save listing changes",
+    "disclaimerCheckbox": "I confirm that the food details, expiry date, allergen information, and storage condition are accurate to the best of my knowledge. I understand that OutBackShare acts as a coordination platform and does not independently verify food safety or suitability.",
     "actions": {
       "backHome": "Back to home",
       "backListings": "Back to my listings",
@@ -228,13 +233,13 @@
     "safety": {
       "title": "Food safety reminder",
       "accuracy": "You are responsible for the accuracy of this listing, including quantity, condition, and allergen information.",
-      "allergen": "CrisisLink cannot independently verify allergen declarations. Recipients must exercise their own judgement.",
-      "platform": "CrisisLink is an intermediary only and does not inspect or accept liability for donated food items."
+      "allergen": "OutBackShare cannot independently verify allergen declarations. Recipients must exercise their own judgement.",
+      "platform": "OutBackShare is a coordination platform only and does not inspect or accept liability for donated food items."
     },
     "reviewTitle": "Suggested details — please review before posting.",
     "reviewHintFood": "Check the food name and category.",
-    "reviewHintQuantity": "Confirm the quantity and the size or weight.",
-    "reviewHintDietary": "Update the dietary tag if the AI guessed incorrectly.",
+    "reviewHintQuantity": "Confirm the quantity and portion size.",
+    "reviewHintDietary": "Update the dietary tag if the AI suggestion is incorrect.",
     "quantityWarning": "The AI suggested {{count}} portions, which seems unusually high. Please confirm the quantity before posting.",
     "bestBeforePlaceholder": "DD/MM/YYYY",
     "sizeOptions": {
@@ -316,6 +321,8 @@
     },
     "statusPills": {
       "available": "Available to claim",
+      "expired": "Expired — cannot claim",
+      "safetyRequired": "Food safety info required",
       "posted": "Posted by us",
       "claimed": "Claimed by us: {{quantity}}"
     },
@@ -335,6 +342,7 @@
       "success": "Claimed {{quantity}} successfully.",
       "failed": "Unable to claim this quantity right now."
     },
+    "claimQuickSuccess": "Listing claimed successfully.",
     "filterHint": "Search by food name, notes, source code, or postcode.",
     "searchingFor": "Searching for",
     "filteringCategory": "Category",
@@ -368,6 +376,11 @@
       "loadErrorHint": "We could not load listings required for this alerts view. Please try again.",
       "filterSpike": "Spike alerts",
       "filterWatch": "Watch items",
+      "noWatchFilterHint": "No watch items are currently available.",
+      "noFilteredTitle": "No alerts match this filter",
+      "noFilteredHint": "Try another alert filter to view available demand signals.",
+      "noFilteredWatchHint": "No watch items are currently flagged. Try All or Spike alerts.",
+      "showAllAlerts": "Show all alerts",
       "spikeItem": "Spike alert",
       "watchPrimaryLabel": "Demand watch item",
       "watchItem": "Watch item",
@@ -434,11 +447,13 @@
     "expiresIn": "Expires in {{time}}",
     "from": "From",
     "fromCode": "From {{code}}",
-    "fromDonorCode": "From donor",
-    "fromOrganizationCode": "From organisation",
+    "fromDonorCode": "Posted by donor",
+    "fromOrganizationCode": "Posted by organisation",
     "postcode": "Postcode",
     "claimingButton": "Claiming...",
     "claimThisButton": "Claim food",
+    "claimItemButton": "Claim item",
+    "viewDetailsButton": "View details",
     "justNow": "Just now",
     "minutesAgo": "{{count}}m ago",
     "hoursAgo": "{{count}}h ago",
@@ -454,15 +469,45 @@
       "none": "No dietary tag"
     },
     "units": {
+      "portion": "portion",
       "portions": "portions",
+      "meal": "meal",
       "meals": "meals",
       "kg": "kg",
+      "item": "item",
       "units": "units",
+      "box": "box",
       "boxes": "boxes",
       "dozen": "dozen",
       "litres": "litres"
     },
-    "bestBefore": "Best before"
+    "bestBefore": "Best before",
+    "bestBeforeToday": "Best before today",
+    "storageLabel": "Storage",
+    "pickupWindowLabel": "Pickup window",
+    "pickupNotesLabel": "Pickup notes",
+    "dietaryLabel": "Dietary",
+    "allergenLabel": "Allergens",
+    "allergenRequired": "Allergen info required",
+    "claimBlockedExpired": "This listing is expired and can no longer be claimed.",
+    "claimBlockedMissingSafety": "This listing is missing required food safety information.",
+    "storage": {
+      "room_temp": "Room temperature",
+      "refrigerated": "Refrigerated",
+      "frozen": "Frozen",
+      "keep_dry": "Keep dry",
+      "unknown": "Not provided"
+    },
+    "allergens": {
+      "nuts": "Nuts",
+      "dairy": "Dairy",
+      "gluten": "Gluten",
+      "eggs": "Eggs",
+      "soy": "Soy",
+      "sesame": "Sesame",
+      "shellfish": "Shellfish",
+      "noknownallergens": "No known allergens"
+    }
   },
   "common": {
     "close": "Close",
@@ -475,7 +520,7 @@
     "success": "Success",
     "alerts": "Alerts",
     "profile": "Profile",
-    "secure": "SECURE CIVIC PLATFORM • DATA ENCRYPTED",
+    "secure": "COMMUNITY FOOD SHARING PLATFORM",
     "all": "All"
   },
   "lang": {
@@ -500,6 +545,55 @@
       "mediumlow": "Medium-low (≥0.25)",
       "low": "Low (<0.25)",
       "none": "No score yet"
+    }
+  },
+  "logisticsGuide": {
+    "ariaLabel": "Listing workflow guide",
+    "eyebrow": "How it works",
+    "title": "Track each donation from listing to confirmed collection.",
+    "orgEyebrow": "How pickup works",
+    "orgTitle": "Reserve and collect food in 4 steps",
+    "donor": {
+      "step1": {
+        "title": "Post food",
+        "desc": "Add photo, expiry date, allergens, storage, and pickup window."
+      },
+      "step2": {
+        "title": "Review claims",
+        "desc": "Review claim requests and confirm availability.",
+        "status": "Status: Available → Claimed"
+      },
+      "step3": {
+        "title": "Coordinate pickup",
+        "desc": "Share pickup time, contact details, and collection notes.",
+        "status": "Status: Claimed"
+      },
+      "step4": {
+        "title": "Confirm collection",
+        "desc": "Mark the listing as picked up after collection.",
+        "status": "Status: Picked up"
+      }
+    },
+    "org": {
+      "step1": {
+        "title": "Find available food",
+        "desc": "Browse nearby listings and check expiry, storage, and allergen information."
+      },
+      "step2": {
+        "title": "Claim item",
+        "desc": "Reserve suitable food for your organisation.",
+        "status": "Status: Available → Claimed"
+      },
+      "step3": {
+        "title": "Arrange pickup",
+        "desc": "Check pickup window, contact details, and collection notes.",
+        "status": "Status: Claimed"
+      },
+      "step4": {
+        "title": "Confirm collected",
+        "desc": "Mark the item as picked up after collection.",
+        "status": "Status: Picked up"
+      }
     }
   },
   "hiw": {

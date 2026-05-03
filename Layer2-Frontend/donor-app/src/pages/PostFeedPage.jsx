@@ -12,7 +12,7 @@ import WorkspaceSummaryCard from '../components/WorkspaceSummaryCard'
 import { forgetDonorListing, getOrCreateDonorCode, isRememberedDonorListing } from '../utils/donorIdentity'
 import { resolveImageUrl } from '../utils/imageUrl'
 import { getSavedDonorPostcode, saveDonorPostcode } from '../utils/donorPostcode'
-import HowItWorksStrip from '../components/HowItWorksStrip'
+import { mergeListingSafetyFallback } from '../utils/listingSafety'
 import '../styles/PostFeedPage.css'
 
 function getDietaryClass(tag) {
@@ -43,6 +43,36 @@ function matchesDietaryFilter(tags, filterValue) {
     }
     return normalized === filterValue
   })
+}
+
+function formatStorageCondition(storageCondition, t) {
+  const value = String(storageCondition || '').trim()
+  if (!value) return t('listing.storage.unknown', 'Not provided')
+  return t(`listing.storage.${value}`, value)
+}
+
+function normalizeAllergenTag(tag) {
+  return String(tag || '').trim().toLowerCase()
+}
+
+function getAllergenTags(listing) {
+  if (Array.isArray(listing?.allergenTags)) return listing.allergenTags
+  if (Array.isArray(listing?.allergen_tags)) return listing.allergen_tags
+  return []
+}
+
+function getStorageCondition(listing) {
+  return String(listing?.storageCondition || listing?.storage_condition || '').trim()
+}
+
+function formatAllergenTag(tag, t) {
+  const normalized = normalizeAllergenTag(tag)
+  if (!normalized) return ''
+  if (normalized === 'no known allergens') {
+    return t('listing.allergens.noknownallergens', 'No known allergens')
+  }
+  const key = normalized.replace(/\s+/g, '')
+  return t(`listing.allergens.${key}`, tag)
 }
 
 function isLegacyDonorListing(listing, currentPostcode) {
@@ -126,6 +156,7 @@ const PostFeedPage = () => {
 
   const [activeFilter, setActiveFilter] = useState('All')
   const [activeFoodType, setActiveFoodType] = useState('all')
+  const [listingScope, setListingScope] = useState('all')
   const [search, setSearch] = useState('')
   const [listings, setListings] = useState([])
   const [loading, setLoading] = useState(true)
@@ -143,7 +174,8 @@ const PostFeedPage = () => {
         filters.postcode = postcode
       }
       const data = await getAvailableListings(filters)
-      setListings(Array.isArray(data) ? data : [])
+      const safeListings = (Array.isArray(data) ? data : []).map((listing) => mergeListingSafetyFallback(listing))
+      setListings(safeListings)
       setError('')
     } catch (err) {
       console.error('Fetch donor listings error:', err)
@@ -166,6 +198,7 @@ const PostFeedPage = () => {
       const ownListing = isOwnedDonorListing(listing, donorCode, postcode)
 
       if (!ownListing) return false
+      if (listingScope === 'editable' && listing.hasClaims) return false
 
       const matchesFilter = activeFilter === 'All' || category === activeFilter
       if (!matchesFilter) return false
@@ -175,12 +208,13 @@ const PostFeedPage = () => {
 
       return matchesSearchFields(getSearchableFields(listing, term), term)
     })
-  }, [activeFilter, activeFoodType, donorCode, listings, postcode, search])
+  }, [activeFilter, activeFoodType, donorCode, listingScope, listings, postcode, search])
 
   const hasActiveSearch = search.trim() !== ''
   const hasActiveFilter = activeFilter !== 'All'
   const hasActiveFoodTypeFilter = activeFoodType !== 'all'
-  const hasActiveControls = hasActiveSearch || hasActiveFilter || hasActiveFoodTypeFilter
+  const hasActiveScopeFilter = listingScope !== 'all'
+  const hasActiveControls = hasActiveSearch || hasActiveFilter || hasActiveFoodTypeFilter || hasActiveScopeFilter
   const isBaseEmpty = listings.length === 0
   const isFilteredEmpty = !loading && !isBaseEmpty && filteredListings.length === 0
 
@@ -188,6 +222,7 @@ const PostFeedPage = () => {
     setSearch('')
     setActiveFilter('All')
     setActiveFoodType('all')
+    setListingScope('all')
   }
 
   const donorSummary = useMemo(() => {
@@ -278,18 +313,28 @@ const PostFeedPage = () => {
           )}
         >
           <div className="workspace-summary-grid donor-summary-grid">
-            <div className="workspace-summary-metric">
+            <button
+              type="button"
+              className={listingScope === 'all'
+                ? 'workspace-summary-metric workspace-summary-metric--button is-active'
+                : 'workspace-summary-metric workspace-summary-metric--button'}
+              onClick={() => setListingScope('all')}
+            >
               <span className="workspace-summary-metric__label">{t('dashboard.statusTabs.all', 'All listings')}</span>
               <strong className="workspace-summary-metric__value">{donorSummary.total}</strong>
-            </div>
-            <div className="workspace-summary-metric workspace-summary-metric--soft">
+            </button>
+            <button
+              type="button"
+              className={listingScope === 'editable'
+                ? 'workspace-summary-metric workspace-summary-metric--soft workspace-summary-metric--button is-active'
+                : 'workspace-summary-metric workspace-summary-metric--soft workspace-summary-metric--button'}
+              onClick={() => setListingScope('editable')}
+            >
               <span className="workspace-summary-metric__label">{t('feed.editableListings', 'Editable listings')}</span>
               <strong className="workspace-summary-metric__value">{donorSummary.editable}</strong>
-            </div>
+            </button>
           </div>
         </WorkspaceSummaryCard>
-
-        <HowItWorksStrip role="donor" onNavigate={navigate} />
 
         <WorkspaceFilterPanel role="donor" className="filter-section workspace-listings-filters workspace-listings-filters--donor donor-filter-section">
           <div className={hasActiveSearch ? 'search-wrapper donor-search-wrapper donor-search-wrapper--active' : 'search-wrapper donor-search-wrapper'}>
@@ -297,7 +342,7 @@ const PostFeedPage = () => {
             <input
               className={hasActiveSearch ? 'search-input search-input--active' : 'search-input'}
               type="text"
-              placeholder={t('feed.search', 'Search listings')}
+              placeholder={t('feed.searchDonor', 'Search your listings')}
               value={search}
               onChange={(event) => setSearch(event.target.value)}
             />
@@ -371,13 +416,18 @@ const PostFeedPage = () => {
                     {t('dashboard.filterLabels.foodType', 'Food type')} · {t(`listing.dietary.${resolveDietaryTranslationKey(activeFoodType)}`, activeFoodType)}
                   </span>
                 ) : null}
+                {hasActiveScopeFilter ? (
+                  <span className="filter-feedback-pill">
+                    {t('feed.scopeFilter', 'Scope')} · {t('feed.scopeEditable', 'Editable listings')}
+                  </span>
+                ) : null}
               </div>
               <button type="button" className="filter-clear-btn" onClick={clearFilters}>
                 {t('feed.clearFilters', 'Clear filters')}
               </button>
             </div>
           ) : (
-            <p className="filter-feedback-hint">{t('feed.filterHint', 'Search by food name, notes, size, or postcode.')}</p>
+            <p className="filter-feedback-hint">{t('feed.filterHint', 'Search by food name, notes, category, or postcode.')}</p>
           )}
 
           {isFilteredEmpty ? null : (
@@ -413,6 +463,9 @@ const PostFeedPage = () => {
             {filteredListings.map((listing) => {
               const ownListing = isOwnedDonorListing(listing, donorCode, postcode)
               const dietaryTag = Array.isArray(listing.dietary_tags) && listing.dietary_tags.length > 0 ? listing.dietary_tags[0] : ''
+              const allergenTags = getAllergenTags(listing).map((tag) => String(tag || '').trim()).filter(Boolean)
+              const allergenDisplayTags = allergenTags.length > 0 ? allergenTags : ['no known allergens']
+              const storageLabel = formatStorageCondition(getStorageCondition(listing), t)
               const bestBefore = formatBestBeforeLabel(listing.expiryDate, i18n.language === 'zh' ? 'zh-CN' : 'en-AU')
               const category = resolveListingCategory(listing.category, listing.foodType)
               const categoryOption = FILTER_OPTIONS.find((option) => option.value === category)
@@ -472,29 +525,42 @@ const PostFeedPage = () => {
                         <span>{t('listing.bestBefore', 'Best before')} {bestBefore}</span>
                       </div>
                     ) : null}
+                    <div className="food-card-detail-row donor-card-detail-row">
+                      <span className="material-symbols-outlined">kitchen</span>
+                      <span>{t('listing.storageLabel', 'Storage')}: {storageLabel}</span>
+                    </div>
                   </div>
 
-                  {(dietaryTag || listing.description) ? (
-                    <div className="card-supporting-stack donor-supporting-stack">
-                      {dietaryTag ? (
-                        <div className="supporting-panel donor-dietary-panel">
-                          <strong className="supporting-panel-label">{t('donation.dietary', 'Dietary tag')}</strong>
-                          <div className="tags-row tags-row-spaced donor-tag-row supporting-tag-list">
-                            <span className={'tag-chip tag-' + getDietaryClass(dietaryTag)}>
-                              {t('listing.dietary.' + getDietaryClass(dietaryTag), dietaryTag)}
-                            </span>
-                          </div>
+                  <div className="card-supporting-stack donor-supporting-stack">
+                    {dietaryTag ? (
+                      <div className="supporting-panel donor-dietary-panel">
+                        <strong className="supporting-panel-label">{t('donation.dietary', 'Dietary tag')}</strong>
+                        <div className="tags-row tags-row-spaced donor-tag-row supporting-tag-list">
+                          <span className={'tag-chip tag-' + getDietaryClass(dietaryTag)}>
+                            {t('listing.dietary.' + getDietaryClass(dietaryTag), dietaryTag)}
+                          </span>
                         </div>
-                      ) : null}
+                      </div>
+                    ) : null}
 
-                      {listing.description ? (
-                        <div className="donor-extra-notes supporting-panel">
-                          <strong className="supporting-panel-label">{t('donation.extraNotes', 'Extra notes')}</strong>
-                          <p>{listing.description}</p>
-                        </div>
-                      ) : null}
+                    <div className="supporting-panel donor-allergen-panel">
+                      <strong className="supporting-panel-label">{t('listing.allergenLabel', 'Allergens')}</strong>
+                      <div className="tags-row tags-row-spaced donor-tag-row supporting-tag-list">
+                        {allergenDisplayTags.map((tag, index) => (
+                          <span key={`${tag}-${index}`} className="tag-chip">
+                            {formatAllergenTag(tag, t)}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                  ) : null}
+
+                    {listing.description ? (
+                      <div className="donor-extra-notes supporting-panel">
+                        <strong className="supporting-panel-label">{t('donation.extraNotes', 'Extra notes')}</strong>
+                        <p>{listing.description}</p>
+                      </div>
+                    ) : null}
+                  </div>
 
                   <div className="food-card-actions donor-card-actions">
                     {ownListing ? (

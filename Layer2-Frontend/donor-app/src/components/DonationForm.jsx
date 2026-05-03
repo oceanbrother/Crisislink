@@ -24,6 +24,7 @@ import WorkspaceHeader from './WorkspaceHeader'
 import { forgetDonorListing, getOrCreateDonorCode, rememberDonorListing } from '../utils/donorIdentity'
 import { resolveImageUrl } from '../utils/imageUrl'
 import { getSavedDonorPostcode, saveDonorPostcode } from '../utils/donorPostcode'
+import { rememberListingSafety } from '../utils/listingSafety'
 import '../styles/DonationForm.css'
 
 const DEFAULT_CATEGORY = 'Baked goods'
@@ -137,6 +138,10 @@ function isExpiryPast(value) {
 
 function buildInitialState({ postcode, orgMode, initialOrgCode, listing }) {
   if (listing) {
+    const listingAllergenTags = Array.isArray(listing.allergenTags)
+      ? listing.allergenTags
+      : (Array.isArray(listing.allergen_tags) ? listing.allergen_tags : [])
+    const listingStorageCondition = listing.storageCondition || listing.storage_condition || ''
     return {
       foodType: listing.foodType || '',
       quantity: listing.quantity ? String(listing.quantity) : '',
@@ -152,8 +157,8 @@ function buildInitialState({ postcode, orgMode, initialOrgCode, listing }) {
           : inferDietaryChoiceFromFoodName(listing.foodType),
       description: listing.description || '',
       nameSuggestions: [],
-      allergenTags: listing.allergenTags || [],
-      storageCondition: listing.storageCondition || '',
+      allergenTags: listingAllergenTags,
+      storageCondition: listingStorageCondition,
     }
   }
 
@@ -383,7 +388,7 @@ const DonationForm = () => {
       if (String(formData.postcode).trim() === '') {
         throw new Error(t('donation.errors.postcode'))
       }
-      if (!editMode && String(formData.expiryDate || '').trim() === '') {
+      if (String(formData.expiryDate || '').trim() === '') {
         throw new Error(t('donation.errors.expiryRequired', 'Best before date is required'))
       }
       if (String(formData.expiryDate || '').trim() !== '' && expiryDateValue === null) {
@@ -392,10 +397,10 @@ const DonationForm = () => {
       if (expiryDateValue && new Date(expiryDateValue) < new Date(new Date().toDateString())) {
         throw new Error(t('donation.errors.expiryPast', 'Best before date cannot be in the past'))
       }
-      if (!editMode && formData.allergenTags.length === 0) {
+      if (formData.allergenTags.length === 0) {
         throw new Error(t('donation.errors.allergenRequired', 'Please select at least one allergen tag (or "No known allergens")'))
       }
-      if (!editMode && !formData.storageCondition) {
+      if (!formData.storageCondition) {
         throw new Error(t('donation.errors.storageRequired', 'Please select a storage condition'))
       }
       if (!disclaimerChecked) {
@@ -430,7 +435,9 @@ const DonationForm = () => {
         sizeCue: String(formData.sizeCue || '').trim(),
         expiryDate: expiryDateValue,
         allergenTags: formData.allergenTags,
+        allergen_tags: formData.allergenTags,
         storageCondition: formData.storageCondition || null,
+        storage_condition: formData.storageCondition || null,
       }
 
       let savedListing = null
@@ -438,6 +445,13 @@ const DonationForm = () => {
         savedListing = await updateListing(editingListing.id, payload)
       } else {
         savedListing = await submitListing(payload)
+      }
+      const safetyListingId = savedListing?.id || editingListing?.id
+      if (safetyListingId) {
+        rememberListingSafety(safetyListingId, {
+          allergenTags: formData.allergenTags,
+          storageCondition: formData.storageCondition,
+        })
       }
       if (!orgMode && savedListing?.id) {
         rememberDonorListing(savedListing.id)
@@ -751,7 +765,7 @@ const DonationForm = () => {
               </div>
 
               <div className="ai-field">
-                <label className="field-label" htmlFor="sizeCue">{t('donation.sizeCue', 'Size or weight')}</label>
+                <label className="field-label" htmlFor="sizeCue">{t('donation.sizeCue', 'Portion size')}</label>
                 <div className="form-select-wrapper">
                   <select
                     id="sizeCue"
@@ -768,7 +782,7 @@ const DonationForm = () => {
                   <span className="material-symbols-outlined select-arrow">expand_more</span>
                 </div>
                 <p className="field-hint strong">
-                  {t('donation.sizeCueHint', 'Choose the closest size or weight so community groups know what to expect at pickup.')}
+                  {t('donation.sizeCueHint', 'Select the estimated number of serves rather than an exact weight.')}
                 </p>
               </div>
 
@@ -793,8 +807,8 @@ const DonationForm = () => {
 
               <div className="ai-field">
                 <label className="field-label" htmlFor="expiryDate">
-                  {t('donation.bestBefore', 'Best before')}
-                  {!editMode && <span style={{ color: '#e53e3e', marginLeft: 2 }}>*</span>}
+                  {t('donation.expiryDateLabel', 'Use-by / best-before date')}
+                  <span style={{ color: '#e53e3e', marginLeft: 2 }}>*</span>
                 </label>
                 <div className="date-input-wrapper">
                   <input
@@ -844,7 +858,7 @@ const DonationForm = () => {
               <div className="ai-field full">
                 <label className="field-label">
                   {t('donation.allergenTags', 'Allergen information')}
-                  {!editMode && <span style={{ color: '#e53e3e', marginLeft: 2 }}>*</span>}
+                  <span style={{ color: '#e53e3e', marginLeft: 2 }}>*</span>
                 </label>
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '4px' }}>
                   {ALLERGEN_PRESETS.map(({ key, label }) => {
@@ -892,7 +906,7 @@ const DonationForm = () => {
               <div className="ai-field">
                 <label className="field-label" htmlFor="storageCondition">
                   {t('donation.storageCondition', 'Storage condition')}
-                  {!editMode && <span style={{ color: '#e53e3e', marginLeft: 2 }}>*</span>}
+                  <span style={{ color: '#e53e3e', marginLeft: 2 }}>*</span>
                 </label>
                 <div className="form-select-wrapper">
                   <select
@@ -961,7 +975,7 @@ const DonationForm = () => {
               />
               <span style={{ fontSize: '0.78rem', color: '#4a5568', lineHeight: 1.55 }}>
                 {t('donation.disclaimerCheckbox',
-                  'I confirm the information in this listing is accurate to the best of my knowledge, and I understand CrisisLink acts as an intermediary only.'
+                  'I confirm that the food details, expiry date, allergen information, and storage condition are accurate to the best of my knowledge. I understand that OutBackShare acts as a coordination platform and does not independently verify food safety or suitability.'
                 )}
               </span>
             </label>
