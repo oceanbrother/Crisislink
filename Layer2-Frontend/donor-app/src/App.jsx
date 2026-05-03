@@ -10,7 +10,6 @@ import PostFeedPage from './pages/PostFeedPage'
 import DonationFormPage from './pages/DonationFormPage'
 import DonorDashboardPage from './pages/DonorDashboardPage'
 import DonorHotspotsPage from './pages/DonorHotspotsPage'
-import HotspotMap from './pages/HotspotMap'
 
 // Pages - Organization Flow
 import OrgCodeInputPage from './pages/OrgCodeInputPage'
@@ -135,9 +134,9 @@ function AppRoutes() {
       <Route path="/donor" element={<DonorDashboardPage />} />
       <Route path="/donor/post" element={<DonationFormPage />} />
       <Route path="/donor/listings" element={<PostFeedPage />} />
-      <Route path="/donor/hotspots" element={<MapErrorBoundary><HotspotMap /></MapErrorBoundary>} />
+      <Route path="/donor/hotspots" element={<DonorHotspotsPage />} />
       <Route path="/feed/:postcode" element={<PostFeedPage />} />
-      <Route path="/hotspots/:postcode" element={<MapErrorBoundary><HotspotMap /></MapErrorBoundary>} />
+      <Route path="/hotspots/:postcode" element={<DonorHotspotsPage />} />
 
       {/* Form with optional postcode param so we can redirect back to feed */}
       <Route path="/form/:postcode" element={<DonationFormPage />} />
