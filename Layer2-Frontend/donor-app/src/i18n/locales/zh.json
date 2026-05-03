@@ -141,6 +141,7 @@
     "shareButton": "发布食物",
     "filter": "按类别筛选",
     "search": "搜索物品",
+    "searchDonor": "搜索你的发布",
     "subtitle": "管理你自己发布的物品。",
     "referenceOnly": "真正的领取动作会在社区组织自己的物品板里完成。",
     "postedByYou": "你发布的物品",
@@ -156,34 +157,36 @@
     "pageTitle": "我的物品",
     "quickPost": "发布食物",
     "quickPostTooltip": "发布剩余食物",
-    "postcodeHint": "用于附近物品列表和热点。",
+    "postcodeHint": "用于展示附近物品与热点洞察。",
     "editableListings": "可编辑发布",
     "lockedListings": "已领取 / 已锁定",
-    "filterHint": "可按食物名称、备注、大小或邮编搜索。",
+    "filterHint": "可按食物名称、备注、类别或邮编搜索。",
     "searchingFor": "正在搜索",
     "filteringCategory": "类别",
+    "scopeFilter": "范围",
+    "scopeEditable": "可编辑发布",
     "clearFilters": "清除筛选",
     "showingMatches": "当前显示 {{count}} 条匹配物品",
     "emptyTitle": "还没有 donor 发布的物品",
     "emptyHint": "当你从这个邮编发布剩余食物后，它会出现在这里，供你后续管理。",
     "emptySearchTitle": "没有匹配的物品",
-    "emptySearchHint": "试试别的关键词，或者清除当前类别筛选后再看全部物品。"
+    "emptySearchHint": "试试其他关键词，或清除筛选后查看更多物品。"
   },
   "donation": {
     "title": "发布剩余",
     "subtitle": "让 AI 为您承担繁重工作。只需拍摄或上传您想分享的食物照片。",
-    "aiTitle": "AI 辅助物品发布",
+    "aiTitle": "AI 辅助发布",
     "orgTitle": "组织端发布",
     "takePhoto": "拍照或上传照片",
-    "uploadSubtitle": "我们会帮您填入详情",
+    "uploadSubtitle": "我们会先生成建议内容，请在发布前确认。",
     "changePhoto": "更改照片",
     "analyzing": "正在分析食物...",
     "aiDetails": "建议填写内容",
     "foodName": "食物名称",
     "quantity": "估计数量",
     "category": "类别",
-    "postcode": "你的邮编",
-    "postButton": "发布物品",
+    "postcode": "邮编",
+    "postButton": "发布食物",
     "errors": {
       "foodType": "请输入食物类型",
       "quantity": "请输入有效数量（必须大于 0）",
@@ -205,15 +208,17 @@
       "nextStepHint": "查看附近的食物短缺热点，看看你的捐赠最适合帮助哪里。"
     },
     "editTitle": "编辑物品",
-    "sizeCue": "大小或重量",
+    "sizeCue": "份量",
     "sizeCuePlaceholder": "例如 小袋、中托盘、500g 瓶装",
-    "sizeCueHint": "请选择预估份数，不需要填写精确重量。",
+    "sizeCueHint": "请选择预估份数，而不是精确重量。",
     "dietary": "饮食标签",
     "bestBefore": "最佳食用日期",
+    "expiryDateLabel": "食用期限 / 最佳食用日期",
     "openDatePicker": "打开日历",
     "extraNotes": "补充说明",
-    "extraNotesPlaceholder": "例如：下午 4 点后到前台取货，需要冷藏，请自备容器。",
+    "extraNotesPlaceholder": "例如：下午 4 点后到前台取货，需要冷藏，请自备容器。到达后可先电话联系。",
     "saveButton": "保存物品修改",
+    "disclaimerCheckbox": "我确认本条发布中的食物信息、日期、过敏原信息与存储条件均已尽我所知如实填写。我理解 OutBackShare 仅作为协调平台，不会独立核验食品安全或适用性。",
     "actions": {
       "backHome": "返回首页",
       "backListings": "返回我的物品",
@@ -229,13 +234,13 @@
     "safety": {
       "title": "食品安全提醒",
       "accuracy": "您需对本次发布的所有信息负责，包括数量、食品状态及过敏原声明。",
-      "allergen": "CrisisLink 无法独立核实过敏原信息，领取方须自行判断食品是否适合食用。",
-      "platform": "CrisisLink 仅作为协调平台，不检查捐赠食物，也不承担相关责任。"
+      "allergen": "OutBackShare 无法独立核实过敏原信息，领取方须自行判断食品是否适合食用。",
+      "platform": "OutBackShare 仅作为协调平台，不检查捐赠食物，也不承担相关责任。"
     },
     "reviewTitle": "以下是建议填写内容，发布前请再次确认。",
     "reviewHintFood": "检查食物名称和分类是否正确。",
-    "reviewHintQuantity": "确认数量，以及大小或重量信息。",
-    "reviewHintDietary": "如果 AI 判断错了，请手动调整饮食标签。",
+    "reviewHintQuantity": "确认数量与份量信息。",
+    "reviewHintDietary": "如果 AI 建议不准确，请手动调整饮食标签。",
     "quantityWarning": "AI 建议了 {{count}} 份，这个数量看起来偏高。发布前请手动确认。",
     "bestBeforePlaceholder": "DD/MM/YYYY",
     "sizeOptions": {
@@ -317,6 +322,8 @@
     },
     "statusPills": {
       "available": "可领取物品",
+      "expired": "已过期，无法认领",
+      "safetyRequired": "食安信息不完整",
       "posted": "我发布的",
       "claimed": "我已领取：{{quantity}}份"
     },
@@ -336,6 +343,7 @@
       "success": "已成功领取 {{quantity}}。",
       "failed": "暂时无法领取这部分数量。"
     },
+    "claimQuickSuccess": "已成功认领该物品。",
     "filterHint": "可按食物名称、备注、来源代码或邮编搜索。",
     "searchingFor": "正在搜索",
     "filteringCategory": "类别",
@@ -369,6 +377,11 @@
       "loadErrorHint": "当前无法读取该预警视图所需的实时列表数据，请稍后再试。",
       "filterSpike": "峰值预警",
       "filterWatch": "关注项目",
+      "noWatchFilterHint": "当前没有可显示的关注项目。",
+      "noFilteredTitle": "当前筛选下没有预警",
+      "noFilteredHint": "请切换筛选条件以查看可用的需求信号。",
+      "noFilteredWatchHint": "当前没有被标记为关注项目的预警。可切换到全部或峰值预警。",
+      "showAllAlerts": "查看全部预警",
       "spikeItem": "需求峰值",
       "watchPrimaryLabel": "需求关注项",
       "watchItem": "关注项目",
@@ -434,11 +447,13 @@
     "expiresIn": "{{time}}内过期",
     "from": "来自",
     "fromCode": "来自 {{code}}",
-    "fromDonorCode": "来自捐赠方",
-    "fromOrganizationCode": "来自社区组织",
+    "fromDonorCode": "由捐赠者发布",
+    "fromOrganizationCode": "由社区组织发布",
     "postcode": "邮编",
     "claimingButton": "领取中...",
     "claimThisButton": "领取食物",
+    "claimItemButton": "认领物品",
+    "viewDetailsButton": "查看详情",
     "justNow": "刚才",
     "minutesAgo": "{{count}} 分钟前",
     "hoursAgo": "{{count}} 小时前",
@@ -454,15 +469,45 @@
       "none": "无饮食标签"
     },
     "units": {
+      "portion": "份",
       "portions": "份",
+      "meal": "餐",
       "meals": "餐",
       "kg": "公斤",
+      "item": "件",
       "units": "件",
+      "box": "盒",
       "boxes": "盒",
       "dozen": "打",
       "litres": "升"
     },
-    "bestBefore": "最佳食用日期"
+    "bestBefore": "最佳食用日期",
+    "bestBeforeToday": "今日到期",
+    "storageLabel": "存储条件",
+    "pickupWindowLabel": "取货时间窗",
+    "pickupNotesLabel": "取货备注",
+    "dietaryLabel": "饮食标签",
+    "allergenLabel": "过敏原信息",
+    "allergenRequired": "需要补充过敏原信息",
+    "claimBlockedExpired": "该物品已过期，无法继续认领。",
+    "claimBlockedMissingSafety": "该物品缺少必要的食品安全信息，暂时不能认领。",
+    "storage": {
+      "room_temp": "常温保存",
+      "refrigerated": "冷藏保存",
+      "frozen": "冷冻保存",
+      "keep_dry": "保持干燥",
+      "unknown": "未提供"
+    },
+    "allergens": {
+      "nuts": "坚果",
+      "dairy": "乳制品",
+      "gluten": "麸质",
+      "eggs": "鸡蛋",
+      "soy": "大豆",
+      "sesame": "芝麻",
+      "shellfish": "贝类",
+      "noknownallergens": "暂无已知过敏原"
+    }
   },
   "common": {
     "close": "关闭",
@@ -475,7 +520,7 @@
     "success": "成功",
     "alerts": "通知",
     "profile": "我的",
-    "secure": "安全民众平台 • 数据已加密",
+    "secure": "社区食物共享平台",
     "all": "全部"
   },
   "lang": {
@@ -500,6 +545,55 @@
       "mediumlow": "中低风险 (≥0.25)",
       "low": "低风险 (<0.25)",
       "none": "暂无评分"
+    }
+  },
+  "logisticsGuide": {
+    "ariaLabel": "发布流程引导",
+    "eyebrow": "操作流程",
+    "title": "从发布到确认取货，全流程四步完成。",
+    "orgEyebrow": "取货流程",
+    "orgTitle": "认领与取货共 4 步",
+    "donor": {
+      "step1": {
+        "title": "发布食物",
+        "desc": "填写照片、日期、过敏原、存储条件和取货时间窗。"
+      },
+      "step2": {
+        "title": "审核认领",
+        "desc": "查看认领请求并确认可用性。",
+        "status": "状态：Available → Claimed"
+      },
+      "step3": {
+        "title": "协调取货",
+        "desc": "提供取货时间、联系人和取货备注。",
+        "status": "状态：Claimed"
+      },
+      "step4": {
+        "title": "确认完成",
+        "desc": "取货完成后将该条目标记为已取走。",
+        "status": "状态：Picked up"
+      }
+    },
+    "org": {
+      "step1": {
+        "title": "查找可领取食物",
+        "desc": "浏览附近可领取物品，并检查日期、存储条件和过敏原信息。"
+      },
+      "step2": {
+        "title": "认领物品",
+        "desc": "为你的组织预留合适食物。",
+        "status": "状态：Available → Claimed"
+      },
+      "step3": {
+        "title": "安排取货",
+        "desc": "确认取货时间窗、联系人和备注信息。",
+        "status": "状态：Claimed"
+      },
+      "step4": {
+        "title": "确认取货",
+        "desc": "取货后将条目标记为已取走。",
+        "status": "状态：Picked up"
+      }
     }
   },
   "hiw": {
