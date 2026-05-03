@@ -1,11 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useNavigate } from 'react-router-dom'
+import { useLocation, useNavigate } from 'react-router-dom'
 import OrgFeatureNav from '../components/OrgFeatureNav'
 import WorkspaceHeader from '../components/WorkspaceHeader'
 import PostcodeMap from '../components/PostcodeMap'
 import { predictionApiClient } from '../services/api'
 import suburbLookup from '../data/vic_postcode_suburbs.json'
+import '../styles/LiveListingBoard.css'
 
 const RISK_COLORS = {
   high: '#e53e3e',
@@ -42,9 +43,18 @@ const LEGEND = [
 export default function CoverageGapMap() {
   const { t } = useTranslation()
   const navigate = useNavigate()
+  const location = useLocation()
   const [riskData, setRiskData] = useState({})
   const [selectedPostcode, setSelectedPostcode] = useState(null)
   const [loading, setLoading] = useState(true)
+  const savedOrgSession = (() => {
+    try {
+      return JSON.parse(window.localStorage.getItem('crisislink-org-session') || '{}')
+    } catch {
+      return {}
+    }
+  })()
+  const orgCode = location.state?.orgCode || savedOrgSession.orgCode || 'HCFB-2841'
 
   useEffect(() => {
     predictionApiClient.get('/intelligence/supply-gaps')
@@ -73,14 +83,39 @@ export default function CoverageGapMap() {
 
   const atRiskCount = Object.keys(riskData).length
 
-  const MAP_HEIGHT = 'calc(100vh - 112px)'
+  const MAP_HEIGHT = '58vh'
 
   return (
-    <>
-      <WorkspaceHeader role="org" onBackClick={() => navigate(-1)} />
-      <OrgFeatureNav active="coverage-map" />
+    <div className="live-listing-board org-role-board org-role-page">
+      <WorkspaceHeader
+        role="org"
+        onBackClick={() => navigate('/org/listings', { state: { orgCode } })}
+        onBrandClick={() => navigate('/org/listings', { state: { orgCode } })}
+      />
 
-      <div style={{ display: 'flex', height: MAP_HEIGHT }}>
+      <main className="feed-content org-feed-content">
+        <div className="workspace-nav-row org-area-nav-row">
+          <OrgFeatureNav active="coverage-map" orgCode={orgCode} />
+        </div>
+
+        <section className="org-page-intro org-hero-card">
+          <div className="org-page-heading-row">
+            <div className="org-page-heading">
+              <h1 className="board-title org-page-title">
+                {t('dashboard.workspaceTitle', 'Organisation workspace')}
+              </h1>
+              <p className="org-page-subtitle">
+                {t('dashboard.workspaceSubtitle', 'Review live supply and demand signals for nearby service areas.')}
+              </p>
+              <div className="org-page-meta org-page-meta-pill">
+                <span className="material-symbols-outlined">domain</span>
+                <span>{t('dashboard.signedInAs', { orgCode, defaultValue: `Signed in as ${orgCode}` })}</span>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section style={{ display: 'flex', height: MAP_HEIGHT }}>
         {/* Map area */}
         <div style={{ flex: 1, position: 'relative' }}>
           {loading && (
@@ -197,8 +232,9 @@ export default function CoverageGapMap() {
             </p>
           )}
         </div>
-      </div>
-    </>
+        </section>
+      </main>
+    </div>
   )
 }
 

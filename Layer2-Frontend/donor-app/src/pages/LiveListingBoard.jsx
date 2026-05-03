@@ -5,6 +5,7 @@ import { getAvailableListings, claimListing, unclaimListing, deleteListing, conf
 import { DIETARY_FILTER_OPTIONS, FILTER_OPTIONS, formatBestBeforeLabel, resolveListingCategory } from '../constants/listings'
 import OrgFeatureNav from '../components/OrgFeatureNav'
 import HowItWorksStrip from '../components/HowItWorksStrip'
+import LogisticsGuideCard from '../components/LogisticsGuideCard'
 import WorkspaceContextCard from '../components/WorkspaceContextCard'
 import WorkspaceFilterPanel from '../components/WorkspaceFilterPanel'
 import WorkspaceHeader from '../components/WorkspaceHeader'
@@ -452,6 +453,7 @@ const LiveListingBoard = () => {
         <div className="workspace-nav-row org-area-nav-row">
           <OrgFeatureNav active="listings" orgCode={orgCode} />
         </div>
+        <LogisticsGuideCard role="org" />
 
         <WorkspaceSummaryCard
           role="org"
