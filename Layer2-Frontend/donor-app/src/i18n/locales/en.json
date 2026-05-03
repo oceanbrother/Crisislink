@@ -225,6 +225,12 @@
       "removeListing": "Remove this listing",
       "postAnother": "Post another listing"
     },
+    "safety": {
+      "title": "Food safety reminder",
+      "accuracy": "You are responsible for the accuracy of this listing, including quantity, condition, and allergen information.",
+      "allergen": "CrisisLink cannot independently verify allergen declarations. Recipients must exercise their own judgement.",
+      "platform": "CrisisLink is an intermediary only and does not inspect or accept liability for donated food items."
+    },
     "reviewTitle": "Suggested details — please review before posting.",
     "reviewHintFood": "Check the food name and category.",
     "reviewHintQuantity": "Confirm the quantity and the size or weight.",
@@ -359,7 +365,24 @@
       "noDataTitle": "No alerts data yet",
       "noDataHint": "Demand alerts will appear here once forecasting data is available.",
       "loadErrorTitle": "Unable to load alerts",
-      "loadErrorHint": "We could not load listings required for this alerts view. Please try again."
+      "loadErrorHint": "We could not load listings required for this alerts view. Please try again.",
+      "filterSpike": "Spike alerts",
+      "filterWatch": "Watch items",
+      "spikeItem": "Spike alert",
+      "watchPrimaryLabel": "Demand watch item",
+      "watchItem": "Watch item",
+      "priorityHigh": "High priority",
+      "priorityRisk": "Demand spike risk",
+      "emergingRisk": "Emerging demand risk",
+      "confidenceHigh": "High confidence",
+      "confidenceMedium": "Medium confidence",
+      "confidenceLow": "Low confidence",
+      "selected": "Selected",
+      "postcodeAlerts": "Postcode alerts",
+      "nextSevenDays": "Next 7 days",
+      "factorSeifa": "Socioeconomic disadvantage",
+      "factorLowSupply": "Low food supply",
+      "alertReason": "Demand risk {{score}}% — SEIFA IRSD {{irsd}}"
     },
     "coverageInsights": {
       "title": "Supply coverage watch",
@@ -394,6 +417,7 @@
         "watch": "Watch",
         "healthy": "Healthy"
       },
+      "navLabel": "Supply gaps",
       "respondAction": "Respond to this postcode",
       "noDataTitle": "No coverage data yet",
       "noDataHint": "Coverage hotspots will appear here once enough listing data is available.",
@@ -451,7 +475,8 @@
     "success": "Success",
     "alerts": "Alerts",
     "profile": "Profile",
-    "secure": "SECURE CIVIC PLATFORM • DATA ENCRYPTED"
+    "secure": "SECURE CIVIC PLATFORM • DATA ENCRYPTED",
+    "all": "All"
   },
   "lang": {
     "en": "English",
@@ -475,6 +500,32 @@
       "mediumlow": "Medium-low (≥0.25)",
       "low": "Low (<0.25)",
       "none": "No score yet"
+    }
+  },
+  "hiw": {
+    "label": "How it works",
+    "dismiss": "Got it ✕",
+    "donor": {
+      "step1Title": "Post food",
+      "step1Desc": "List your surplus food with a photo",
+      "step1Cta": "Post now",
+      "step2Title": "Wait for a claim",
+      "step2Desc": "A community group reserves your item",
+      "step3Title": "Arrange pickup",
+      "step3Desc": "Share a pickup time and contact details",
+      "step4Title": "Food collected!",
+      "step4Desc": "Your donation reaches those in need",
+      "step4Cta": "Post more"
+    },
+    "org": {
+      "step1Title": "Browse food",
+      "step1Desc": "Find available surplus near your area",
+      "step2Title": "Claim a listing",
+      "step2Desc": "Reserve what your community needs",
+      "step3Title": "Arrange pickup",
+      "step3Desc": "Confirm time and contact with the donor",
+      "step4Title": "Collect & distribute",
+      "step4Desc": "Pick up and deliver to those in need"
     }
   }
 }

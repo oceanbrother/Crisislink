@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { getAvailableListings, claimListing, unclaimListing, deleteListing } from '../services/api'
+import { getAvailableListings, claimListing, unclaimListing, deleteListing, confirmPickup } from '../services/api'
 import { DIETARY_FILTER_OPTIONS, FILTER_OPTIONS, formatBestBeforeLabel, resolveListingCategory } from '../constants/listings'
 import OrgFeatureNav from '../components/OrgFeatureNav'
+import HowItWorksStrip from '../components/HowItWorksStrip'
 import WorkspaceContextCard from '../components/WorkspaceContextCard'
 import WorkspaceFilterPanel from '../components/WorkspaceFilterPanel'
 import WorkspaceHeader from '../components/WorkspaceHeader'
@@ -175,6 +176,7 @@ const LiveListingBoard = () => {
   const [claimDialogListing, setClaimDialogListing] = useState(null)
   const [claimQuantity, setClaimQuantity] = useState('1')
   const [claimError, setClaimError] = useState('')
+  const [pickingUpId, setPickingUpId] = useState(null)
 
   const savedOrgSession = (() => {
     try {
@@ -287,6 +289,23 @@ const LiveListingBoard = () => {
       setTimeout(() => setError(''), 3000)
     } finally {
       setRemovingId(null)
+    }
+  }
+
+  const handlePickupConfirm = async (listingId) => {
+    setPickingUpId(listingId)
+    setError('')
+    setSuccess('')
+    try {
+      await confirmPickup(listingId, { orgId: orgCode })
+      setSuccess('Pickup confirmed! This listing is now marked as collected.')
+      await loadListings()
+      setTimeout(() => setSuccess(''), 3000)
+    } catch (err) {
+      setError('Unable to confirm pickup right now.')
+      setTimeout(() => setError(''), 3000)
+    } finally {
+      setPickingUpId(null)
     }
   }
 
@@ -470,6 +489,8 @@ const LiveListingBoard = () => {
             ))}
           </div>
         </WorkspaceSummaryCard>
+
+        <HowItWorksStrip role="org" onNavigate={navigate} />
 
         <WorkspaceFilterPanel role="org" className="filter-section workspace-listings-filters workspace-listings-filters--org org-filter-section">
           <div className={hasActiveSearch ? 'search-wrapper org-search-wrapper org-search-wrapper--active' : 'search-wrapper org-search-wrapper'}>
@@ -693,14 +714,24 @@ const LiveListingBoard = () => {
                     </button>
                   </div>
                 ) : isClaimedByCurrentOrg ? (
-                  <button
-                    className="card-action-btn claim-btn--remove"
-                    onClick={() => handleRemoveClaim(listing.id)}
-                    disabled={removingId === listing.id}
-                    type="button"
-                  >
-                    {removingId === listing.id ? 'Removing...' : 'Remove Claim'}
-                  </button>
+                  <div className="food-card-actions donor-card-actions">
+                    <button
+                      className="card-action-btn primary"
+                      onClick={() => handlePickupConfirm(listing.id)}
+                      disabled={pickingUpId === listing.id || removingId === listing.id}
+                      type="button"
+                    >
+                      {pickingUpId === listing.id ? 'Confirming...' : '✓ Confirm pickup'}
+                    </button>
+                    <button
+                      className="card-action-btn claim-btn--remove"
+                      onClick={() => handleRemoveClaim(listing.id)}
+                      disabled={removingId === listing.id || pickingUpId === listing.id}
+                      type="button"
+                    >
+                      {removingId === listing.id ? 'Removing...' : 'Remove claim'}
+                    </button>
+                  </div>
                 ) : (
                   <button
                     className="card-action-btn primary"

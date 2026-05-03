@@ -391,16 +391,39 @@ async def post_postcode_risk(postcode: str):
 	}
 
 
+COLD_START_THRESHOLD = 10  # minimum historical claim records per postcode before using ML scores
+
+
+async def _get_postcode_record_counts() -> dict:
+	"""Return {postcode: claim_count} for cold-start check."""
+	if not database:
+		return {}
+	rows = await database.fetch_all(
+		"""
+		SELECT postcode, COUNT(*) AS cnt
+		FROM food_listing
+		WHERE status IN ('claimed', 'picked_up')
+		GROUP BY postcode
+		"""
+	)
+	return {r["postcode"]: int(r["cnt"]) for r in rows}
+
+
 @app.get("/intelligence/supply-gaps")
 async def get_supply_gaps(region_category: Optional[str] = None):
 	"""
 	Identify supply gaps: postcodes with high risk but low active listings.
 
-	Returns ranked list of high-need areas.
+	Returns ranked list of high-need areas. Each item carries:
+	  - data_source: "ai_forecast" | "rule_based"
+	  - cold_start: true if postcode has fewer than COLD_START_THRESHOLD historical records
 	"""
 	if not database:
 		raise HTTPException(status_code=503, detail="Database not configured")
 
+	record_counts = await _get_postcode_record_counts()
+
+	# Query postcodes that have ML scores stored
 	query = """
 		SELECT
 			ps.postcode,
@@ -429,16 +452,23 @@ async def get_supply_gaps(region_category: Optional[str] = None):
 
 	rows = await database.fetch_all(query, params)
 
-	return [
-		{
-			"postcode": row["postcode"],
+	result = []
+	for row in rows:
+		postcode = row["postcode"]
+		count = record_counts.get(postcode, 0)
+		cold_start = count < COLD_START_THRESHOLD
+		# Data source: if models loaded and postcode has enough history → AI, else rule-based
+		data_source = "ai_forecast" if (risk_scorer is not None and not cold_start) else "rule_based"
+		result.append({
+			"postcode": postcode,
 			"irsd_score": float(row["irsd_score"]),
 			"demand_risk_score": float(row["latest_risk_score"]) if row["latest_risk_score"] else 0.0,
 			"active_listings": row["active_listings"],
 			"total_supply": float(row["total_supply"]),
-		}
-		for row in rows
-	]
+			"data_source": data_source,
+			"cold_start": cold_start,
+		})
+	return result
 
 
 @app.get('/predictions/all-risk-scores')
@@ -518,9 +548,17 @@ async def api_gap_postcodes(radius_km: Optional[float] = None, lat: Optional[flo
 
 @app.get('/predictions/hotspots')
 async def api_hotspots(limit: int = 50):
-	"""Return donor-facing hotspots ordered by unmet demand (simple heuristic)."""
+	"""
+	Return donor-facing hotspots ordered by unmet demand.
+
+	Each item carries:
+	  - data_source: "ai_forecast" | "rule_based"
+	  - cold_start: true if postcode has fewer than COLD_START_THRESHOLD historical records
+	"""
 	if not database:
 		raise HTTPException(status_code=503, detail="Database not configured")
+
+	record_counts = await _get_postcode_record_counts()
 
 	query = """
 		SELECT ps.postcode, ps.irsd_score, ps.regional_category,
@@ -536,17 +574,23 @@ async def api_hotspots(limit: int = 50):
 	"""
 	rows = await database.fetch_all(query, {"limit": limit})
 
-	return [
-		{
-			'postcode': row['postcode'],
+	result = []
+	for row in rows:
+		postcode = row['postcode']
+		count = record_counts.get(postcode, 0)
+		cold_start = count < COLD_START_THRESHOLD
+		data_source = "ai_forecast" if (risk_scorer is not None and not cold_start) else "rule_based"
+		result.append({
+			'postcode': postcode,
 			'irsd_score': float(row['irsd_score']),
 			'regional_category': row['regional_category'],
 			'risk_score': float(row['risk_score']),
 			'total_supply': float(row['total_supply']),
 			'top_shortage_categories': [],
-		}
-		for row in rows
-	]
+			'data_source': data_source,
+			'cold_start': cold_start,
+		})
+	return result
 
 
 # ─── Batch Processing ────────────────────────────────────────────────────

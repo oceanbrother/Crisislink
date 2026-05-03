@@ -76,6 +76,15 @@
   color: var(--donor-primary-dark);
 }
 
+.workspace-header--donor .workspace-header__back-btn {
+  color: var(--donor-primary);
+  border-color: rgba(199, 131, 24, 0.15);
+}
+
+.workspace-header--donor .workspace-header__back-btn:hover {
+  background: rgba(199, 131, 24, 0.08);
+}
+
 .workspace-header__actions {
   display: inline-flex;
   align-items: center;

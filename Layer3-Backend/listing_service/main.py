@@ -37,7 +37,7 @@ recognizer = None
 ALLOWED_TYPES = {"image/jpeg", "image/png", "image/webp"}
 MAX_SIZE = 5 * 1024 * 1024
 EXT_MAP = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp"}
-ALLOWED_STATUSES = {"available", "claimed", "expired"}
+ALLOWED_STATUSES = {"available", "claimed", "expired", "picked_up"}
 CATEGORY_MAP = {
     "baked goods": "Baked goods",
     "bakery": "Baked goods",
@@ -59,6 +59,12 @@ SIZE_PREFIX = "[sizeCue:"
 
 async def ensure_schema_extensions():
     await database.execute("ALTER TABLE food_listing ADD COLUMN IF NOT EXISTS source_listing_id VARCHAR(36)")
+    await database.execute("ALTER TABLE food_listing ADD COLUMN IF NOT EXISTS pickup_window VARCHAR(100)")
+    await database.execute("ALTER TABLE food_listing ADD COLUMN IF NOT EXISTS contact_name VARCHAR(100)")
+    await database.execute("ALTER TABLE food_listing ADD COLUMN IF NOT EXISTS pickup_notes TEXT")
+    await database.execute("ALTER TABLE food_listing ADD COLUMN IF NOT EXISTS picked_up_at TIMESTAMP")
+    await database.execute("ALTER TABLE food_listing ADD COLUMN IF NOT EXISTS allergen_tags VARCHAR(500)")
+    await database.execute("ALTER TABLE food_listing ADD COLUMN IF NOT EXISTS storage_condition VARCHAR(100)")
 
 
 @asynccontextmanager
@@ -102,6 +108,10 @@ app.add_middleware(
 )
 
 
+ALLERGEN_OPTIONS = {"nuts", "dairy", "gluten", "eggs", "soy", "sesame", "shellfish", "no known allergens"}
+STORAGE_OPTIONS = {"room_temp", "refrigerated", "frozen", "keep_dry"}
+
+
 class ListingBase(BaseModel):
     foodType: str = Field(..., min_length=2, max_length=100)
     category: str = Field(default="Other", min_length=2, max_length=50)
@@ -114,6 +124,8 @@ class ListingBase(BaseModel):
     photoUrl: Optional[str] = Field(default=None)
     sizeCue: Optional[str] = Field(default=None, max_length=100)
     expiryDate: Optional[date] = None
+    allergenTags: list[str] = Field(default_factory=list)
+    storageCondition: Optional[str] = Field(default=None, max_length=50)
 
     @field_validator("dietary_tags")
     @classmethod
@@ -123,6 +135,21 @@ class ListingBase(BaseModel):
                 raise ValueError("Each dietary tag must be 50 characters or fewer")
         return tags
 
+    @field_validator("allergenTags")
+    @classmethod
+    def validate_allergen_tags(cls, tags):
+        for tag in tags:
+            if tag.lower() not in ALLERGEN_OPTIONS:
+                raise ValueError(f"Unknown allergen tag: {tag}")
+        return tags
+
+    @field_validator("storageCondition")
+    @classmethod
+    def validate_storage_condition(cls, value):
+        if value and value not in STORAGE_OPTIONS:
+            raise ValueError(f"storageCondition must be one of: {', '.join(STORAGE_OPTIONS)}")
+        return value
+
     @field_validator("category")
     @classmethod
     def normalize_category_field(cls, value):
@@ -130,7 +157,16 @@ class ListingBase(BaseModel):
 
 
 class ListingCreate(ListingBase):
-    pass
+    expiryDate: date  # required for new listings
+    allergenTags: list[str] = Field(..., min_length=1)
+    storageCondition: str = Field(..., min_length=1)
+
+    @field_validator("expiryDate")
+    @classmethod
+    def expiry_not_past(cls, value):
+        if value < date.today():
+            raise ValueError("expiryDate must not be in the past")
+        return value
 
 
 class ListingUpdate(ListingBase):
@@ -154,6 +190,10 @@ class ClaimRequest(BaseModel):
 
 
 class UnclaimRequest(BaseModel):
+    orgId: str = Field(..., min_length=1, max_length=50)
+
+
+class PickupRequest(BaseModel):
     orgId: str = Field(..., min_length=1, max_length=50)
 
 
@@ -259,6 +299,8 @@ def row_to_listing(row) -> dict:
     tags_raw = row["dietary_tags"] or ""
     tags_list = [t.strip() for t in tags_raw.split(",") if t.strip()]
     description, size_cue = decode_description(row["description"])
+    allergen_raw = row["allergen_tags"] if "allergen_tags" in row._mapping else None
+    allergen_list = [t.strip() for t in (allergen_raw or "").split(",") if t.strip()]
 
     return {
         "id": row["listing_id"],
@@ -279,6 +321,12 @@ def row_to_listing(row) -> dict:
         "claimedAt": row["claimed_at"],
         "hasClaims": bool(row["has_claims"]) if "has_claims" in row._mapping else False,
         "sourceListingId": row["source_listing_id"],
+        "allergenTags": allergen_list,
+        "storageCondition": row["storage_condition"] if "storage_condition" in row._mapping else None,
+        "pickupWindow": row["pickup_window"] if "pickup_window" in row._mapping else None,
+        "contactName": row["contact_name"] if "contact_name" in row._mapping else None,
+        "pickupNotes": row["pickup_notes"] if "pickup_notes" in row._mapping else None,
+        "pickedUpAt": row["picked_up_at"] if "picked_up_at" in row._mapping else None,
     }
 
 
@@ -295,16 +343,19 @@ async def create_listing(request: Request, listing: ListingCreate):
     tags_str = ",".join(listing.dietary_tags)
     now = datetime.now()
 
+    allergen_str = ",".join(listing.allergenTags)
     await database.execute(
         """
         INSERT INTO food_listing (
             listing_id, title, description, quantity, unit,
             food_category, dietary_tags, photo_url,
-            postcode, org_code, status, created_at, org_id, expiry_date
+            postcode, org_code, status, created_at, org_id, expiry_date,
+            allergen_tags, storage_condition
         ) VALUES (
             :listing_id, :title, :description, :quantity, :unit,
             :food_category, :dietary_tags, :photo_url,
-            :postcode, :org_code, 'available', :created_at, :org_id, :expiry_date
+            :postcode, :org_code, 'available', :created_at, :org_id, :expiry_date,
+            :allergen_tags, :storage_condition
         )
         """,
         {
@@ -321,6 +372,8 @@ async def create_listing(request: Request, listing: ListingCreate):
             "created_at": now,
             "org_id": org_id,
             "expiry_date": listing.expiryDate,
+            "allergen_tags": allergen_str,
+            "storage_condition": listing.storageCondition,
         },
     )
 
@@ -392,6 +445,7 @@ async def update_listing(request: Request, listing_id: str, listing: ListingUpda
         raise HTTPException(status_code=400, detail="Listings that have already been claimed cannot be edited")
 
     tags_str = ",".join(listing.dietary_tags)
+    allergen_str = ",".join(listing.allergenTags)
     await database.execute(
         """
         UPDATE food_listing
@@ -403,7 +457,9 @@ async def update_listing(request: Request, listing_id: str, listing: ListingUpda
             dietary_tags = :dietary_tags,
             photo_url = :photo_url,
             postcode = :postcode,
-            expiry_date = :expiry_date
+            expiry_date = :expiry_date,
+            allergen_tags = :allergen_tags,
+            storage_condition = :storage_condition
         WHERE listing_id = :listing_id
         """,
         {
@@ -417,6 +473,8 @@ async def update_listing(request: Request, listing_id: str, listing: ListingUpda
             "photo_url": listing.photoUrl,
             "postcode": listing.postcode,
             "expiry_date": listing.expiryDate,
+            "allergen_tags": allergen_str,
+            "storage_condition": listing.storageCondition,
         },
     )
     updated = await fetch_listing_row(listing_id)
@@ -594,6 +652,37 @@ async def unclaim_listing(request: Request, listing_id: str, payload: UnclaimReq
         )
 
     return {"success": True, "listing_id": listing_id, "status": "available"}
+
+
+@app.patch("/listings/{listing_id}/pickup")
+@limiter.limit("10/minute")
+async def pickup_listing(request: Request, listing_id: str, payload: PickupRequest):
+    row = await database.fetch_one(
+        """
+        SELECT fl.status, co.org_code AS claimed_by_org_code
+        FROM food_listing fl
+        LEFT JOIN organization co ON fl.claimed_by_org_id = co.org_id
+        WHERE fl.listing_id = :listing_id
+        """,
+        {"listing_id": listing_id},
+    )
+    if not row:
+        raise HTTPException(status_code=404, detail="Listing not found")
+    if row["status"] != "claimed":
+        raise HTTPException(status_code=400, detail="Only claimed listings can be marked as picked up")
+    if (row["claimed_by_org_code"] or "") != payload.orgId:
+        raise HTTPException(status_code=403, detail="Only the claiming organisation can confirm pickup")
+
+    picked_up_at = datetime.now()
+    await database.execute(
+        """
+        UPDATE food_listing
+        SET status = 'picked_up', picked_up_at = :picked_up_at
+        WHERE listing_id = :listing_id
+        """,
+        {"listing_id": listing_id, "picked_up_at": picked_up_at},
+    )
+    return {"success": True, "listing_id": listing_id, "status": "picked_up", "picked_up_at": picked_up_at}
 
 
 @app.patch("/listings/{listing_id}/expire")

@@ -119,6 +119,11 @@ export const unclaimListing = async (listingId, unclaimData) => {
   return response.data
 }
 
+export const confirmPickup = async (listingId, pickupData) => {
+  const response = await apiClient.patch("/listings/" + listingId + "/pickup", pickupData)
+  return response.data
+}
+
 
 export const getPredictionRiskScores = async (filters = {}) => {
   const response = await apiClient.get('/predictions/risk-scores', { params: filters })
