@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { deleteListing, getAvailableListings } from '../services/api'
 import { DIETARY_FILTER_OPTIONS, FILTER_OPTIONS, formatBestBeforeLabel, resolveListingCategory } from '../constants/listings'
 import DonorFeatureNav from '../components/DonorFeatureNav'
+import LogisticsGuideCard from '../components/LogisticsGuideCard'
 import WorkspaceContextCard from '../components/WorkspaceContextCard'
 import WorkspaceFilterPanel from '../components/WorkspaceFilterPanel'
 import WorkspaceHeader from '../components/WorkspaceHeader'
@@ -247,6 +248,7 @@ const PostFeedPage = () => {
         <div className="workspace-nav-row donor-area-nav-row">
           <DonorFeatureNav active="listings" postcode={postcode} />
         </div>
+        <LogisticsGuideCard role="donor" />
 
         <WorkspaceSummaryCard
           role="donor"
