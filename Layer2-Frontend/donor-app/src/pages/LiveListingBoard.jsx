@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { getAvailableListings, claimListing, unclaimListing, deleteListing } from '../services/api'
 import { DIETARY_FILTER_OPTIONS, FILTER_OPTIONS, formatBestBeforeLabel, resolveListingCategory } from '../constants/listings'
 import OrgFeatureNav from '../components/OrgFeatureNav'
+import LogisticsGuideCard from '../components/LogisticsGuideCard'
 import WorkspaceContextCard from '../components/WorkspaceContextCard'
 import WorkspaceFilterPanel from '../components/WorkspaceFilterPanel'
 import WorkspaceHeader from '../components/WorkspaceHeader'
@@ -433,6 +434,7 @@ const LiveListingBoard = () => {
         <div className="workspace-nav-row org-area-nav-row">
           <OrgFeatureNav active="listings" orgCode={orgCode} />
         </div>
+        <LogisticsGuideCard role="org" />
 
         <WorkspaceSummaryCard
           role="org"
