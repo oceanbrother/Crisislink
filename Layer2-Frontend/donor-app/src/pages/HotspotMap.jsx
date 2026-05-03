@@ -1,30 +1,12 @@
 import React, { useEffect, useMemo, useState } from 'react'
-import { CircleMarker, MapContainer, TileLayer, Tooltip } from 'react-leaflet'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import DonorFeatureNav from '../components/DonorFeatureNav'
 import WorkspaceHeader from '../components/WorkspaceHeader'
-import apiClient from '../services/api'
+import PostcodeMap from '../components/PostcodeMap'
+import { predictionApiClient } from '../services/api'
 import { getSavedDonorPostcode } from '../utils/donorPostcode'
 import suburbLookup from '../data/vic_postcode_suburbs.json'
-
-function getFeatureCentroid(feature) {
-  const geom = feature?.geometry
-  if (!geom) return null
-  let ring
-  if (geom.type === 'Polygon') {
-    ring = geom.coordinates[0]
-  } else if (geom.type === 'MultiPolygon') {
-    let maxLen = 0
-    for (const poly of geom.coordinates) {
-      if (poly[0].length > maxLen) { maxLen = poly[0].length; ring = poly[0] }
-    }
-  }
-  if (!ring?.length) return null
-  const lat = ring.reduce((s, c) => s + c[1], 0) / ring.length
-  const lng = ring.reduce((s, c) => s + c[0], 0) / ring.length
-  return [lat, lng]
-}
 
 function severityColor(score) {
   if (score >= 0.75) return '#e53e3e'
@@ -38,13 +20,6 @@ function severityLabel(score) {
   if (score >= 0.5) return 'High need'
   if (score >= 0.25) return 'Watch'
   return 'Low'
-}
-
-function circleRadius(score) {
-  if (score >= 0.75) return 14
-  if (score >= 0.5) return 11
-  if (score >= 0.25) return 8
-  return 6
 }
 
 const LEGEND = [
@@ -62,59 +37,51 @@ export default function HotspotMap() {
   const { t } = useTranslation()
   const navigate = useNavigate()
   const [hotspots, setHotspots] = useState([])
-  const [centroids, setCentroids] = useState({})
   const [selected, setSelected] = useState(null)
   const [loading, setLoading] = useState(true)
-  const [noCentroids, setNoCentroids] = useState(false)
   const [severityFilter, setSeverityFilter] = useState('all')
 
   const donorPostcode = getSavedDonorPostcode()
 
   useEffect(() => {
-    fetch('/vic_regional_postcodes.geojson')
-      .then(r => r.ok ? r.json() : null)
-      .then(data => {
-        if (!data) { setNoCentroids(true); return }
-        const map = {}
-        for (const feature of data.features) {
-          const pc = feature?.properties?.POA_CODE21 ?? feature?.properties?.postcode
-          if (pc) {
-            const c = getFeatureCentroid(feature)
-            if (c) map[String(pc)] = c
-          }
-        }
-        setCentroids(map)
-      })
-      .catch(() => setNoCentroids(true))
-
-    apiClient.get('/predictions/all-risk-scores')
-      .then(res => setHotspots((res.data || []).map(d => ({ ...d, risk_score: d.demand_risk_score }))))
-      .catch(() => apiClient.get('/predictions/hotspots', { params: { limit: 495 } })
-        .then(res => setHotspots(res.data || []))
-        .catch(() => {}))
+    predictionApiClient.get('/predictions/hotspots', { params: { limit: 495 } })
+      .then(res => setHotspots(res.data || []))
+      .catch(() => {})
       .finally(() => setLoading(false))
   }, [])
 
-  const mappable = useMemo(() => {
-    const withCentroids = hotspots.filter(h => centroids[String(h.postcode)])
-    if (severityFilter === 'all') return withCentroids
+  const filtered = useMemo(() => {
+    if (severityFilter === 'all') return hotspots
     const minScore = SEVERITY_FILTER_MAP[severityFilter] ?? 0
     const maxScore = severityFilter === 'critical' ? 1
       : severityFilter === 'high' ? 0.75
       : severityFilter === 'watch' ? 0.5
       : 0.25
-    return withCentroids.filter(h => h.risk_score >= minScore && h.risk_score < maxScore)
-  }, [hotspots, centroids, severityFilter])
+    return hotspots.filter(h => h.risk_score >= minScore && h.risk_score < maxScore)
+  }, [hotspots, severityFilter])
 
-  const counts = useMemo(() => {
-    const all = hotspots.filter(h => centroids[String(h.postcode)])
-    return {
-      critical: all.filter(h => h.risk_score >= 0.75).length,
-      high: all.filter(h => h.risk_score >= 0.5 && h.risk_score < 0.75).length,
-      watch: all.filter(h => h.risk_score >= 0.25 && h.risk_score < 0.5).length,
-      low: all.filter(h => h.risk_score < 0.25).length,
-    }
-  }, [hotspots, centroids])
+  const mapZones = useMemo(() =>
+    filtered.map(h => ({
+      postcode: h.postcode,
+      suburb: suburbLookup[String(h.postcode)] || String(h.postcode),
+      tone: h.risk_score >= 0.75 ? 'critical'
+          : h.risk_score >= 0.5 ? 'high'
+          : h.risk_score >= 0.25 ? 'watch'
+          : 'healthy',
+      metric: `Risk: ${(h.risk_score * 100).toFixed(0)}%`,
+    }))
+  , [filtered])
+
+  const counts = useMemo(() => ({
+    critical: hotspots.filter(h => h.risk_score >= 0.75).length,
+    high: hotspots.filter(h => h.risk_score >= 0.5 && h.risk_score < 0.75).length,
+    watch: hotspots.filter(h => h.risk_score >= 0.25 && h.risk_score < 0.5).length,
+    low: hotspots.filter(h => h.risk_score < 0.25).length,
+  }), [hotspots])
+
+  function handleSelect(postcode) {
+    setSelected(hotspots.find(h => String(h.postcode) === String(postcode)) || null)
+  }
 
   return (
     <>
@@ -133,35 +100,14 @@ export default function HotspotMap() {
               <p style={{ color: '#4a5568' }}>{t('common.loading')}</p>
             </div>
           )}
-          <MapContainer
-            center={[-36.8, 144.8]}
-            zoom={7}
-            style={{ height: MAP_HEIGHT, width: '100%' }}
-          >
-            <TileLayer
-              url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-              attribution='&copy; OpenStreetMap contributors'
-            />
-            {mappable.map(h => (
-              <CircleMarker
-                key={h.postcode}
-                center={centroids[String(h.postcode)]}
-                radius={circleRadius(h.risk_score)}
-                pathOptions={{
-                  color: severityColor(h.risk_score),
-                  fillColor: severityColor(h.risk_score),
-                  fillOpacity: 0.75,
-                  weight: 2,
-                }}
-                eventHandlers={{ click: () => setSelected(h) }}
-              >
-                <Tooltip>
-                  <strong>{suburbLookup[String(h.postcode)] || h.postcode}</strong> ({h.postcode})<br />
-                  {severityLabel(h.risk_score)} — {(h.risk_score * 100).toFixed(0)}%
-                </Tooltip>
-              </CircleMarker>
-            ))}
-          </MapContainer>
+          <PostcodeMap
+            zones={mapZones}
+            selectedPostcode={selected ? String(selected.postcode) : null}
+            onSelect={handleSelect}
+            height={MAP_HEIGHT}
+            defaultCenter={[-36.8, 144.9]}
+            defaultZoom={7}
+          />
         </div>
 
         {/* Side panel */}
@@ -226,9 +172,7 @@ export default function HotspotMap() {
           </div>
 
           <p style={{ fontSize: '0.75rem', color: '#a0aec0' }}>
-            {noCentroids
-              ? 'Place vic_regional_postcodes.geojson in donor-app/public/ to show map positions.'
-              : `${mappable.length} hotspot${mappable.length !== 1 ? 's' : ''} on map`}
+            {`${filtered.length} hotspot${filtered.length !== 1 ? 's' : ''} shown`}
           </p>
 
           {selected ? (

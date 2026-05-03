@@ -1,8 +1,8 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet'
-import apiClient from '../services/api'
+import PostcodeMap from '../components/PostcodeMap'
+import { predictionApiClient } from '../services/api'
 import suburbLookup from '../data/vic_postcode_suburbs.json'
 import OrgFeatureNav from '../components/OrgFeatureNav'
 import WorkspaceHeader from '../components/WorkspaceHeader'
@@ -28,14 +28,6 @@ const OrgAlertsPage = () => {
   const [error, setError] = useState('')
   const [alertToneFilter, setAlertToneFilter] = useState('all')
   const [selectedAlertPostcode, setSelectedAlertPostcode] = useState('')
-  const [geojson, setGeojson] = useState(null)
-
-  useEffect(() => {
-    fetch('/vic_regional_postcodes.geojson')
-      .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data) setGeojson(data) })
-      .catch(() => {})
-  }, [])
 
   const savedOrgSession = (() => {
     try {
@@ -56,7 +48,7 @@ const OrgAlertsPage = () => {
     setLoading(true)
     setError('')
 
-    apiClient.get('/predictions/all-risk-scores')
+    predictionApiClient.get('/intelligence/supply-gaps')
       .then(res => {
         if (isCancelled) return
         const rows = res.data || []
@@ -166,27 +158,6 @@ const OrgAlertsPage = () => {
     })),
     [filteredDemandAlerts]
   )
-
-  const alertToneColors = { critical: '#e53e3e', high: '#dd6b20', watch: '#d69e2e' }
-
-  const styleAlertFeature = useCallback((feature) => {
-    const pc = String(feature?.properties?.POA_CODE21 ?? feature?.properties?.postcode ?? '')
-    const alert = filteredDemandAlerts.find(a => String(a.postcode) === pc)
-    if (!alert) return { color: '#cbd5e0', weight: 0.5, fillColor: '#f7fafc', fillOpacity: 0.2 }
-    const tone = getDemandTone(alert.demandLift)
-    return { color: '#555', weight: 0.8, fillColor: alertToneColors[tone] || '#d69e2e', fillOpacity: 0.65 }
-  }, [filteredDemandAlerts])
-
-  const onEachAlertFeature = useCallback((feature, layer) => {
-    const pc = String(feature?.properties?.POA_CODE21 ?? feature?.properties?.postcode ?? '')
-    const alert = filteredDemandAlerts.find(a => String(a.postcode) === pc)
-    if (alert) {
-      layer.bindTooltip(`${pc} — +${alert.demandLift}% demand`, { sticky: true })
-      layer.on('click', () => setSelectedAlertPostcode(alert.postcode))
-    } else {
-      layer.bindTooltip(pc, { sticky: true })
-    }
-  }, [filteredDemandAlerts])
 
   function getConfidenceLevel(confidence) {
     const v = Number(confidence || 0)
@@ -307,26 +278,14 @@ const OrgAlertsPage = () => {
                   </button>
                 </div>
 
-                <div style={{ height: '340px', borderRadius: '8px', overflow: 'hidden', marginBottom: '1rem' }}>
-                  <MapContainer
-                    center={[-36.8, 144.8]}
-                    zoom={7}
-                    style={{ height: '340px', width: '100%' }}
-                  >
-                    <TileLayer
-                      url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                      attribution='&copy; OpenStreetMap contributors'
-                    />
-                    {geojson && (
-                      <GeoJSON
-                        key={filteredDemandAlerts.length + alertToneFilter}
-                        data={geojson}
-                        style={styleAlertFeature}
-                        onEachFeature={onEachAlertFeature}
-                      />
-                    )}
-                  </MapContainer>
-                </div>
+                <PostcodeMap
+                  zones={mapZones}
+                  selectedPostcode={selectedAlertPostcode}
+                  onSelect={setSelectedAlertPostcode}
+                  height={340}
+                  defaultCenter={[-36.8, 144.9]}
+                  defaultZoom={7}
+                />
 
                 <div className="org-demand-alert-grid" role="list" aria-label={t('dashboard.intelligence.postcodeAlerts', 'Postcode alerts')}>
                   {filteredDemandAlerts.map((alert) => {

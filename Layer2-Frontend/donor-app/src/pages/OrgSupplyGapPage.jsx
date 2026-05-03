@@ -1,8 +1,8 @@
-import React, { useCallback, useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { MapContainer, TileLayer, GeoJSON } from 'react-leaflet'
-import apiClient from '../services/api'
+import PostcodeMap from '../components/PostcodeMap'
+import { predictionApiClient } from '../services/api'
 import suburbLookup from '../data/vic_postcode_suburbs.json'
 import OrgFeatureNav from '../components/OrgFeatureNav'
 import WorkspaceHeader from '../components/WorkspaceHeader'
@@ -24,15 +24,7 @@ const OrgSupplyGapPage = () => {
   const [coverageFilter, setCoverageFilter] = useState('all')
   const [coverageInsights, setCoverageInsights] = useState({ source: 'loading', zones: [], hotspotZones: [], watchZones: [], totals: { zeroSupply: 0, atRisk: 0, averageCoverage: 0 }, highlightedZone: null })
   const [selectedPostcode, setSelectedPostcode] = useState('')
-  const [geojson, setGeojson] = useState(null)
-  const [riskData, setRiskData] = useState({})
 
-  useEffect(() => {
-    fetch('/vic_regional_postcodes.geojson')
-      .then(r => r.ok ? r.json() : null)
-      .then(data => { if (data) setGeojson(data) })
-      .catch(() => {})
-  }, [])
 
   const savedOrgSession = (() => {
     try {
@@ -52,7 +44,7 @@ const OrgSupplyGapPage = () => {
     let isCancelled = false
     setLoading(true)
 
-    apiClient.get('/predictions/all-risk-scores')
+    predictionApiClient.get('/intelligence/supply-gaps')
       .then(res => {
         if (isCancelled) return
         const rows = res.data || []
@@ -88,9 +80,6 @@ const OrgSupplyGapPage = () => {
 
         const hotspotZones = zones.filter(z => z.coverageLevel === 'none')
         const watchZones = zones.filter(z => z.coverageLevel === 'low' || z.coverageLevel === 'watch')
-        const riskMap = {}
-        rows.forEach(r => { riskMap[String(r.postcode)] = r })
-        setRiskData(riskMap)
         setCoverageInsights({
           source: 'prediction',
           zones,
@@ -132,30 +121,15 @@ const OrgSupplyGapPage = () => {
   const criticalZones = useMemo(() => coverageInsights.hotspotZones.slice(0, 4), [coverageInsights.hotspotZones])
   const watchZones = useMemo(() => coverageInsights.watchZones.slice(0, 4), [coverageInsights.watchZones])
 
-  const gapPostcodeSet = useMemo(
-    () => new Set(filteredZones.map(z => String(z.postcode))),
-    [filteredZones]
-  )
-
-  const styleFeature = useCallback((feature) => {
-    const pc = feature?.properties?.POA_CODE21 ?? feature?.properties?.postcode
-    const zone = filteredZones.find(z => String(z.postcode) === String(pc))
-    if (!zone) return { color: '#cbd5e0', weight: 0.5, fillColor: '#f7fafc', fillOpacity: 0.2 }
-    const fill = zone.coverageLevel === 'none' ? '#e53e3e'
-      : zone.coverageLevel === 'low' ? '#dd6b20'
-      : zone.coverageLevel === 'watch' ? '#d69e2e'
-      : '#38a169'
-    return { color: '#555', weight: 0.8, fillColor: fill, fillOpacity: 0.65 }
-  }, [filteredZones])
-
-  const onEachGapFeature = useCallback((feature, layer) => {
-    const pc = String(feature?.properties?.POA_CODE21 ?? feature?.properties?.postcode ?? '')
-    layer.bindTooltip(pc, { sticky: true })
-    layer.on('click', () => {
-      const zone = filteredZones.find(z => String(z.postcode) === pc)
-      if (zone) setSelectedPostcode(zone.postcode)
-    })
-  }, [filteredZones])
+  const mapZones = useMemo(() => filteredZones.map((z) => ({
+    postcode: z.postcode,
+    suburb: z.suburb,
+    tone: z.coverageLevel === 'none' ? 'critical'
+      : z.coverageLevel === 'low' ? 'high'
+      : z.coverageLevel === 'watch' ? 'watch'
+      : 'healthy',
+    metric: `${z.shortfallPortions} portions short`,
+  })), [filteredZones])
 
   const getCoverageMeta = (coverageLevel) => {
     if (coverageLevel === 'none') return {
@@ -274,26 +248,14 @@ const OrgSupplyGapPage = () => {
                 </span>
               </div>
 
-              <div style={{ height: '460px', borderRadius: '8px', overflow: 'hidden' }}>
-                <MapContainer
-                  center={[-36.8, 144.8]}
-                  zoom={7}
-                  style={{ height: '460px', width: '100%' }}
-                >
-                  <TileLayer
-                    url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-                    attribution='&copy; OpenStreetMap contributors'
-                  />
-                  {geojson && (
-                    <GeoJSON
-                      key={filteredZones.length + coverageFilter}
-                      data={geojson}
-                      style={styleFeature}
-                      onEachFeature={onEachGapFeature}
-                    />
-                  )}
-                </MapContainer>
-              </div>
+              <PostcodeMap
+                zones={mapZones}
+                selectedPostcode={selectedPostcode}
+                onSelect={setSelectedPostcode}
+                height={460}
+                defaultCenter={[-36.8, 144.9]}
+                defaultZoom={7}
+              />
 
               <div className="org-coverage-legend" aria-label={t('dashboard.coverageInsights.legendLabel', 'Coverage legend')}>
                 {['none', 'low', 'watch', 'healthy'].map((level) => (

@@ -26,7 +26,7 @@ const TONE_RADIUS = {
 
 const MELBOURNE = [-37.835, 144.975]
 
-export default function PostcodeMap({ zones, selectedPostcode, onSelect, height = 420 }) {
+export default function PostcodeMap({ zones, selectedPostcode, onSelect, height = 420, defaultCenter = MELBOURNE, defaultZoom = 12 }) {
   const containerRef = useRef(null)
   const mapRef = useRef(null)
   const markersRef = useRef({})
@@ -41,8 +41,8 @@ export default function PostcodeMap({ zones, selectedPostcode, onSelect, height 
     if (!containerRef.current || mapRef.current) return
 
     const map = L.map(containerRef.current, {
-      center: MELBOURNE,
-      zoom: 12,
+      center: defaultCenter,
+      zoom: defaultZoom,
       scrollWheelZoom: false,
       attributionControl: false,
       zoomControl: true,
