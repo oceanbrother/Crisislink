@@ -64,7 +64,11 @@ class RiskScorer:
         self.scaler = _load_pickle(models_dir / "scaler.pkl")
         self.kmeans = KMeansClustering(str(models_dir / "kmeans_model.pkl"))
         self.cluster_lookup: dict = _load_json(models_dir / "cluster_lookup.json") or _DEFAULT_CLUSTER_LOOKUP
-        self.forecaster = _load_pickle(models_dir / "demand_forecaster.pkl")
+        try:
+            self.forecaster = _load_pickle(models_dir / "demand_forecaster.pkl")
+        except Exception as e:
+            print(f"[WARN] demand_forecaster.pkl could not be loaded ({e}); online learning disabled")
+            self.forecaster = None
         self.shap_surrogate = _load_pickle(models_dir / "shap_surrogate.pkl")
         self.feature_names = self._resolve_feature_names()
 
@@ -159,6 +163,8 @@ class RiskScorer:
         return result.iloc[0].to_dict() if not result.empty else None
 
     def online_update(self, claim_events: list[dict]) -> None:
+        if self.forecaster is None:
+            return
         for event in claim_events:
             try:
                 x = {k: float(v) for k, v in event.items() if k != "demand_risk_score"}
