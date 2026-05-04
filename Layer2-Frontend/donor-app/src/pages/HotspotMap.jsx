@@ -60,6 +60,7 @@ export default function HotspotMap() {
   const [liveSupply, setLiveSupply] = useState(null) // live count for selected postcode
 
   const hasAutoSelectedRef = useRef(false)
+  const hasAutoLocatedRef = useRef(false)
   const donorPostcode = getSavedDonorPostcode()
 
   const loadHotspots = () => {
@@ -83,6 +84,9 @@ export default function HotspotMap() {
 
   // Auto-request geolocation on mount
   useEffect(() => {
+    if (hasAutoLocatedRef.current) return
+    hasAutoLocatedRef.current = true
+
     const autoLocate = () => {
       setLocating(true)
       const applyCoords = (coords) => {
@@ -95,20 +99,26 @@ export default function HotspotMap() {
         navigator.geolocation.getCurrentPosition(
           pos => applyCoords([pos.coords.latitude, pos.coords.longitude]),
           () => {
-            const fallback = donorPostcode ? POSTCODE_COORDS[donorPostcode] : null
-            if (fallback) applyCoords(fallback)
-            else setLocating(false)
+            const fallback = getSavedDonorPostcode() ? POSTCODE_COORDS[getSavedDonorPostcode()] : null
+            if (fallback) {
+              applyCoords(fallback)
+            } else {
+              setLocating(false)
+            }
           },
           { timeout: 5000, maximumAge: 60000 }
         )
       } else {
-        const fallback = donorPostcode ? POSTCODE_COORDS[donorPostcode] : null
-        if (fallback) applyCoords(fallback)
-        else setLocating(false)
+        const fallback = getSavedDonorPostcode() ? POSTCODE_COORDS[getSavedDonorPostcode()] : null
+        if (fallback) {
+          applyCoords(fallback)
+        } else {
+          setLocating(false)
+        }
       }
     }
     autoLocate()
-  }, [donorPostcode])
+  }, [])
 
   // Fetch live supply count for selected postcode
   useEffect(() => {
