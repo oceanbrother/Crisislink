@@ -74,8 +74,12 @@ async def lifespan(app: FastAPI):
     await ensure_schema_extensions()
     print("[OK] PostgreSQL connected")
     print("Starting food recognizer...")
-    recognizer = get_recognizer()
-    print("[OK] Model ready")
+    try:
+        recognizer = get_recognizer()
+        print("[OK] Model ready")
+    except Exception as exc:
+        print(f"[WARN] Food recognizer failed to load ({exc}); image recognition disabled")
+        recognizer = None
     yield
     await database.disconnect()
     print("PostgreSQL disconnected")
@@ -730,6 +734,8 @@ async def recognize_food_from_image(request: Request, image: UploadFile = File(.
     if len(img_bytes) > MAX_SIZE:
         raise HTTPException(status_code=413, detail="File too large. Maximum size is 5 MB.")
 
+    if recognizer is None:
+        raise HTTPException(status_code=503, detail="Image recognition model is not available")
     result = recognizer.predict(img_bytes)
     return ImageRecognitionResult(
         name=result["name"],
