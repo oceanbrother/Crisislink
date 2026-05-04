@@ -22,7 +22,13 @@ from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../Layer4-AI/image_recognition/food_photo_recognition")))
-from recognizer import get_recognizer
+
+_enable_ai_recognizer = os.getenv("ENABLE_AI_RECOGNIZER", "true").lower() in ("true", "1", "yes")
+if _enable_ai_recognizer:
+    from recognizer import get_recognizer
+else:
+    def get_recognizer():
+        return None
 
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
@@ -73,12 +79,17 @@ async def lifespan(app: FastAPI):
     await database.connect()
     await ensure_schema_extensions()
     print("[OK] PostgreSQL connected")
-    print("Starting food recognizer...")
-    try:
-        recognizer = get_recognizer()
-        print("[OK] Model ready")
-    except Exception as exc:
-        print(f"[WARN] Food recognizer failed to load ({exc}); image recognition disabled")
+    enable_ai = os.getenv("ENABLE_AI_RECOGNIZER", "true").lower() in ("true", "1", "yes")
+    if enable_ai:
+        print("Starting food recognizer...")
+        try:
+            recognizer = get_recognizer()
+            print("[OK] Model ready")
+        except Exception as exc:
+            print(f"[WARN] Food recognizer failed to load ({exc}); image recognition disabled")
+            recognizer = None
+    else:
+        print("[INFO] AI recognizer disabled via ENABLE_AI_RECOGNIZER=false")
         recognizer = None
     yield
     await database.disconnect()
