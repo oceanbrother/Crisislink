@@ -21,6 +21,8 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
+load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
+
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../Layer4-AI/image_recognition/food_photo_recognition")))
 
 _enable_ai_recognizer = os.getenv("ENABLE_AI_RECOGNIZER", "true").lower() in ("true", "1", "yes")
@@ -29,8 +31,6 @@ if _enable_ai_recognizer:
 else:
     def get_recognizer():
         return None
-
-load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
