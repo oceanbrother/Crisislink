@@ -359,6 +359,10 @@
       "success": "Claimed {{quantity}} successfully.",
       "failed": "Unable to claim this quantity right now."
     },
+    "detailsDialog": {
+      "title": "Listing details",
+      "availableLabel": "Available"
+    },
     "claimQuickSuccess": "Listing claimed successfully.",
     "filterHint": "Search by food name, notes, source code, or postcode.",
     "searchingFor": "Searching for",
@@ -470,6 +474,7 @@
     "claimingButton": "Claiming...",
     "claimThisButton": "Claim food",
     "claimItemButton": "Claim item",
+    "claimUnavailableButton": "Claim unavailable",
     "viewDetailsButton": "View details",
     "justNow": "Just now",
     "minutesAgo": "{{count}}m ago",

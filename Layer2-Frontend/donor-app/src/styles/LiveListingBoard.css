@@ -882,6 +882,10 @@
   padding: 1.4rem;
 }
 
+.claim-dialog--details {
+  width: min(100%, 540px);
+}
+
 .claim-dialog-header {
   display: flex;
   align-items: center;
@@ -919,6 +923,19 @@
   background: rgba(0, 105, 76, 0.05);
   border: 1px solid rgba(0, 105, 76, 0.1);
   margin-bottom: 1rem;
+}
+
+.claim-dialog-meta {
+  margin-bottom: 1rem;
+  display: grid;
+  gap: 0.4rem;
+}
+
+.claim-dialog-meta p {
+  margin: 0;
+  color: #304840;
+  font-size: 0.96rem;
+  line-height: 1.45;
 }
 
 .claim-quantity-control {

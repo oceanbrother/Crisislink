@@ -288,6 +288,7 @@ const LiveListingBoard = () => {
   const [filterFoodType, setFilterFoodType] = useState('all')
   const [filterStatus, setFilterStatus] = useState(location.state?.filterStatus || 'all')
   const [claimDialogListing, setClaimDialogListing] = useState(null)
+  const [detailDialogListing, setDetailDialogListing] = useState(null)
   const [claimQuantity, setClaimQuantity] = useState('1')
   const [claimError, setClaimError] = useState('')
   const [pickingUpId, setPickingUpId] = useState(null)
@@ -373,7 +374,7 @@ const LiveListingBoard = () => {
     setFilteredListings(filtered)
   }
 
-  const handleClaim = async (listing) => {
+  const handleClaim = (listing) => {
     if (!listing) return
     const blockReason = getClaimBlockReason(listing, t)
     if (blockReason) {
@@ -381,26 +382,7 @@ const LiveListingBoard = () => {
       setTimeout(() => setError(''), 3200)
       return
     }
-
-    const listingId = listing.id
-    const rawQuantity = Number(listing.quantity || 0)
-    const quickClaimQuantity = rawQuantity > 0 && rawQuantity < 1 ? rawQuantity : 1
-
-    setClaimingId(listingId)
-    setError('')
-    setSuccess('')
-
-    try {
-      await claimListing(listingId, { orgId: orgCode, quantity: quickClaimQuantity })
-      setSuccess(t('dashboard.claimQuickSuccess', 'Listing claimed successfully.'))
-      await loadListings()
-      setTimeout(() => setSuccess(''), 1500)
-    } catch (err) {
-      setError(t('feed.noListings'))
-      setTimeout(() => setError(''), 3000)
-    } finally {
-      setClaimingId(null)
-    }
+    openClaimDialog(listing)
   }
 
   const handleRemoveClaim = async (listingId) => {
@@ -513,6 +495,7 @@ const LiveListingBoard = () => {
   }, [listings, orgCode])
 
   const openClaimDialog = (listing) => {
+    setDetailDialogListing(null)
     setClaimDialogListing(listing)
     const quantity = Number(listing?.quantity || 0)
     const initialQuantity = quantity > 0 && quantity < 1 ? quantity : 1
@@ -529,6 +512,17 @@ const LiveListingBoard = () => {
     setClaimError('')
   }
 
+  const openDetailsDialog = (listing) => {
+    if (!listing) return
+    setDetailDialogListing(listing)
+    setError('')
+    setSuccess('')
+  }
+
+  const closeDetailsDialog = () => {
+    setDetailDialogListing(null)
+  }
+
   const handleClaimQuantityAdjust = (delta) => {
     setClaimQuantity((prev) => {
       const current = parseClaimQuantityValue(prev) ?? 0
@@ -539,7 +533,7 @@ const LiveListingBoard = () => {
 
   const handleClaimAll = () => {
     if (!claimDialogListing) return
-    setClaimQuantity(formatQuantityValue(claimDialogListing.quantity))
+    setClaimQuantity(formatQuantityValue(maxClaimQuantity))
     setClaimError('')
   }
 
@@ -581,6 +575,13 @@ const LiveListingBoard = () => {
       setClaimingId(null)
     }
   }
+
+  const detailDialogBlockReason = useMemo(() => {
+    if (!detailDialogListing) return ''
+    return getClaimBlockReason(detailDialogListing, t)
+  }, [detailDialogListing, t])
+
+  const detailDialogIsClaimBlocked = Boolean(detailDialogBlockReason)
 
   return (
     <div className="live-listing-board org-role-board org-role-page">
@@ -927,7 +928,7 @@ const LiveListingBoard = () => {
                   <div className="food-card-actions org-card-actions org-card-actions--split">
                     <button
                       className="card-action-btn"
-                      onClick={() => openClaimDialog(listing)}
+                      onClick={() => openDetailsDialog(listing)}
                       type="button"
                     >
                       {t('listing.viewDetailsButton', 'View details')}
@@ -970,6 +971,26 @@ const LiveListingBoard = () => {
               <div className="claim-dialog-card">
                 <strong>{claimDialogListing.foodType}</strong>
                 <span>{formatSourceLabel(claimDialogListing, orgCode, t)}</span>
+              </div>
+              <div className="claim-dialog-meta">
+                <p>
+                  {getExpiryMeta(claimDialogListing.expiryDate).isToday
+                    ? t('listing.bestBeforeToday', 'Best before today')
+                    : `${t('listing.bestBefore', 'Best before')} ${formatBestBeforeLabel(claimDialogListing.expiryDate, i18n.language === 'zh' ? 'zh-CN' : 'en-AU') || '—'}`}
+                </p>
+                <p>{t('listing.storageLabel', 'Storage')}: {formatStorageCondition(getStorageCondition(claimDialogListing), t)}</p>
+                <p>
+                  {t('listing.pickupWindowLabel', 'Pickup window')}: {String(claimDialogListing.pickupWindow || claimDialogListing.pickup_window || '').trim() || t('listing.storage.unknown', 'Not provided')}
+                </p>
+                <p>
+                  {t('listing.allergenLabel', 'Allergens')}: {
+                    (() => {
+                      const tags = getAllergenTags(claimDialogListing).map((tag) => String(tag || '').trim()).filter(Boolean)
+                      if (tags.length === 0) return t('listing.allergenRequired', 'Allergen info required')
+                      return tags.map((tag) => formatAllergenTag(tag, t)).join(', ')
+                    })()
+                  }
+                </p>
               </div>
               <div className="claim-quantity-control">
                 <button
@@ -1015,6 +1036,61 @@ const LiveListingBoard = () => {
                   {claimingId === claimDialogListing.id ? t('listing.claimingButton') : t('dashboard.claimDialog.confirm')}
                 </button>
               </div>
+            </div>
+          </div>
+        ) : null}
+
+        {detailDialogListing ? (
+          <div className="claim-dialog-backdrop" onClick={closeDetailsDialog}>
+            <div className="claim-dialog claim-dialog--details" onClick={(event) => event.stopPropagation()}>
+              <div className="claim-dialog-header">
+                <h2>{t('dashboard.detailsDialog.title', 'Listing details')}</h2>
+                <button type="button" className="claim-dialog-close" onClick={closeDetailsDialog}>×</button>
+              </div>
+              <div className="claim-dialog-card">
+                <strong>{detailDialogListing.foodType}</strong>
+                <span>{formatSourceLabel(detailDialogListing, orgCode, t)}</span>
+              </div>
+              <div className="claim-dialog-meta">
+                <p>
+                  {t('dashboard.detailsDialog.availableLabel', 'Available')}: {formatQuantityValue(detailDialogListing.quantity)} {t(`listing.units.${detailDialogListing.unit || 'portions'}`, detailDialogListing.unit || 'portions')}
+                </p>
+                <p>{t('listing.postcode')}: {detailDialogListing.postcode}</p>
+                <p>
+                  {getExpiryMeta(detailDialogListing.expiryDate).isToday
+                    ? t('listing.bestBeforeToday', 'Best before today')
+                    : `${t('listing.bestBefore', 'Best before')} ${formatBestBeforeLabel(detailDialogListing.expiryDate, i18n.language === 'zh' ? 'zh-CN' : 'en-AU') || '—'}`}
+                </p>
+                <p>{t('listing.storageLabel', 'Storage')}: {formatStorageCondition(getStorageCondition(detailDialogListing), t)}</p>
+                <p>
+                  {t('listing.pickupWindowLabel', 'Pickup window')}: {String(detailDialogListing.pickupWindow || detailDialogListing.pickup_window || '').trim() || t('listing.storage.unknown', 'Not provided')}
+                </p>
+                <p>
+                  {t('listing.allergenLabel', 'Allergens')}: {
+                    (() => {
+                      const tags = getAllergenTags(detailDialogListing).map((tag) => String(tag || '').trim()).filter(Boolean)
+                      if (tags.length === 0) return t('listing.allergenRequired', 'Allergen info required')
+                      return tags.map((tag) => formatAllergenTag(tag, t)).join(', ')
+                    })()
+                  }
+                </p>
+              </div>
+              <div className="claim-dialog-footer">
+                <button type="button" className="card-action-btn" onClick={closeDetailsDialog}>
+                  {t('common.close', 'Close')}
+                </button>
+                <button
+                  type="button"
+                  className={detailDialogIsClaimBlocked ? 'card-action-btn primary is-disabled' : 'card-action-btn primary'}
+                  disabled={detailDialogIsClaimBlocked}
+                  onClick={() => openClaimDialog(detailDialogListing)}
+                >
+                  {detailDialogIsClaimBlocked
+                    ? t('listing.claimUnavailableButton', 'Claim unavailable')
+                    : `${t('listing.claimItemButton', 'Claim item')} →`}
+                </button>
+              </div>
+              {detailDialogIsClaimBlocked ? <div className="alert alert-error claim-dialog-error">{detailDialogBlockReason}</div> : null}
             </div>
           </div>
         ) : null}

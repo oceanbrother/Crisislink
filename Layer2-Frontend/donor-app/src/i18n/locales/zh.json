@@ -360,6 +360,10 @@
       "success": "已成功领取 {{quantity}}。",
       "failed": "暂时无法领取这部分数量。"
     },
+    "detailsDialog": {
+      "title": "物品详情",
+      "availableLabel": "可领取数量"
+    },
     "claimQuickSuccess": "已成功认领该物品。",
     "filterHint": "可按食物名称、备注、来源代码或邮编搜索。",
     "searchingFor": "正在搜索",
@@ -470,6 +474,7 @@
     "claimingButton": "领取中...",
     "claimThisButton": "领取食物",
     "claimItemButton": "认领物品",
+    "claimUnavailableButton": "暂不可认领",
     "viewDetailsButton": "查看详情",
     "justNow": "刚才",
     "minutesAgo": "{{count}} 分钟前",
