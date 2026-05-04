@@ -316,10 +316,11 @@ const LiveListingBoard = () => {
     setLoading(true)
     setError('')
     try {
-      const [availableData, claimedData] = await Promise.all([
+      const [availableData, claimedResult] = await Promise.all([
         getAvailableListings({ status: 'available' }),
-        getAvailableListings({ status: 'claimed' }),
+        getAvailableListings({ status: 'claimed' }).catch(() => []),
       ])
+      const claimedData = Array.isArray(claimedResult) ? claimedResult : []
       const mergedData = [
         ...availableData,
         ...claimedData.filter(
