@@ -110,13 +110,21 @@ UPLOADS_DIR = os.path.join(os.path.dirname(__file__), "uploads")
 os.makedirs(UPLOADS_DIR, exist_ok=True)
 app.mount("/static", StaticFiles(directory=UPLOADS_DIR), name="static")
 
+default_cors_origins = [
+    "http://localhost:3004",
+    "http://127.0.0.1:3004",
+    "https://donor-app-dusky.vercel.app",
+]
+cors_env = os.getenv("CORS_ALLOWED_ORIGINS", "").strip()
+cors_origins = (
+    [origin.strip() for origin in cors_env.split(",") if origin.strip()]
+    if cors_env
+    else default_cors_origins
+)
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3004",
-        "http://127.0.0.1:3004",
-        "https://donor-app-dusky.vercel.app",
-    ],
+    allow_origins=cors_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "PATCH", "DELETE"],
     allow_headers=["Authorization", "Content-Type"],
