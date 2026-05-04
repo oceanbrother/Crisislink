@@ -54,13 +54,12 @@ export default function HotspotMap() {
   const [loading, setLoading] = useState(true)
   const [fetchError, setFetchError] = useState(false)
   const [severityFilter, setSeverityFilter] = useState('critical')
-  const [sortMode, setSortMode] = useState('priority') // 'priority' | 'distance'
-  const [userLocation, setUserLocation] = useState(null) // [lat, lon]
+  const [sortMode, setSortMode] = useState('priority')
+  const [showRoute, setShowRoute] = useState(null) // { from, to } for route display
   const [locating, setLocating] = useState(false)
-  const [liveSupply, setLiveSupply] = useState(null) // live count for selected postcode
+  const [liveSupply, setLiveSupply] = useState(null)
 
   const hasAutoSelectedRef = useRef(false)
-  const hasAutoLocatedRef = useRef(false)
   const donorPostcode = getSavedDonorPostcode()
 
   const loadHotspots = () => {
@@ -82,43 +81,6 @@ export default function HotspotMap() {
     }
   }, [hotspots])
 
-  // Auto-request geolocation on mount
-  useEffect(() => {
-    if (hasAutoLocatedRef.current) return
-    hasAutoLocatedRef.current = true
-
-    const autoLocate = () => {
-      setLocating(true)
-      const applyCoords = (coords) => {
-        setUserLocation(coords)
-        setSortMode('distance')
-        setLocating(false)
-      }
-
-      if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-          pos => applyCoords([pos.coords.latitude, pos.coords.longitude]),
-          () => {
-            const fallback = getSavedDonorPostcode() ? POSTCODE_COORDS[getSavedDonorPostcode()] : null
-            if (fallback) {
-              applyCoords(fallback)
-            } else {
-              setLocating(false)
-            }
-          },
-          { timeout: 5000, maximumAge: 60000 }
-        )
-      } else {
-        const fallback = getSavedDonorPostcode() ? POSTCODE_COORDS[getSavedDonorPostcode()] : null
-        if (fallback) {
-          applyCoords(fallback)
-        } else {
-          setLocating(false)
-        }
-      }
-    }
-    autoLocate()
-  }, [])
 
   // Fetch live supply count for selected postcode
   useEffect(() => {
@@ -144,38 +106,20 @@ export default function HotspotMap() {
         : 0.25
       list = list.filter(h => h.risk_score >= minScore && h.risk_score < maxScore)
     }
-    let sorted = list
-    if (sortMode === 'distance' && userLocation) {
-      sorted = [...list].sort((a, b) => {
-        const ca = POSTCODE_COORDS[a.postcode]
-        const cb = POSTCODE_COORDS[b.postcode]
-        if (!ca) return 1
-        if (!cb) return -1
-        return haversineKm(userLocation, ca) - haversineKm(userLocation, cb)
-      })
-    }
-    // Apply display limit based on location availability
-    const limit = userLocation ? 10 : 20
-    return sorted.slice(0, limit)
-  }, [hotspots, severityFilter, sortMode, userLocation])
+    return list
+  }, [hotspots, severityFilter])
 
   const mapZones = useMemo(() =>
-    filtered.map(h => {
-      const coords = POSTCODE_COORDS[h.postcode]
-      const distLabel = (sortMode === 'distance' && userLocation && coords)
-        ? `${haversineKm(userLocation, coords).toFixed(0)} km away`
-        : null
-      return {
-        postcode: h.postcode,
-        suburb: suburbLookup[String(h.postcode)] || String(h.postcode),
-        tone: h.risk_score >= 0.75 ? 'critical'
-            : h.risk_score >= 0.5 ? 'high'
-            : h.risk_score >= 0.25 ? 'watch'
-            : 'healthy',
-        metric: distLabel || `Risk: ${(h.risk_score * 100).toFixed(0)}%`,
-      }
-    })
-  , [filtered, sortMode, userLocation])
+    filtered.map(h => ({
+      postcode: h.postcode,
+      suburb: suburbLookup[String(h.postcode)] || String(h.postcode),
+      tone: h.risk_score >= 0.75 ? 'critical'
+          : h.risk_score >= 0.5 ? 'high'
+          : h.risk_score >= 0.25 ? 'watch'
+          : 'healthy',
+      metric: `Risk: ${(h.risk_score * 100).toFixed(0)}%`,
+    }))
+  , [filtered])
 
   const counts = useMemo(() => ({
     critical: hotspots.filter(h => h.risk_score >= 0.75).length,
@@ -185,13 +129,20 @@ export default function HotspotMap() {
   }), [hotspots])
 
   function handleSelect(postcode) {
-    setSelected(hotspots.find(h => String(h.postcode) === String(postcode)) || null)
+    const selected = hotspots.find(h => String(h.postcode) === String(postcode)) || null
+    setSelected(selected)
+    if (selected && donorPostcode) {
+      setShowRoute({ from: donorPostcode, to: selected.postcode })
+    } else {
+      setShowRoute(null)
+    }
   }
 
   function handleSortByPriority() {
     setSortMode('priority')
+    setShowRoute(null)
     // Re-select the highest priority in current filtered view
-    const top = hotspots.find(h => {
+    const top = filtered[0] || hotspots.find(h => {
       if (severityFilter === 'all') return true
       const minScore = SEVERITY_FILTER_MAP[severityFilter] ?? 0
       const maxScore = severityFilter === 'critical' ? 1
@@ -203,44 +154,39 @@ export default function HotspotMap() {
   }
 
   function handleSortByDistance() {
+    if (!donorPostcode) {
+      alert('Please set your postcode first')
+      return
+    }
+
     setLocating(true)
-
-    const applyCoords = (coords) => {
-      setUserLocation(coords)
-      setSortMode('distance')
+    const userCoords = POSTCODE_COORDS[donorPostcode]
+    if (!userCoords) {
       setLocating(false)
-      // Find nearest hotspot and select it
-      const withDist = hotspots
-        .map(h => ({ h, coords: POSTCODE_COORDS[h.postcode] }))
-        .filter(({ coords: c }) => !!c)
-        .sort((a, b) => haversineKm(coords, a.coords) - haversineKm(coords, b.coords))
-      if (withDist.length > 0) setSelected(withDist[0].h)
+      return
     }
 
-    if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition(
-        pos => applyCoords([pos.coords.latitude, pos.coords.longitude]),
-        () => {
-          // Fallback: use saved donor postcode coords
-          const fallback = donorPostcode ? POSTCODE_COORDS[donorPostcode] : null
-          if (fallback) applyCoords(fallback)
-          else setLocating(false)
-        },
-        { timeout: 5000, maximumAge: 60000 }
-      )
-    } else {
-      const fallback = donorPostcode ? POSTCODE_COORDS[donorPostcode] : null
-      if (fallback) applyCoords(fallback)
-      else setLocating(false)
+    // Find nearest hotspot in current filtered list
+    const withDist = filtered
+      .map(h => ({ h, coords: POSTCODE_COORDS[h.postcode] }))
+      .filter(({ coords: c }) => !!c)
+      .sort((a, b) => haversineKm(userCoords, a.coords) - haversineKm(userCoords, b.coords))
+
+    if (withDist.length > 0) {
+      const nearest = withDist[0].h
+      setSelected(nearest)
+      setShowRoute({ from: donorPostcode, to: nearest.postcode })
     }
+    setLocating(false)
   }
 
   const selectedDistKm = useMemo(() => {
-    if (!userLocation || !selected) return null
-    const coords = POSTCODE_COORDS[selected.postcode]
-    if (!coords) return null
-    return haversineKm(userLocation, coords).toFixed(0)
-  }, [userLocation, selected])
+    if (!donorPostcode || !selected) return null
+    const userCoords = POSTCODE_COORDS[donorPostcode]
+    const selectedCoords = POSTCODE_COORDS[selected.postcode]
+    if (!userCoords || !selectedCoords) return null
+    return haversineKm(userCoords, selectedCoords).toFixed(0)
+  }, [donorPostcode, selected])
 
   return (
     <div className="live-listing-board donor-role-board donor-role-page">
@@ -286,6 +232,8 @@ export default function HotspotMap() {
             height={MAP_HEIGHT}
             defaultCenter={[-36.8, 144.9]}
             defaultZoom={7}
+            userPostcode={donorPostcode || null}
+            route={showRoute}
           />
         </div>
 

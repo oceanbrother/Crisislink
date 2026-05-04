@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(git add *)",
+      "Bash(git commit *)",
+      "Bash(git push *)",
+      "Bash(vercel --prod)",
+      "Bash(vercel --prod --scope oceanbrothers-projects-ac4c3549)"
+    ]
+  }
+}

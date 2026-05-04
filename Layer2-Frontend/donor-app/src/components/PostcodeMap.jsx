@@ -59,11 +59,15 @@ export default function PostcodeMap({
   defaultCenter = MELBOURNE,
   defaultZoom   = 12,
   fitBoundsOnLoad = false,
+  userPostcode = null,
+  route = null,
 }) {
   const containerRef    = useRef(null)
   const mapRef          = useRef(null)
   const markersRef      = useRef({})
   const halosRef        = useRef({})
+  const userMarkerRef   = useRef(null)
+  const routePolylineRef = useRef(null)
   const onSelectRef     = useRef(onSelect)
   const zonesRef        = useRef(zones)
   const selectedRef     = useRef(selectedPostcode)
@@ -153,6 +157,65 @@ export default function PostcodeMap({
       }
     }
   }, [zones]) // eslint-disable-line react-hooks/exhaustive-deps
+
+  // ── Handle user postcode marker and route ─────────────────────────────────
+  useEffect(() => {
+    const map = mapRef.current
+    if (!map) return
+
+    // Remove old user marker if exists
+    if (userMarkerRef.current) {
+      userMarkerRef.current.remove()
+      userMarkerRef.current = null
+    }
+
+    // Remove old route if exists
+    if (routePolylineRef.current) {
+      routePolylineRef.current.remove()
+      routePolylineRef.current = null
+    }
+
+    // Add user marker (blue dot with label)
+    if (userPostcode) {
+      const coords = POSTCODE_COORDS[userPostcode]
+      if (coords) {
+        const userMarker = L.circleMarker(coords, {
+          radius: 8,
+          fillColor: '#3182ce',
+          fillOpacity: 0.85,
+          color: '#ffffff',
+          weight: 2,
+          opacity: 1,
+        })
+        userMarker.bindTooltip(`<span class="pcmap-tip-inner"><strong>${userPostcode}</strong><em>Your location</em></span>`, {
+          sticky: true,
+          className: 'pcmap-tip',
+          offset: [0, -4],
+        })
+        userMarker.addTo(map)
+        userMarkerRef.current = userMarker
+
+        // Add pulsing animation to user marker
+        const el = userMarker.getElement()
+        if (el) el.classList.add('pcmap-user-pulse')
+      }
+    }
+
+    // Add route polyline if exists
+    if (route && route.from && route.to) {
+      const fromCoords = POSTCODE_COORDS[route.from]
+      const toCoords = POSTCODE_COORDS[route.to]
+      if (fromCoords && toCoords) {
+        const polyline = L.polyline([fromCoords, toCoords], {
+          color: '#3182ce',
+          weight: 3,
+          opacity: 0.7,
+          dashArray: '5, 5',
+        }).addTo(map)
+        routePolylineRef.current = polyline
+      }
+    }
+  }, [userPostcode, route])
 
   // ── Handle selection changes ───────────────────────────────────────────────
   useEffect(() => {
