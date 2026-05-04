@@ -27,18 +27,18 @@ function severityColor(score) {
   return '#38a169'
 }
 
-function severityLabel(score) {
-  if (score >= 0.75) return 'Critical'
-  if (score >= 0.5) return 'High need'
-  if (score >= 0.25) return 'Watch'
-  return 'Low'
+function severityLabelKey(score) {
+  if (score >= 0.75) return 'hotspots.map.sevCritical'
+  if (score >= 0.5) return 'hotspots.map.sevHigh'
+  if (score >= 0.25) return 'hotspots.map.sevWatch'
+  return 'hotspots.map.sevLow'
 }
 
 const LEGEND = [
-  { color: '#e53e3e', label: 'Critical (≥0.75)', key: 'critical' },
-  { color: '#dd6b20', label: 'High need (≥0.50)', key: 'high' },
-  { color: '#d69e2e', label: 'Watch (≥0.25)', key: 'watch' },
-  { color: '#38a169', label: 'Low (<0.25)', key: 'low' },
+  { color: '#e53e3e', key: 'critical', labelKey: 'hotspots.map.legendCritical' },
+  { color: '#dd6b20', key: 'high',     labelKey: 'hotspots.map.legendHigh' },
+  { color: '#d69e2e', key: 'watch',    labelKey: 'hotspots.map.legendWatch' },
+  { color: '#38a169', key: 'low',      labelKey: 'hotspots.map.legendLow' },
 ]
 
 const SEVERITY_FILTER_MAP = { critical: 0.75, high: 0.5, watch: 0.25, low: 0 }
@@ -205,7 +205,7 @@ export default function HotspotMap() {
                 ? <p style={{ color: '#4a5568' }}>{t('common.loading')}</p>
                 : <>
                     <p style={{ color: '#e53e3e', fontWeight: 600, fontSize: '0.9rem' }}>
-                      Unable to load hotspot data
+                      {t('hotspots.map.loadError')}
                     </p>
                     <button
                       onClick={loadHotspots}
@@ -215,7 +215,7 @@ export default function HotspotMap() {
                         fontSize: '0.82rem', cursor: 'pointer',
                       }}
                     >
-                      Retry
+                      {t('hotspots.map.retry')}
                     </button>
                   </>
               }
@@ -255,7 +255,7 @@ export default function HotspotMap() {
           {/* Sort mode */}
           <div>
             <p style={{ fontSize: '0.68rem', fontWeight: 700, color: '#a0aec0', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '6px' }}>
-              Sort by
+              {t('hotspots.map.sortBy')}
             </p>
             <div style={{ display: 'flex', gap: '6px' }}>
               <button
@@ -269,7 +269,7 @@ export default function HotspotMap() {
                 }}
               >
                 <span className="material-symbols-outlined" style={{ fontSize: '0.85rem' }}>priority_high</span>
-                Priority
+                {t('hotspots.map.sortPriority')}
               </button>
               <button
                 onClick={handleSortByDistance}
@@ -284,7 +284,7 @@ export default function HotspotMap() {
                 }}
               >
                 <span className="material-symbols-outlined" style={{ fontSize: '0.85rem' }}>near_me</span>
-                {locating ? 'Locating…' : 'Distance'}
+                {locating ? t('hotspots.map.locating') : t('hotspots.controls.distance')}
               </button>
             </div>
           </div>
@@ -292,15 +292,15 @@ export default function HotspotMap() {
           {/* Severity filter chips */}
           <div>
             <p style={{ fontSize: '0.68rem', fontWeight: 700, color: '#a0aec0', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '6px' }}>
-              Filter
+              {t('hotspots.map.filter')}
             </p>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
               {[
-                { key: 'all', label: 'All', color: '#4a5568' },
-                { key: 'critical', label: `Critical · ${counts.critical}`, color: '#e53e3e' },
-                { key: 'high', label: `High · ${counts.high}`, color: '#dd6b20' },
-                { key: 'watch', label: `Watch · ${counts.watch}`, color: '#d69e2e' },
-                { key: 'low', label: `Low · ${counts.low}`, color: '#38a169' },
+                { key: 'all',      label: t('common.all'),                                              color: '#4a5568' },
+                { key: 'critical', label: t('hotspots.map.chipCritical', { count: counts.critical }),   color: '#e53e3e' },
+                { key: 'high',     label: t('hotspots.map.chipHigh',     { count: counts.high }),       color: '#dd6b20' },
+                { key: 'watch',    label: t('hotspots.map.chipWatch',    { count: counts.watch }),      color: '#d69e2e' },
+                { key: 'low',      label: t('hotspots.map.chipLow',      { count: counts.low }),        color: '#38a169' },
               ].map(({ key, label, color }) => (
                 <button
                   key={key}
@@ -322,20 +322,20 @@ export default function HotspotMap() {
           {/* Legend */}
           <div>
             <p style={{ fontSize: '0.7rem', fontWeight: 600, color: '#718096', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: '0.5rem' }}>
-              Severity
+              {t('hotspots.map.severity')}
             </p>
             <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
-              {LEGEND.map(({ color, label }) => (
-                <div key={label} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+              {LEGEND.map(({ color, key, labelKey }) => (
+                <div key={key} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                   <span style={{ width: 14, height: 14, borderRadius: '50%', background: color, flexShrink: 0 }} />
-                  <span style={{ fontSize: '0.75rem', color: '#4a5568' }}>{label}</span>
+                  <span style={{ fontSize: '0.75rem', color: '#4a5568' }}>{t(labelKey)}</span>
                 </div>
               ))}
             </div>
           </div>
 
           <p style={{ fontSize: '0.75rem', color: '#a0aec0' }}>
-            {`${filtered.length} hotspot${filtered.length !== 1 ? 's' : ''} shown`}
+            {t('hotspots.map.shown', { count: filtered.length })}
           </p>
 
           {selected ? (
@@ -352,34 +352,34 @@ export default function HotspotMap() {
                 >✕</button>
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', marginBottom: '1rem' }}>
-                <Row label="Severity">
+                <Row label={t('hotspots.map.labelSeverity')}>
                   <span style={{ color: severityColor(selected.risk_score), fontWeight: 600 }}>
-                    {severityLabel(selected.risk_score)}
+                    {t(severityLabelKey(selected.risk_score))}
                   </span>
                 </Row>
-                <Row label="Risk score">
+                <Row label={t('hotspots.map.labelRisk')}>
                   <span style={{ fontWeight: 500 }}>{(selected.risk_score * 100).toFixed(0)}%</span>
                 </Row>
                 {selectedDistKm !== null && (
-                  <Row label="Distance">
+                  <Row label={t('hotspots.map.labelDistance')}>
                     <span style={{ fontWeight: 500 }}>{selectedDistKm} km</span>
                   </Row>
                 )}
-                <Row label="Data source">
+                <Row label={t('hotspots.map.labelDataSource')}>
                   <span style={{
                     fontSize: '0.7rem', fontWeight: 600, padding: '2px 7px', borderRadius: '999px',
                     background: selected.cold_start ? '#fff3cd' : selected.data_source === 'ai_forecast' ? '#e0f5ec' : '#edf2f7',
                     color: selected.cold_start ? '#7d5a00' : selected.data_source === 'ai_forecast' ? '#1a7c54' : '#4a5568',
                   }}>
-                    {selected.cold_start ? 'Learning' : selected.data_source === 'ai_forecast' ? 'AI forecast' : 'Rule-based'}
+                    {selected.cold_start ? t('hotspots.map.dataLearning') : selected.data_source === 'ai_forecast' ? t('hotspots.map.dataAi') : t('hotspots.map.dataRule')}
                   </span>
                 </Row>
-                <Row label="SEIFA IRSD">
+                <Row label={t('hotspots.map.labelSeifa')}>
                   <span style={{ fontWeight: 500 }}>{typeof selected.irsd_score === 'number' ? selected.irsd_score.toFixed(1) : selected.irsd_score}</span>
                 </Row>
-                <Row label="Active supply">
+                <Row label={t('hotspots.map.labelSupply')}>
                   <span style={{ fontWeight: 500, color: selected.total_supply === 0 ? '#e53e3e' : '#38a169' }}>
-                    {selected.total_supply} portions
+                    {t('hotspots.portions', { count: selected.total_supply })}
                   </span>
                 </Row>
               </div>
@@ -394,12 +394,12 @@ export default function HotspotMap() {
                   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px',
                 }}
               >
-                Post food here
+                {t('hotspots.map.postHere')}
               </button>
             </div>
           ) : (
             <p style={{ fontSize: '0.75rem', color: '#a0aec0', fontStyle: 'italic' }}>
-              Click a circle on the map to see postcode details.
+              {t('hotspots.map.clickHint')}
             </p>
           )}
         </div>

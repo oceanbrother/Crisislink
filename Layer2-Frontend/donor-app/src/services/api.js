@@ -105,7 +105,7 @@ export const getGapPostcodes = async (params = {}) => {
 }
 
 export const getHotspots = async (params = {}) => {
-  const response = await apiClient.get('/predictions/hotspots', { params })
+  const response = await predictionApiClient.get('/predictions/hotspots', { params })
   return response.data
 }
 
