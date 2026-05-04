@@ -1,0 +1,23 @@
+# Backend and AI - not needed for frontend deploy
+Layer3-Backend/
+Layer4-AI/
+Layer5-Data/
+AI_models_pipeline/
+source/
+tools/
+docs/
+
+# Python artifacts
+.venv/
+__pycache__/
+*.pth
+*.pkl
+*.egg-info/
+
+# Large frontend artifacts (rebuilt by Vercel)
+Layer2-Frontend/donor-app/node_modules/
+Layer2-Frontend/donor-app/dist/
+
+# Misc
+*.jsonl
+CTemphotspots.json

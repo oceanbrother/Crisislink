@@ -32,11 +32,9 @@ except Exception as e:
 	APSCHEDULER_AVAILABLE = False
 	print(f"[WARN] APScheduler not available: {e}")
 
-# Import the risk scoring pipeline
-import sys
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../Layer4-AI")))
 from demand_prediction.risk_scorer import RiskScorer
 
+load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 load_dotenv(os.path.join(os.path.dirname(__file__), "..", "listing_service", ".env"))
 
 DATABASE_URL = os.getenv("DATABASE_URL")
@@ -60,6 +58,30 @@ def _risk_label(score: float) -> str:
 	return "low"
 
 
+def _ensure_model_file(dest_path, url: str, label: str) -> None:
+	"""Download a model artifact from URL if not already present."""
+	if dest_path.exists():
+		return
+	if not url:
+		return
+	import urllib.request
+	dest_path.parent.mkdir(parents=True, exist_ok=True)
+	print(f"Downloading {label} from {url} ...")
+	try:
+		urllib.request.urlretrieve(url, dest_path)
+		print(f"[OK] {label} downloaded ({dest_path.stat().st_size // 1024} KB)")
+	except Exception as e:
+		print(f"[WARN] Failed to download {label}: {e}")
+
+
+def _ensure_models(models_dir) -> None:
+	"""Download any missing model artifacts using env-var URLs."""
+	_ensure_model_file(models_dir / "demand_forecaster.pkl",  os.getenv("MODEL_FORECASTER_URL", ""), "demand_forecaster.pkl")
+	_ensure_model_file(models_dir / "kmeans_model.pkl",       os.getenv("MODEL_KMEANS_URL", ""),     "kmeans_model.pkl")
+	_ensure_model_file(models_dir / "scaler.pkl",             os.getenv("MODEL_SCALER_URL", ""),      "scaler.pkl")
+	_ensure_model_file(models_dir / "shap_surrogate.pkl",     os.getenv("MODEL_SHAP_URL", ""),        "shap_surrogate.pkl")
+
+
 # ─── Startup / Shutdown ──────────────────────────────────────────────────
 @app.on_event("startup")
 async def startup():
@@ -73,6 +95,7 @@ async def startup():
 	try:
 		from pathlib import Path as _Path
 		_models_dir = _Path(__file__).parent / "models"
+		_ensure_models(_models_dir)
 		risk_scorer = RiskScorer(models_dir=_models_dir)
 		print("[OK] Risk scorer models loaded successfully")
 	except Exception as e:
