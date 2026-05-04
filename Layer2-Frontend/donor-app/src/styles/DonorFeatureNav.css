@@ -1,0 +1,77 @@
+.donor-area-nav-row,
+.donor-form-nav-row {
+  display: flex;
+  justify-content: flex-start;
+  margin-bottom: 1rem;
+}
+
+.donor-form-nav-row {
+  width: 100%;
+  max-width: 920px;
+  margin: 5.7rem auto 0;
+  padding: 0 1.5rem;
+  box-sizing: border-box;
+}
+
+.donor-form-nav-row + form .form-content {
+  padding-top: 1.35rem;
+}
+
+.donor-feature-nav {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.4rem;
+  margin: 0;
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 107, 76, 0.1);
+  border-radius: 999px;
+  box-shadow: 0 10px 24px rgba(18, 50, 39, 0.06);
+}
+
+.donor-feature-nav-button {
+  border: none;
+  background: transparent;
+  color: #527168;
+  font-size: 1.05rem;
+  font-weight: 800;
+  border-radius: 999px;
+  min-width: 10.5rem;
+  padding: 0.82rem 1.35rem;
+  cursor: pointer;
+  transition: background-color 0.16s ease, color 0.16s ease, transform 0.16s ease;
+}
+
+.donor-feature-nav-button:hover {
+  background: rgba(15, 107, 76, 0.08);
+  color: #0f6b4c;
+  transform: translateY(-1px);
+}
+
+.donor-feature-nav-button.active {
+  background: #0f6b4c;
+  color: #ffffff;
+}
+
+@media (min-width: 768px) {
+  .donor-form-nav-row {
+    padding: 0 4rem;
+  }
+}
+
+@media (max-width: 720px) {
+  .donor-feature-nav {
+    width: 100%;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .donor-feature-nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  .donor-feature-nav-button {
+    min-width: auto;
+    white-space: nowrap;
+  }
+}
