@@ -19,7 +19,6 @@ __pycache__/
 env/
 venv/
 ENV/
-.venv/
 pip-log.txt
 pip-delete-this-directory.txt
 .vscode/
@@ -45,9 +44,6 @@ postgresql_data/
 logs/
 *.log
 
-# Runtime uploads
-Layer3-Backend/listing_service/uploads/
-
 # OS
 .DS_Store
 Thumbs.db
@@ -57,13 +53,16 @@ Thumbs.db
 *.h5
 *.pt
 *.pth
-!Layer3-Backend/listing_service/models/
-!Layer3-Backend/listing_service/models/*.json
-Layer3-Backend/listing_service/models/best_food101_convnext.pth
 Food-101/
 trained_models/
 
+# Local ML model artifact directories (do not commit full models)
+Layer4-AI/demand_prediction/models/
+Layer3-Backend/prediction_service/models/
+
 # Docker
 .dockerignore
-.vercel
-.env*.local
+
+.venv/
+Layer3-Backend/listing_service/uploads/*
+!Layer3-Backend/listing_service/uploads/.gitkeep

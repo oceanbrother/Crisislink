@@ -10,57 +10,72 @@ const HomePage = () => {
 
   return (
     <div className="home-page">
-      {/* Logo */}
-      <header className="home-header">
-        <h1 className="brand-name">{t('appName')}</h1>
-        <LanguageSwitcher />
-      </header>
+      <div className="home-shell">
+        <header className="home-header">
+          <h1 className="brand-name">{t('appName')}</h1>
+          <LanguageSwitcher />
+        </header>
 
-      {/* Main */}
-      <main className="home-main">
-        <p className="home-question">{t('home.question')}</p>
+        <main className="home-main">
+          <section className="home-hero">
+            <div className="home-hero-stack">
+              <p className="home-eyebrow">{t('home.eyebrow', 'Local food sharing')}</p>
+              <h2 className="home-question">{t('home.question')}</h2>
+            </div>
+            <p className="home-support">
+              {t('home.support', 'Choose the role that matches what you need to do next. We keep the two journeys separate so posting, claiming, and follow-up actions stay clear.')}
+            </p>
+          </section>
 
-        <div className="cards-grid">
-          {/* Donor card */}
-          <div className="role-card" onClick={() => navigate('/postcode')}>
-            <div className="role-card-accent donor" />
-            <div className="role-card-inner">
-              <div className="role-icon-circle donor">
-                <span className="material-symbols-outlined">bakery_dining</span>
+          <div className="cards-grid">
+            <div className="role-card role-card--donor" onClick={() => navigate('/postcode')}>
+              <div className="role-card-accent donor" />
+              <div className="role-card-inner">
+                <div className="role-card-copy">
+                  <div className="role-icon-circle donor">
+                    <span className="material-symbols-outlined">bakery_dining</span>
+                  </div>
+                  <h3 className="role-card-title donor">{t('home.donor.title')}</h3>
+                  <p className="role-card-desc">{t('home.donor.description')}</p>
+                </div>
+                <button
+                  className="role-btn donor"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    navigate('/postcode')
+                  }}
+                >
+                  {t('home.donor.button')}
+                </button>
               </div>
-              <h3 className="role-card-title donor">{t('home.donor.title')}</h3>
-              <p className="role-card-desc">{t('home.donor.description')}</p>
-              <button
-                className="role-btn donor"
-                onClick={(e) => { e.stopPropagation(); navigate('/postcode') }}
-              >
-                {t('home.donor.button')}
-              </button>
+            </div>
+
+            <div className="role-card role-card--org" onClick={() => navigate('/org/code')}>
+              <div className="role-card-accent org" />
+              <div className="role-card-inner">
+                <div className="role-card-copy">
+                  <div className="role-icon-circle org">
+                    <span className="material-symbols-outlined">corporate_fare</span>
+                  </div>
+                  <h3 className="role-card-title org">{t('home.organization.title')}</h3>
+                  <p className="role-card-desc">{t('home.organization.description')}</p>
+                </div>
+                <button
+                  className="role-btn org"
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    navigate('/org/code')
+                  }}
+                >
+                  {t('home.organization.button')}
+                </button>
+              </div>
             </div>
           </div>
+        </main>
 
-          {/* Org / community card */}
-          <div className="role-card" onClick={() => navigate('/org/code')}>
-            <div className="role-card-accent org" />
-            <div className="role-card-inner">
-              <div className="role-icon-circle org">
-                <span className="material-symbols-outlined">corporate_fare</span>
-              </div>
-              <h3 className="role-card-title org">{t('home.organization.title')}</h3>
-              <p className="role-card-desc">{t('home.organization.description')}</p>
-              <button
-                className="role-btn org"
-                onClick={(e) => { e.stopPropagation(); navigate('/org/code') }}
-              >
-                {t('home.organization.button')}
-              </button>
-            </div>
-          </div>
-        </div>
-      </main>
-
-      {/* Footer decorative element */}
-      <footer className="home-footer" />
+        <footer className="home-footer" />
+      </div>
     </div>
   )
 }

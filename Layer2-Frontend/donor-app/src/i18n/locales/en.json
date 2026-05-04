@@ -1,174 +1,536 @@
 {
-  "appName": "CrisisLink",
+  "appName": "OutBackShare",
   "tagline": "Food relief resource coordination platform",
-
   "home": {
-    "question": "How are you using CrisisLink today?",
+    "eyebrow": "SELECT YOUR WORKSPACE",
+    "question": "Choose how you want to use OutBackShare",
     "donor": {
-      "title": "I have food to give",
-      "description": "Post surplus food for your community",
-      "button": "Post surplus"
+      "title": "I want to donate food",
+      "description": "Post surplus food quickly so nearby approved groups can collect it before it goes to waste.",
+      "button": "Continue as donor"
     },
     "organization": {
-      "title": "I run a community group",
-      "description": "I coordinate a food bank, pantry or community relief program",
-      "button": "Go to dashboard"
+      "title": "I manage a community organisation",
+      "description": "View available listings, coordinate collection, and identify local areas with higher food need.",
+      "button": "Continue as organisation"
+    },
+    "support": "Select a donor or community organisation workspace to continue.",
+    "about": "Post surplus food, manage listings, or check local shortage hotspots from the right workspace."
+  },
+  "donorNav": {
+    "post": "Post food",
+    "listings": "My listings",
+    "hotspots": "Hotspots"
+  },
+  "donorWorkspace": {
+    "title": "Donor workspace",
+    "subtitle": "Post surplus food, see where food is needed, and manage your listings.",
+    "currentPostcodeAria": "Current donor postcode",
+    "currentPostcodeLabel": "Current postcode",
+    "currentPostcodeFallback": "Add when you post food",
+    "actionsAria": "Donor workspace actions",
+    "cards": {
+      "post": {
+        "eyebrow": "Post food",
+        "title": "Post surplus food",
+        "description": "Share food you have available.",
+        "button": "Post food"
+      },
+      "hotspots": {
+        "eyebrow": "Need hotspots",
+        "title": "See where food is needed",
+        "description": "Check nearby food shortage hotspots before you donate.",
+        "button": "View hotspot map"
+      },
+      "listings": {
+        "eyebrow": "My listings",
+        "title": "Manage your listings",
+        "description": "View, edit, or track your posts.",
+        "button": "View my listings"
+      }
     }
   },
-
-  "postcode": {
-    "title": "Enter your postcode",
-    "subtitle": "Help us find food near you",
-    "placeholder": "e.g., 3000",
-    "button": "Post surplus",
-    "example": "Please enter a valid 4-digit postcode to continue."
+  "hotspots": {
+    "ariaLabel": "Hotspot priority map",
+    "referencePostcode": "Based on postcode {{postcode}}",
+    "referenceStatewide": "Based on state-wide baseline",
+    "eyebrow": "Need map",
+    "title": "Where food is needed most",
+    "subtitle": "Food shortage hotspots near your reference postcode.",
+    "helper": "Start from region clusters, then open a postcode card to inspect exact shortage details.",
+    "topPriorityLabel": "Top priority right now:",
+    "topPriorityHint": "{{name}} ({{distance}} km) - {{shortfall}} portions short",
+    "chips": {
+      "all": "All hotspots",
+      "criticalTitle": "Show urgent shortage hotspots",
+      "critical": "Critical shortage · {{count}}",
+      "highTitle": "Show high-need hotspots",
+      "highEmptyTitle": "No high-need hotspots right now",
+      "high": "High need · {{count}}",
+      "watchTitle": "Show emerging-risk hotspots to monitor",
+      "watch": "Watchlist risk · {{count}}"
+    },
+    "controls": {
+      "view": "View",
+      "needLevel": "Need level",
+      "allRegions": "All regions (state-wide)",
+      "groups": {
+        "metro": "Metro areas",
+        "greater": "Greater regions",
+        "regional": "Regional"
+      },
+      "groupHint": "Metro = inner city areas. Greater = surrounding suburbs. Regional = outside metro regions.",
+      "distance": "Distance",
+      "anyDistance": "Any distance",
+      "within10": "Within 10 km",
+      "within25": "Within 25 km",
+      "within50": "Within 50 km",
+      "sort": "Sort",
+      "sortPriority": "Priority (highest need first)",
+      "sortDistance": "Distance (closest first)"
+    },
+    "legendCopy": "Critical shortage = urgent need. High need = strong demand. Watchlist risk = areas to monitor next.",
+    "sampleNote": "Sample data only. Live hotspot scoring will be connected after database integration.",
+    "updating": "Updating hotspots...",
+    "emptyTitle": "No hotspots match these filters.",
+    "emptyHint": "Try all regions or a wider distance range.",
+    "emptyDistanceTitle": "No hotspots within {{distance}} km.",
+    "emptyDistanceHint": "Try expanding your distance range to {{distance}} km or more.",
+    "regionCount": "{{count}} hotspots",
+    "clusterClosest": "Closest {{distance}} km",
+    "clusterPriority": "Top priority {{score}}",
+    "clusterShortfall": "{{count}} portions short",
+    "priorityBands": {
+      "critical": "Critical hotspot",
+      "high": "High hotspot",
+      "watch": "Watchlist hotspot"
+    },
+    "metrics": {
+      "needScore": "Need score {{count}}",
+      "activeListings": "Active listings {{count}}",
+      "priority": "Priority {{count}}",
+      "distanceAway": "{{distance}} km away"
+    },
+    "detailTitle": "Hotspot detail · {{postcode}}",
+    "detailHint": "Only currently needed categories are shown.",
+    "detailStats": {
+      "shortfall": "Current shortfall",
+      "distance": "Approx. distance",
+      "nearestSupply": "Nearest supply point"
+    },
+    "portions": "{{count}} portions",
+    "kilometres": "{{distance}} km",
+    "nearestHub": "{{name}} ({{distance}} km)",
+    "shortageAmount": "{{count}} portions short"
   },
-
+  "postcode": {
+    "title": "What is your postcode?",
+    "subtitle": "Enter your postcode to view nearby community organisations and local food shortage hotspots.",
+    "placeholder": "e.g., 3000",
+    "button": "Continue",
+    "example": "e.g. Postcode 3000",
+    "invalid": "Please enter a valid 4-digit postcode."
+  },
   "feed": {
     "title": "Live Listings",
     "noListings": "No listings available in your area yet",
     "claimButton": "Claim food",
     "claimedBy": "Claimed by",
-    "referenceOnly": "Reference view for donors",
-    "editButton": "Edit listing",
-    "availableToGroups": "For community groups only",
-    "shareButton": "Share Surplus",
+    "claimedPickupInfo": "Pickup is arranged directly with the donor after claiming.",
+    "shareButton": "Post food",
     "filter": "Filter by category",
     "search": "Search listings",
-    "searchResults": "{{count}} result(s) for \"{{term}}\"",
-    "filterResults": "{{count}} listing(s) in {{filter}}"
+    "searchDonor": "Search your listings",
+    "subtitle": "Edit or remove the items you have posted.",
+    "referenceOnly": "Community groups can claim these listings from their own board after contacting the donor.",
+    "postedByYou": "Posted by you",
+    "availableForGroups": "Available to community groups",
+    "loadError": "Unable to load listings right now.",
+    "removeError": "Unable to remove this listing right now.",
+    "referenceTitle": "Donor view only.",
+    "groupClaimNote": "Community groups can claim this item from their board.",
+    "editLockedNote": "A community group has already claimed part of this listing, so editing and removal are now locked.",
+    "editLockedTooltip": "This listing has already been claimed and can no longer be edited or removed.",
+    "editLockedExpiredNote": "This listing has expired, so editing and removal are now locked.",
+    "editLockedExpiredTooltip": "This listing has expired and can no longer be edited or removed.",
+    "homeLink": "Back to home",
+    "kicker": "Donor preview",
+    "pageTitle": "My listings",
+    "quickPost": "Post food",
+    "quickPostTooltip": "Post surplus food",
+    "postcodeHint": "Used to show nearby listings and hotspot insights.",
+    "editableListings": "Editable listings",
+    "lockedListings": "Claimed / locked",
+    "filterHint": "Search by food name, notes, category, or postcode.",
+    "searchingFor": "Searching for",
+    "filteringCategory": "Category",
+    "scopeFilter": "Scope",
+    "scopeEditable": "Editable listings",
+    "clearFilters": "Clear filters",
+    "showingMatches": "Showing {{count}} matching listings",
+    "emptyTitle": "No donor listings yet",
+    "emptyHint": "Once you post surplus food from this postcode, it will appear here for you to manage.",
+    "emptySearchTitle": "No matching listings",
+    "emptySearchHint": "Try a different search term or clear your filters to see more listings."
   },
-
   "donation": {
-    "title": "Share Surplus",
+    "title": "Post Surplus",
     "subtitle": "Let AI do the heavy lifting. Just snap a photo of the food you'd like to share.",
-    "aiTitle": "AI Assisted Listing",
-    "orgTitle": "Organization Sharing",
+    "aiTitle": "AI-assisted listing",
+    "orgTitle": "Organisation posting",
     "takePhoto": "Take a photo or upload one",
-    "uploadSubtitle": "we will fill in the details",
+    "uploadSubtitle": "We’ll suggest the listing details for you to review.",
     "changePhoto": "Change photo",
     "analyzing": "Analysing food...",
-    "aiDetails": "AI Generated Details",
-    "guidanceTitle": "Photo tips",
-    "guidanceBody": "Take a clear photo with the full food item visible. Keep the main item centered, use good lighting, avoid blur, and make sure the food is fully inside the frame. AI suggestions may be wrong, so please review and edit before posting.",
-    "guidancePoints": {
-      "fullItem": "Show the full food item clearly inside the frame.",
-      "centered": "Keep the main item centered and easy to identify.",
-      "lighting": "Use good lighting and avoid blur or heavy shadows.",
-      "quantityCue": "If you know the amount, add cues like small, medium, large, heavy, or extra heavy when editing."
-    },
+    "aiDetails": "Suggested details",
     "foodName": "Food Name",
     "quantity": "Estimated Quantity",
-    "sizeCue": "Size / Weight",
-    "sizeCuePlaceholder": "Optional size or weight cue",
-    "sizeCueOptions": {
-      "small": "Small",
-      "medium": "Medium",
-      "large": "Large",
-      "heavy": "Heavy",
-      "extraHeavy": "Extra heavy"
-    },
-    "quantityHint": "If helpful, describe size or weight with cues like small, medium, large, heavy, or extra heavy.",
-    "sizeCueDescriptionPrefix": "Size cue:",
-    "categoryOptions": {
-      "bakedGoods": "Baked goods",
-      "produce": "Fruit & veg",
-      "dairy": "Dairy, eggs & fridge",
-      "pantry": "Pantry",
-      "preparedMeals": "Prepared meals",
-      "other": "Other"
-    },
     "category": "Category",
-    "postcode": "Your postcode",
-    "orgCode": "Food Bank Code",
-    "postButton": "Post listing - takes under 60 seconds",
+    "postcode": "Postcode",
+    "postButton": "Post food",
     "errors": {
       "foodType": "Please enter a food type",
       "quantity": "Please enter a valid quantity (must be greater than 0)",
       "postcode": "Please enter a postcode",
-      "orgCode": "Please enter an organization code",
       "aiTimeout": "AI recognition failed or timed out. You can still manually enter the food details.",
       "uploadFailed": "Image upload failed",
-      "deleteFailed": "Could not remove this listing. Please try again."
+      "removeFailed": "Unable to remove this listing right now.",
+      "submitFailed": "Unable to save this listing right now.",
+      "bestBefore": "Please enter the best before date as DD/MM/YYYY",
+      "expiryRequired": "Best before date is required",
+      "expiryPast": "Best before date cannot be in the past",
+      "allergenRequired": "Please select at least one allergen tag (or \"No known allergens\")",
+      "storageRequired": "Please select a storage condition",
+      "pickupWindowRequired": "Please add a pickup window before posting.",
+      "disclaimerRequired": "Please confirm the accuracy declaration before posting"
     },
-    "reviewNotice": "AI suggestions can be inaccurate. Please double-check the food name, quantity, and category before posting.",
     "success": {
       "title": "Posted!",
       "donorMessage": "Your food is now visible to local food banks.",
       "donorTag": "Thank you for sharing.",
       "orgMessage": "Your surplus food is now available for other communities to claim.",
       "orgTag": "Thank you for helping the network.",
-      "backToListings": "Back to live listings",
-      "backToDashboard": "Back to dashboard",
+      "updatedTitle": "Listing updated",
+      "nextStepLabel": "Next step",
+      "nextStepHint": "Check nearby food shortage hotspots to see where your donation can help most."
+    },
+    "editTitle": "Edit listing",
+    "sizeCue": "Portion size",
+    "sizeCuePlaceholder": "e.g. small bag, medium tray, 500g bottle",
+    "sizeCueHint": "Select the estimated number of serves rather than an exact weight.",
+    "dietary": "Dietary tag",
+    "bestBefore": "Best before",
+    "expiryDateLabel": "Use-by / best-before date",
+    "pickupWindow": "Pickup window",
+    "pickupWindowPlaceholder": "e.g. Today 4:00-6:00 pm",
+    "pickupWindowHint": "When can organisations collect this food?",
+    "pickupWindowRequiredHint": "Required: add a pickup date and time window so organisations know when to collect.",
+    "storageCondition": "Storage condition",
+    "storageHint": "How should this food be stored before pickup?",
+    "storageRequiredHint": "Required: choose a storage condition so organisations can handle the food safely.",
+    "openDatePicker": "Open calendar",
+    "extraNotes": "Extra notes",
+    "extraNotesPlaceholder": "Example: Pickup from front desk after 4pm. Keep refrigerated. Please bring a container. Call on arrival if needed.",
+    "saveButton": "Save listing changes",
+    "disclaimerCheckbox": "I confirm that the food details, expiry date, allergen information, and storage condition are accurate to the best of my knowledge. I understand that OutBackShare acts as a coordination platform and does not independently verify food safety or suitability.",
+    "actions": {
+      "backHome": "Back to home",
+      "backListings": "Back to my listings",
+      "backOrgListings": "Back to food listings",
+      "backDashboard": "Back to dashboard",
+      "viewOrgAlerts": "Review alerts",
+      "viewOrgGaps": "Review supply gaps",
+      "viewHotspots": "See where food is needed",
       "editListing": "Edit this listing",
-      "deleteListing": "Remove this listing"
+      "removeListing": "Remove this listing",
+      "postAnother": "Post another listing"
+    },
+    "safety": {
+      "title": "Food safety reminder",
+      "accuracy": "You are responsible for the accuracy of this listing, including quantity, condition, and allergen information.",
+      "allergen": "OutBackShare cannot independently verify allergen declarations. Recipients must exercise their own judgement.",
+      "platform": "OutBackShare is a coordination platform only and does not inspect or accept liability for donated food items."
+    },
+    "reviewTitle": "Suggested details — please review before posting.",
+    "reviewHintFood": "Check the food name and category.",
+    "reviewHintQuantity": "Confirm the quantity and portion size.",
+    "reviewHintDietary": "Update the dietary tag if the AI suggestion is incorrect.",
+    "allergenHint": "Select all allergens present. Choose \"No known allergens\" if none apply.",
+    "allergenRequiredHint": "Required: select at least one allergen tag, or choose \"No known allergens\".",
+    "quantityWarning": "The AI suggested {{count}} portions, which seems unusually high. Please confirm the quantity before posting.",
+    "bestBeforePlaceholder": "DD/MM/YYYY",
+    "sizeOptions": {
+      "none": "Select one",
+      "small": "Small - around 1 serve",
+      "medium": "Medium - around 2-3 serves",
+      "large": "Large - around 4-6 serves",
+      "extraLarge": "Extra large - 7+ serves",
+      "bulkHeavy": "Bulk / heavy - trays or cartons"
     }
   },
-
   "orgCode": {
-    "current": "Current organization code",
-    "title": "Enter Organization Code",
-    "subtitle": "Ask your food bank staff for their organization code",
-    "placeholder": "e.g., HCFB-2841",
-    "button": "Access Board",
-    "example": "Ask the food bank staff for their code"
+    "title": "Find your organisation",
+    "subtitle": "Enter your organisation code or name to access live listings and organisation tools.",
+    "label": "Organisation code or name",
+    "placeholder": "e.g., HCFB-2841 or Helping Hands",
+    "button": "Continue",
+    "example": "Enter an organisation code or name to continue",
+    "note": "Only approved community organisations can access live listings."
   },
-
+  "accessGate": {
+    "badge": "Project access",
+    "title": "Access OutBackShare",
+    "subtitle": "For approved partners and demonstration users.",
+    "label": "Password",
+    "placeholder": "",
+    "button": "Continue",
+    "error": "Incorrect password. Please try again.",
+    "heroTitle": "Local surplus food, coordinated before it goes to waste.",
+    "heroCopy": "OutBackShare connects local food donors with approved community organisations, helping surplus food reach nearby communities faster.",
+    "highlightsLabel": "Platform highlights",
+    "bullets": {
+      "post": "Post surplus food quickly",
+      "coordinate": "Coordinate nearby collection",
+      "spot": "Spot local shortage signals early"
+    },
+    "builtFor": "Built for",
+    "donorRole": "Donors sharing surplus food",
+    "orgRole": "Community organisations coordinating collection",
+    "trust": "Access is limited to approved partners and demonstration users."
+  },
   "dashboard": {
-    "title": "Live Listing Board",
+    "title": "Food listings",
+    "subtitle": "Claim available food or manage your organisation listings.",
+    "serviceArea": "Service area",
+    "orgCodeLabel": "Organisation code",
+    "orgCodeHint": "Used to manage live listings and collection tools.",
+    "signedInAs": "Signed in as {{orgCode}}",
+    "donorCodeLabel": "Donor code",
+    "communityFallback": "Community",
     "noListings": "Failed to load listings. Please try again.",
     "sharing": "Sharing excess from {{orgName}}",
-    "shareButton": "Share Excess",
-    "serviceArea": "Service area",
-    "allServiceAreas": "All service areas",
+    "shareButton": "Post food",
     "tabs": {
       "all": "All",
+      "allTypes": "All types",
       "bakery": "Bakery",
       "bakedGoods": "Baked goods",
       "produce": "Fruit & veg",
-      "pantry": "Pantry",
-      "dairy": "Dairy, eggs & fridge",
+      "dairy": "Dairy",
       "prepared": "Prepared",
       "preparedMeals": "Prepared meals",
-      "other": "Other",
       "grocery": "Grocery",
-      "expiringSoon": "Expiring soon"
-    }
+      "vegan": "Vegan",
+      "vegetarian": "Vegetarian",
+      "nonVegetarian": "Non-vegetarian",
+      "dairyFree": "Lactose-free / dairy-free",
+      "glutenFree": "Gluten-free",
+      "halal": "Halal",
+      "expiringSoon": "Expiring soon",
+      "pantry": "Pantry",
+      "other": "Other"
+    },
+    "filterLabels": {
+      "category": "Food category",
+      "allCategories": "All categories",
+      "foodType": "Food type",
+      "status": "Listing status"
+    },
+    "statusPills": {
+      "available": "Available to claim",
+      "expired": "Expired — cannot claim",
+      "safetyRequired": "Food safety info required",
+      "posted": "Posted by us",
+      "claimed": "Claimed by us: {{quantity}}"
+    },
+    "statusTabs": {
+      "all": "All listings",
+      "available": "Available listings",
+      "posted": "Posted by us",
+      "claimed": "Claimed by us"
+    },
+    "claimDialog": {
+      "title": "Choose claim quantity",
+      "available": "This listing currently has {{quantity}} {{unit}} available.",
+      "claimAll": "Claim all",
+      "confirm": "Confirm claim",
+      "invalidQuantity": "Enter a valid quantity to claim.",
+      "exceedsQuantity": "You can claim up to {{quantity}}.",
+      "success": "Claimed {{quantity}} successfully.",
+      "failed": "Unable to claim this quantity right now."
+    },
+    "claimQuickSuccess": "Listing claimed successfully.",
+    "filterHint": "Search by food name, notes, source code, or postcode.",
+    "searchingFor": "Searching for",
+    "filteringCategory": "Category",
+    "filteringStatus": "Status",
+    "clearFilters": "Clear filters",
+    "showingMatches": "Showing {{count}} matching listings",
+    "emptyTitle": "No listings yet",
+    "emptyHint": "Listings from donors and organisations will appear here as soon as they are posted.",
+    "emptySearchTitle": "No matching listings",
+    "emptySearchHint": "Try another search term or clear the active category and status filters.",
+    "intelligence": {
+      "title": "Demand intelligence",
+      "subtitle": "Preview upcoming demand spikes in your nearby service postcodes.",
+      "sampleNote": "Sample demand indicators are shown until the forecasting data feed is connected.",
+      "respondAction": "Respond to this need",
+      "primaryLabel": "Demand spike alert",
+      "primaryHeadline": "{{suburb}} ({{postcode}}) may need extra support soon",
+      "metrics": {
+        "demandLift": "Demand lift",
+        "activePortions": "Active portions",
+        "households": "Households at risk"
+      },
+      "fields": {
+        "predictedWindow": "Predicted window",
+        "confidence": "Forecast confidence",
+        "factors": "Contributing factors"
+      },
+      "noDataTitle": "No alerts data yet",
+      "noDataHint": "Demand alerts will appear here once forecasting data is available.",
+      "loadErrorTitle": "Unable to load alerts",
+      "loadErrorHint": "We could not load listings required for this alerts view. Please try again.",
+      "filterSpike": "Spike alerts",
+      "filterWatch": "Watch items",
+      "noWatchFilterHint": "No watch items are currently available.",
+      "noFilteredTitle": "No alerts match this filter",
+      "noFilteredHint": "Try another alert filter to view available demand signals.",
+      "noFilteredWatchHint": "No watch items are currently flagged. Try All or Spike alerts.",
+      "showAllAlerts": "Show all alerts",
+      "spikeItem": "Spike alert",
+      "watchPrimaryLabel": "Demand watch item",
+      "watchItem": "Watch item",
+      "priorityHigh": "High priority",
+      "priorityRisk": "Demand spike risk",
+      "emergingRisk": "Emerging demand risk",
+      "confidenceHigh": "High confidence",
+      "confidenceMedium": "Medium confidence",
+      "confidenceLow": "Low confidence",
+      "selected": "Selected",
+      "postcodeAlerts": "Postcode alerts",
+      "nextSevenDays": "Next 7 days",
+      "factorSeifa": "Socioeconomic disadvantage",
+      "factorLowSupply": "Low food supply",
+      "alertReason": "Demand risk {{score}}% — SEIFA IRSD {{irsd}}"
+    },
+    "coverageInsights": {
+      "title": "Supply coverage watch",
+      "kicker": "Coverage",
+      "subtitle": "Identify high-need postcodes with low or zero active food supply.",
+      "sampleNote": "Sample postcode profiles are shown until the live coverage map feed is connected.",
+      "summary": {
+        "zeroSupply": "zero-supply hotspots",
+        "atRisk": "postcodes at risk",
+        "tracked": "tracked postcodes"
+      },
+      "hotspotsTitle": "High-need areas with no active supply",
+      "hotspotsHint": "These postcodes currently have no available listings in the live board.",
+      "watchTitle": "Coverage watchlist",
+      "watchHint": "Postcodes where current active portions are likely to run short.",
+      "allCovered": "Every tracked hotspot postcode currently has active supply.",
+      "noWatch": "No extra watchlist postcodes are flagged right now.",
+      "detailTitle": "Postcode detail panel",
+      "detailHint": "Use this panel to plan redistribution decisions for a priority postcode.",
+      "fields": {
+        "seifa": "SEIFA score",
+        "activeListings": "Active listing count",
+        "population": "Estimated population in need",
+        "nearestSupply": "Nearest active supply point"
+      },
+      "badges": {
+        "zeroSupply": "Zero supply"
+      },
+      "coverage": {
+        "none": "No cover",
+        "low": "Low cover",
+        "watch": "Watch",
+        "healthy": "Healthy"
+      },
+      "navLabel": "Supply gaps",
+      "respondAction": "Respond to this postcode",
+      "noDataTitle": "No coverage data yet",
+      "noDataHint": "Coverage hotspots will appear here once enough listing data is available.",
+      "loadErrorTitle": "Unable to load coverage insights",
+      "loadErrorHint": "We could not load listing data required for postcode coverage analysis. Please try again."
+    },
+    "workspaceTitle": "Organisation workspace",
+    "workspaceSubtitle": "Review live supply and demand signals for nearby service areas."
   },
-
   "listing": {
-    "itemsAvailable": "{{count}} items available",
-    "claimMovedOut": "Claimed successfully. This item has been moved out of the available board.",
-    "claimedByYou": "Claimed by you",
-    "claimedStatus": "Claimed",
+    "itemsAvailable_one": "{{count}} item available",
+    "itemsAvailable_other": "{{count}} items available",
     "location": "Location: ",
     "expiresIn": "Expires in {{time}}",
     "from": "From",
+    "fromCode": "From {{code}}",
+    "fromDonorCode": "Posted by donor",
+    "fromOrganizationCode": "Posted by organisation",
     "postcode": "Postcode",
     "claimingButton": "Claiming...",
-    "claimThisButton": "Claim This",
+    "claimThisButton": "Claim food",
+    "claimItemButton": "Claim item",
+    "viewDetailsButton": "View details",
     "justNow": "Just now",
     "minutesAgo": "{{count}}m ago",
     "hoursAgo": "{{count}}h ago",
     "daysAgo": "{{count}}d ago",
+    "approxQuantity": "About {{quantity}} {{unit}}",
     "dietary": {
       "vegetarian": "Vegetarian",
       "vegan": "Vegan",
       "glutenFree": "Gluten Free",
-      "dairyFree": "Dairy Free",
-      "nonVegetarian": "Non-vegetarian"
+      "dairyFree": "Lactose-free / dairy-free",
+      "nonVegetarian": "Non-vegetarian",
+      "halal": "Halal",
+      "none": "No dietary tag"
     },
     "units": {
+      "portion": "portion",
       "portions": "portions",
+      "meal": "meal",
       "meals": "meals",
       "kg": "kg",
+      "item": "item",
       "units": "units",
+      "box": "box",
       "boxes": "boxes",
       "dozen": "dozen",
       "litres": "litres"
+    },
+    "bestBefore": "Best before",
+    "bestBeforeToday": "Best before today",
+    "storageLabel": "Storage",
+    "pickupWindowLabel": "Pickup window",
+    "pickupNotesLabel": "Pickup notes",
+    "dietaryLabel": "Dietary",
+    "allergenLabel": "Allergens",
+    "allergenRequired": "Allergen info required",
+    "claimBlockedExpired": "This listing is expired and can no longer be claimed.",
+    "claimBlockedMissingExpiry": "Please add an expiry date before this listing can be claimed.",
+    "claimBlockedMissingAllergen": "Please add allergen information before claiming this listing.",
+    "claimBlockedMissingStorage": "Please add storage condition before claiming this listing.",
+    "claimBlockedMissingAllergenAndStorage": "Please add allergen information and storage condition before claiming this listing.",
+    "claimBlockedTodayAllowedHint": "Best-before today items can still be claimed once safety information is complete.",
+    "claimBlockedMissingSafety": "This listing is missing required food safety information.",
+    "storage": {
+      "room_temp": "Room temperature",
+      "refrigerated": "Refrigerated",
+      "frozen": "Frozen",
+      "keep_dry": "Keep dry",
+      "unknown": "Not provided"
+    },
+    "allergens": {
+      "nuts": "Nuts",
+      "dairy": "Dairy",
+      "gluten": "Gluten",
+      "eggs": "Eggs",
+      "soy": "Soy",
+      "sesame": "Sesame",
+      "shellfish": "Shellfish",
+      "noknownallergens": "No known allergens"
     }
   },
-
   "common": {
     "close": "Close",
     "back": "Back",
@@ -178,15 +540,108 @@
     "loading": "Loading...",
     "error": "Error",
     "success": "Success",
-    "home": "Back to home",
     "alerts": "Alerts",
-    "maps": "Maps",
     "profile": "Profile",
-    "secure": "SECURE CIVIC PLATFORM • DATA ENCRYPTED"
+    "secure": "COMMUNITY FOOD SHARING PLATFORM",
+    "all": "All"
   },
-
   "lang": {
     "en": "English",
     "zh": "中文"
+  },
+  "coverageMap": {
+    "navLabel": "Around me",
+    "legend": "Risk level",
+    "summary": "At-risk postcodes",
+    "riskCountHint": "with demand risk > 0.5",
+    "postcode": "Postcode",
+    "riskScore": "Demand risk",
+    "seifaScore": "SEIFA IRSD",
+    "activeListings": "Active listings",
+    "totalSupply": "Total supply",
+    "noScore": "Not scored yet",
+    "clickHint": "Click a postcode on the map to see details.",
+    "risk": {
+      "high": "High (≥0.75)",
+      "mediumhigh": "Medium-high (≥0.50)",
+      "mediumlow": "Medium-low (≥0.25)",
+      "low": "Low (<0.25)",
+      "none": "No score yet"
+    }
+  },
+  "logisticsGuide": {
+    "ariaLabel": "Listing workflow guide",
+    "eyebrow": "How it works",
+    "title": "Track each donation from listing to confirmed collection.",
+    "orgEyebrow": "How pickup works",
+    "orgTitle": "Reserve and collect food in 4 steps",
+    "donor": {
+      "step1": {
+        "title": "Post food",
+        "desc": "Add photo, expiry date, allergens, storage, and pickup window."
+      },
+      "step2": {
+        "title": "Review claims",
+        "desc": "Review claim requests and confirm availability.",
+        "status": "Status: Available → Claimed"
+      },
+      "step3": {
+        "title": "Coordinate pickup",
+        "desc": "Share pickup time, contact details, and collection notes.",
+        "status": "Status: Claimed"
+      },
+      "step4": {
+        "title": "Confirm collection",
+        "desc": "Mark the listing as picked up after collection.",
+        "status": "Status: Picked up"
+      }
+    },
+    "org": {
+      "step1": {
+        "title": "Find available food",
+        "desc": "Browse nearby listings and check expiry, storage, and allergen information."
+      },
+      "step2": {
+        "title": "Claim item",
+        "desc": "Reserve suitable food for your organisation.",
+        "status": "Status: Available → Claimed"
+      },
+      "step3": {
+        "title": "Arrange pickup",
+        "desc": "Check pickup window, contact details, and collection notes.",
+        "status": "Status: Claimed"
+      },
+      "step4": {
+        "title": "Confirm collected",
+        "desc": "Mark the item as picked up after collection.",
+        "status": "Status: Picked up"
+      }
+    }
+  },
+  "hiw": {
+    "label": "How it works",
+    "dismiss": "Got it ✕",
+    "donor": {
+      "step1Title": "Post food",
+      "step1Desc": "List your surplus food with a photo",
+      "step1Cta": "Post now",
+      "step2Title": "Wait for a claim",
+      "step2Desc": "A community group reserves your item",
+      "step3Title": "Arrange pickup",
+      "step3Desc": "Share a pickup time and contact details",
+      "step4Title": "Food collected!",
+      "step4Desc": "Your donation reaches those in need",
+      "step4Cta": "Post more"
+    },
+    "org": {
+      "step1Title": "Browse food",
+      "step1Desc": "Find available surplus near your area",
+      "step2Title": "Claim a listing",
+      "step2Desc": "Reserve what your community needs",
+      "step3Title": "Arrange pickup",
+      "step3Desc": "Confirm time and contact with the donor",
+      "step4Title": "Collect & distribute",
+      "step4Desc": "Pick up and deliver to those in need"
+    }
   }
 }
