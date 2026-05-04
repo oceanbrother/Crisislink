@@ -142,6 +142,7 @@ function buildInitialState({ postcode, orgMode, initialOrgCode, listing }) {
       ? listing.allergenTags
       : (Array.isArray(listing.allergen_tags) ? listing.allergen_tags : [])
     const listingStorageCondition = listing.storageCondition || listing.storage_condition || ''
+    const listingPickupWindow = listing.pickupWindow || listing.pickup_window || ''
     return {
       foodType: listing.foodType || '',
       quantity: listing.quantity ? String(listing.quantity) : '',
@@ -159,6 +160,7 @@ function buildInitialState({ postcode, orgMode, initialOrgCode, listing }) {
       nameSuggestions: [],
       allergenTags: listingAllergenTags,
       storageCondition: listingStorageCondition,
+      pickupWindow: listingPickupWindow,
     }
   }
 
@@ -176,6 +178,7 @@ function buildInitialState({ postcode, orgMode, initialOrgCode, listing }) {
     nameSuggestions: [],
     allergenTags: [],
     storageCondition: '',
+    pickupWindow: '',
   }
 }
 
@@ -213,6 +216,9 @@ const DonationForm = () => {
   const [successListing, setSuccessListing] = useState(null)
   const [previewLoadFailed, setPreviewLoadFailed] = useState(false)
   const [disclaimerChecked, setDisclaimerChecked] = useState(false)
+  const [allergenFieldError, setAllergenFieldError] = useState('')
+  const [storageFieldError, setStorageFieldError] = useState('')
+  const [pickupWindowFieldError, setPickupWindowFieldError] = useState('')
 
   const pageTitle = useMemo(() => {
     if (editMode) return t('donation.editTitle', 'Edit listing')
@@ -239,6 +245,9 @@ const DonationForm = () => {
     setSuccessListing(null)
     setPreviewLoadFailed(false)
     setDisclaimerChecked(false)
+    setAllergenFieldError('')
+    setStorageFieldError('')
+    setPickupWindowFieldError('')
     if (fileInputRef.current) {
       fileInputRef.current.value = ''
     }
@@ -342,6 +351,12 @@ const DonationForm = () => {
     if (field === 'expiryDate') {
       nextValue = String(value)
     }
+    if (field === 'pickupWindow' && String(value || '').trim() !== '') {
+      setPickupWindowFieldError('')
+    }
+    if (field === 'storageCondition' && String(value || '').trim() !== '') {
+      setStorageFieldError('')
+    }
     setFormData((prev) => ({ ...prev, [field]: nextValue }))
   }
 
@@ -374,6 +389,9 @@ const DonationForm = () => {
     event.preventDefault()
     setLoading(true)
     setError('')
+    setAllergenFieldError('')
+    setStorageFieldError('')
+    setPickupWindowFieldError('')
 
     try {
       const quantityValue = parseQuantityValue(formData.quantity)
@@ -398,10 +416,19 @@ const DonationForm = () => {
         throw new Error(t('donation.errors.expiryPast', 'Best before date cannot be in the past'))
       }
       if (formData.allergenTags.length === 0) {
-        throw new Error(t('donation.errors.allergenRequired', 'Please select at least one allergen tag (or "No known allergens")'))
+        const allergenError = t('donation.errors.allergenRequired', 'Please select at least one allergen tag (or "No known allergens")')
+        setAllergenFieldError(allergenError)
+        throw new Error(allergenError)
       }
       if (!formData.storageCondition) {
-        throw new Error(t('donation.errors.storageRequired', 'Please select a storage condition'))
+        const storageError = t('donation.errors.storageRequired', 'Please select a storage condition')
+        setStorageFieldError(storageError)
+        throw new Error(storageError)
+      }
+      if (String(formData.pickupWindow || '').trim() === '') {
+        const pickupWindowError = t('donation.errors.pickupWindowRequired', 'Please add a pickup window before posting.')
+        setPickupWindowFieldError(pickupWindowError)
+        throw new Error(pickupWindowError)
       }
       if (!disclaimerChecked) {
         throw new Error(t('donation.errors.disclaimerRequired', 'Please confirm the accuracy declaration before posting'))
@@ -438,6 +465,8 @@ const DonationForm = () => {
         allergen_tags: formData.allergenTags,
         storageCondition: formData.storageCondition || null,
         storage_condition: formData.storageCondition || null,
+        pickupWindow: String(formData.pickupWindow || '').trim() || null,
+        pickup_window: String(formData.pickupWindow || '').trim() || null,
       }
 
       let savedListing = null
@@ -451,6 +480,7 @@ const DonationForm = () => {
         rememberListingSafety(safetyListingId, {
           allergenTags: formData.allergenTags,
           storageCondition: formData.storageCondition,
+          pickupWindow: formData.pickupWindow,
         })
       }
       if (!orgMode && savedListing?.id) {
@@ -693,7 +723,7 @@ const DonationForm = () => {
               <p>{t('donation.reviewTitle', 'Suggested details — please review before posting.')}</p>
               <ul>
                 <li>{t('donation.reviewHintFood', 'Check the food name and category.')}</li>
-                <li>{t('donation.reviewHintQuantity', 'Confirm the quantity and size or weight.')}</li>
+                <li>{t('donation.reviewHintQuantity', 'Confirm the quantity and portion size.')}</li>
                 <li>{t('donation.reviewHintDietary', 'Update the dietary tag if the AI guessed incorrectly.')}</li>
               </ul>
             </div>
@@ -855,12 +885,12 @@ const DonationForm = () => {
                 ) : null}
               </div>
 
-              <div className="ai-field full">
-                <label className="field-label">
+              <div className={allergenFieldError ? 'ai-field full allergen-field has-error' : 'ai-field full allergen-field'}>
+                <label className={allergenFieldError ? 'field-label field-label--error' : 'field-label'}>
                   {t('donation.allergenTags', 'Allergen information')}
                   <span style={{ color: '#e53e3e', marginLeft: 2 }}>*</span>
                 </label>
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginTop: '4px' }}>
+                <div className="allergen-chip-group" role="group" aria-label={t('donation.allergenTags', 'Allergen information')}>
                   {ALLERGEN_PRESETS.map(({ key, label }) => {
                     const active = formData.allergenTags.includes(key)
                     const isNoKnown = key === 'no known allergens'
@@ -868,29 +898,30 @@ const DonationForm = () => {
                       <button
                         key={key}
                         type="button"
+                        className={[
+                          'allergen-chip',
+                          active ? 'is-active' : '',
+                          isNoKnown ? 'is-wide' : '',
+                        ].join(' ').trim()}
                         onClick={() => {
                           setFormData(prev => {
+                            let nextTags = []
                             if (isNoKnown) {
-                              return { ...prev, allergenTags: active ? [] : [key] }
+                              nextTags = active ? [] : [key]
+                            } else {
+                              const without = prev.allergenTags.filter(t => t !== 'no known allergens')
+                              nextTags = active
+                                ? without.filter(t => t !== key)
+                                : [...without, key]
                             }
-                            const without = prev.allergenTags.filter(t => t !== 'no known allergens')
+                            if (nextTags.length > 0) {
+                              setAllergenFieldError('')
+                            }
                             return {
                               ...prev,
-                              allergenTags: active
-                                ? without.filter(t => t !== key)
-                                : [...without, key],
+                              allergenTags: nextTags,
                             }
                           })
-                        }}
-                        style={{
-                          padding: '4px 10px',
-                          borderRadius: '999px',
-                          border: `1.5px solid ${active ? '#e53e3e' : '#cbd5e0'}`,
-                          background: active ? '#fff5f5' : '#fff',
-                          color: active ? '#c53030' : '#4a5568',
-                          fontSize: '0.75rem',
-                          fontWeight: active ? 700 : 400,
-                          cursor: 'pointer',
                         }}
                       >
                         {label}
@@ -898,20 +929,28 @@ const DonationForm = () => {
                     )
                   })}
                 </div>
-                <p className="field-hint">
+                <p className={allergenFieldError ? 'field-hint field-hint--error' : 'field-hint field-hint--instruction'}>
                   {t('donation.allergenHint', 'Select all allergens present. Choose "No known allergens" if none apply.')}
                 </p>
+                {allergenFieldError ? (
+                  <p className="field-error-inline">
+                    {t(
+                      'donation.allergenRequiredHint',
+                      'Required: select at least one allergen tag, or choose "No known allergens".',
+                    )}
+                  </p>
+                ) : null}
               </div>
 
-              <div className="ai-field">
-                <label className="field-label" htmlFor="storageCondition">
+              <div className={storageFieldError ? 'ai-field has-error' : 'ai-field'}>
+                <label className={storageFieldError ? 'field-label field-label--error' : 'field-label'} htmlFor="storageCondition">
                   {t('donation.storageCondition', 'Storage condition')}
                   <span style={{ color: '#e53e3e', marginLeft: 2 }}>*</span>
                 </label>
                 <div className="form-select-wrapper">
                   <select
                     id="storageCondition"
-                    className="form-select"
+                    className={storageFieldError ? 'form-select form-select--error' : 'form-select'}
                     value={formData.storageCondition}
                     onChange={(event) => handleChange('storageCondition', event.target.value)}
                   >
@@ -923,6 +962,43 @@ const DonationForm = () => {
                   </select>
                   <span className="material-symbols-outlined select-arrow">expand_more</span>
                 </div>
+                <p className={storageFieldError ? 'field-hint field-hint--error' : 'field-hint field-hint--instruction'}>
+                  {t('donation.storageHint', 'How should this food be stored before pickup?')}
+                </p>
+                {storageFieldError ? (
+                  <p className="field-error-inline">
+                    {t(
+                      'donation.storageRequiredHint',
+                      'Required: choose a storage condition so organisations can handle the food safely.',
+                    )}
+                  </p>
+                ) : null}
+              </div>
+
+              <div className={pickupWindowFieldError ? 'ai-field has-error' : 'ai-field'}>
+                <label className={pickupWindowFieldError ? 'field-label field-label--error' : 'field-label'} htmlFor="pickupWindow">
+                  {t('donation.pickupWindow', 'Pickup window')}
+                  <span style={{ color: '#e53e3e', marginLeft: 2 }}>*</span>
+                </label>
+                <input
+                  id="pickupWindow"
+                  className={pickupWindowFieldError ? 'form-input form-input--error' : 'form-input'}
+                  type="text"
+                  value={formData.pickupWindow}
+                  onChange={(event) => handleChange('pickupWindow', event.target.value)}
+                  placeholder={t('donation.pickupWindowPlaceholder', 'e.g. Today 4:00-6:00 pm')}
+                />
+                <p className={pickupWindowFieldError ? 'field-hint field-hint--error' : 'field-hint field-hint--instruction'}>
+                  {t('donation.pickupWindowHint', 'When can organisations collect this food?')}
+                </p>
+                {pickupWindowFieldError ? (
+                  <p className="field-error-inline">
+                    {t(
+                      'donation.pickupWindowRequiredHint',
+                      'Required: add a pickup date and time window so organisations know when to collect.',
+                    )}
+                  </p>
+                ) : null}
               </div>
 
               <div className="ai-field">

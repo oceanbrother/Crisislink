@@ -126,6 +126,7 @@ class ListingBase(BaseModel):
     expiryDate: Optional[date] = None
     allergenTags: list[str] = Field(default_factory=list)
     storageCondition: Optional[str] = Field(default=None, max_length=50)
+    pickupWindow: Optional[str] = Field(default=None, max_length=100)
 
     @field_validator("dietary_tags")
     @classmethod
@@ -359,12 +360,12 @@ async def create_listing(request: Request, listing: ListingCreate):
             listing_id, title, description, quantity, unit,
             food_category, dietary_tags, photo_url,
             postcode, org_code, status, created_at, org_id, expiry_date,
-            allergen_tags, storage_condition
+            allergen_tags, storage_condition, pickup_window
         ) VALUES (
             :listing_id, :title, :description, :quantity, :unit,
             :food_category, :dietary_tags, :photo_url,
             :postcode, :org_code, 'available', :created_at, :org_id, :expiry_date,
-            :allergen_tags, :storage_condition
+            :allergen_tags, :storage_condition, :pickup_window
         )
         """,
         {
@@ -383,6 +384,7 @@ async def create_listing(request: Request, listing: ListingCreate):
             "expiry_date": listing.expiryDate,
             "allergen_tags": allergen_str,
             "storage_condition": listing.storageCondition,
+            "pickup_window": listing.pickupWindow,
         },
     )
 
@@ -468,7 +470,8 @@ async def update_listing(request: Request, listing_id: str, listing: ListingUpda
             postcode = :postcode,
             expiry_date = :expiry_date,
             allergen_tags = :allergen_tags,
-            storage_condition = :storage_condition
+            storage_condition = :storage_condition,
+            pickup_window = :pickup_window
         WHERE listing_id = :listing_id
         """,
         {
@@ -484,6 +487,7 @@ async def update_listing(request: Request, listing_id: str, listing: ListingUpda
             "expiry_date": listing.expiryDate,
             "allergen_tags": allergen_str,
             "storage_condition": listing.storageCondition,
+            "pickup_window": listing.pickupWindow,
         },
     )
     updated = await fetch_listing_row(listing_id)
@@ -554,13 +558,13 @@ async def claim_listing(request: Request, listing_id: str, claim: ClaimRequest):
                     food_category, dietary_tags, photo_url,
                     postcode, org_code, expiry_date, pickup_time,
                     status, created_at, claimed_at, org_id, claimed_by_org_id,
-                    location_id, source_listing_id
+                    location_id, source_listing_id, allergen_tags, storage_condition, pickup_window
                 ) VALUES (
                     :listing_id, :title, :description, :quantity, :unit,
                     :food_category, :dietary_tags, :photo_url,
                     :postcode, :org_code, :expiry_date, :pickup_time,
                     'claimed', :created_at, :claimed_at, :org_id, :claimed_by_org_id,
-                    :location_id, :source_listing_id
+                    :location_id, :source_listing_id, :allergen_tags, :storage_condition, :pickup_window
                 )
                 """,
                 {
@@ -582,6 +586,9 @@ async def claim_listing(request: Request, listing_id: str, claim: ClaimRequest):
                     "claimed_by_org_id": claimer_org_id,
                     "location_id": row["location_id"],
                     "source_listing_id": listing_id,
+                    "allergen_tags": row["allergen_tags"],
+                    "storage_condition": row["storage_condition"],
+                    "pickup_window": row["pickup_window"],
                 },
             )
 

@@ -332,6 +332,10 @@
   margin-left: 0.25rem;
 }
 
+.field-label--error {
+  color: #c53030;
+}
+
 .field-label.muted {
   color: var(--on-surface);
   font-size: 0.88rem;
@@ -359,6 +363,12 @@
   box-shadow: 0 0 0 4px rgba(var(--role-primary-rgb), 0.12);
 }
 
+.form-input--error,
+.form-input--error:focus {
+  border-color: #c53030;
+  box-shadow: 0 0 0 4px rgba(197, 48, 48, 0.14);
+}
+
 .form-input::placeholder { color: var(--outline); font-weight: 400; }
 
 .form-input.muted-bg {
@@ -378,6 +388,25 @@
   margin-top: 0.4rem;
   margin-left: 0.25rem;
   line-height: 1.55;
+}
+
+.field-hint--instruction {
+  color: #2f3e38;
+  font-size: 1rem;
+  font-weight: 580;
+}
+
+.field-hint--error {
+  color: #9b2c2c;
+  font-weight: 620;
+}
+
+.field-error-inline {
+  margin: 0.45rem 0 0 0.25rem;
+  color: #b42318;
+  font-size: 0.95rem;
+  font-weight: 700;
+  line-height: 1.45;
 }
 
 /* ── Select field ─────────────────────────────────────────── */
@@ -403,6 +432,12 @@
 .form-select:focus {
   border-color: var(--primary);
   box-shadow: 0 0 0 4px rgba(var(--role-primary-rgb), 0.12);
+}
+
+.form-select--error,
+.form-select--error:focus {
+  border-color: #c53030;
+  box-shadow: 0 0 0 4px rgba(197, 48, 48, 0.14);
 }
 
 .select-arrow {
@@ -735,6 +770,61 @@
   font-size: 1rem;
   line-height: 1.6;
   color: var(--on-surface);
+}
+
+.allergen-field {
+  border: 1px solid rgba(199, 131, 24, 0.16);
+  border-radius: 1rem;
+  padding: 0.95rem 1rem 0.9rem;
+  background: rgba(255, 255, 255, 0.82);
+}
+
+.allergen-field.has-error {
+  border-color: rgba(197, 48, 48, 0.42);
+  background: rgba(255, 245, 245, 0.7);
+  box-shadow: 0 0 0 2px rgba(197, 48, 48, 0.1);
+}
+
+.allergen-chip-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.72rem;
+  margin-top: 0.35rem;
+}
+
+.allergen-chip {
+  min-height: 2.72rem;
+  padding: 0.62rem 1.15rem;
+  border-radius: 999px;
+  border: 2px solid #b6c4d3;
+  background: #ffffff;
+  color: #334155;
+  font-size: 1.08rem;
+  line-height: 1.2;
+  font-weight: 650;
+  cursor: pointer;
+  transition: transform 0.14s ease, box-shadow 0.14s ease, border-color 0.14s ease, background-color 0.14s ease, color 0.14s ease;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.allergen-chip:hover {
+  transform: translateY(-1px);
+  border-color: #95a7ba;
+  box-shadow: 0 4px 12px rgba(25, 41, 58, 0.08);
+}
+
+.allergen-chip.is-active {
+  border-color: #c53030;
+  background: #fff1f1;
+  color: #9b2c2c;
+  box-shadow: 0 3px 10px rgba(197, 48, 48, 0.12);
+}
+
+.allergen-chip.is-wide {
+  padding-left: 1.2rem;
+  padding-right: 1.2rem;
 }
 
 .response-context-hint {

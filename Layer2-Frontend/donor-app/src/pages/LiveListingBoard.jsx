@@ -210,7 +210,29 @@ const getClaimBlockReason = (listing, t) => {
   if (expiryMeta.isExpired) {
     return t('listing.claimBlockedExpired', 'This listing is expired and can no longer be claimed.')
   }
+
+  if (!expiryMeta.hasDate) {
+    return t('listing.claimBlockedMissingExpiry', 'Please add an expiry date before this listing can be claimed.')
+  }
+
+  // Product rule: "Best before today" items remain claimable.
+  if (expiryMeta.isToday) {
+    return ''
+  }
+
   const safety = hasSafetyFields(listing)
+  if (!safety.hasAllergenInfo && !safety.hasStorageInfo) {
+    return t('listing.claimBlockedMissingAllergenAndStorage', 'Please add allergen information and storage condition before claiming this listing.')
+  }
+
+  if (!safety.hasAllergenInfo) {
+    return t('listing.claimBlockedMissingAllergen', 'Please add allergen information before claiming this listing.')
+  }
+
+  if (!safety.hasStorageInfo) {
+    return t('listing.claimBlockedMissingStorage', 'Please add storage condition before claiming this listing.')
+  }
+
   if (!safety.hasCompleteSafetyInfo) {
     return t('listing.claimBlockedMissingSafety', 'This listing is missing required food safety information.')
   }
@@ -744,7 +766,8 @@ const LiveListingBoard = () => {
               const allergenTags = getAllergenTags(listing).map((tag) => String(tag || '').trim()).filter(Boolean)
               const storageCondition = getStorageCondition(listing)
               const hasPickupNotes = String(listing.description || '').trim() !== ''
-              const hasPickupWindow = String(listing.pickupWindow || '').trim() !== ''
+              const pickupWindow = String(listing.pickupWindow || listing.pickup_window || '').trim()
+              const hasPickupWindow = pickupWindow !== ''
               return (
               <article key={listing.id} className={`food-card org-card org-card--${viewState} ${isOwnOrgListing ? 'org-card--own' : ''} ${isClaimedByCurrentOrg ? 'food-card--claimed org-card--claimed' : ''} ${viewState === 'available' ? 'org-card--available' : ''} ${isAvailableAndExpired ? 'org-card--expired' : ''}`.trim()}>
                 {listing.photoUrl ? <img className="food-card-image" src={listing.photoUrl} alt={listing.foodType} /> : null}
@@ -821,7 +844,7 @@ const LiveListingBoard = () => {
                     <div className="food-card-detail-row org-card-detail-row">
                       <span className="material-symbols-outlined">calendar_month</span>
                       <span>
-                        {t('listing.pickupWindowLabel', 'Pickup window')}: {listing.pickupWindow}
+                        {t('listing.pickupWindowLabel', 'Pickup window')}: {pickupWindow}
                       </span>
                     </div>
                   ) : null}
@@ -910,12 +933,16 @@ const LiveListingBoard = () => {
                       {t('listing.viewDetailsButton', 'View details')}
                     </button>
                     <button
-                      className="card-action-btn primary"
+                      className={isClaimBlocked ? 'card-action-btn primary is-disabled' : 'card-action-btn primary'}
                       onClick={() => handleClaim(listing)}
                       disabled={claimingId === listing.id || isClaimBlocked}
                       type="button"
                     >
-                      {claimingId === listing.id ? t('listing.claimingButton') : t('listing.claimItemButton', 'Claim item')} →
+                      {claimingId === listing.id
+                        ? t('listing.claimingButton')
+                        : (isAvailableAndExpired
+                            ? t('listing.claimUnavailableButton', 'Claim unavailable')
+                            : `${t('listing.claimItemButton', 'Claim item')} →`)}
                     </button>
                     {isClaimBlocked ? (
                       <p className="org-card-claim-note">{claimBlockReason}</p>
