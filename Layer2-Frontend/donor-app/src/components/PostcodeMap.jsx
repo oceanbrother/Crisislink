@@ -58,14 +58,16 @@ export default function PostcodeMap({
   height = 420,
   defaultCenter = MELBOURNE,
   defaultZoom   = 12,
+  fitBoundsOnLoad = false,
 }) {
-  const containerRef  = useRef(null)
-  const mapRef        = useRef(null)
-  const markersRef    = useRef({})
-  const halosRef      = useRef({})
-  const onSelectRef   = useRef(onSelect)
-  const zonesRef      = useRef(zones)
-  const selectedRef   = useRef(selectedPostcode)
+  const containerRef    = useRef(null)
+  const mapRef          = useRef(null)
+  const markersRef      = useRef({})
+  const halosRef        = useRef({})
+  const onSelectRef     = useRef(onSelect)
+  const zonesRef        = useRef(zones)
+  const selectedRef     = useRef(selectedPostcode)
+  const hasFitRef       = useRef(false)
 
   useEffect(() => { onSelectRef.current = onSelect },        [onSelect])
   useEffect(() => { zonesRef.current    = zones },           [zones])
@@ -141,7 +143,16 @@ export default function PostcodeMap({
 
       markersRef.current[zone.postcode] = marker
     })
-  }, [zones])
+
+    // Auto-fit map to show all markers on first non-empty load only
+    if (fitBoundsOnLoad && !hasFitRef.current) {
+      const allCoords = Object.values(markersRef.current).map(m => m.getLatLng())
+      if (allCoords.length > 0) {
+        map.fitBounds(L.latLngBounds(allCoords), { padding: [32, 32], maxZoom: 9 })
+        hasFitRef.current = true
+      }
+    }
+  }, [zones]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // ── Handle selection changes ───────────────────────────────────────────────
   useEffect(() => {

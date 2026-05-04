@@ -30,7 +30,7 @@ except Exception as e:
 	AsyncIOScheduler = None
 	CronTrigger = None
 	APSCHEDULER_AVAILABLE = False
-	print(f"⚠ APScheduler not available: {e}")
+	print(f"[WARN] APScheduler not available: {e}")
 
 # Import the risk scoring pipeline
 import sys
@@ -74,9 +74,9 @@ async def startup():
 		from pathlib import Path as _Path
 		_models_dir = _Path(__file__).parent / "models"
 		risk_scorer = RiskScorer(models_dir=_models_dir)
-		print("✓ Risk scorer models loaded successfully")
+		print("[OK] Risk scorer models loaded successfully")
 	except Exception as e:
-		print(f"⚠ Risk scorer models not available: {e}")
+		print(f"[WARN] Risk scorer models not available: {e}")
 		risk_scorer = None
 
 	# Setup scheduler for periodic tasks (optional)
@@ -90,7 +90,7 @@ async def startup():
 		scheduler.start()
 	else:
 		scheduler = None
-		print("⚠ Scheduler disabled; APScheduler not available")
+		print("[WARN] Scheduler disabled; APScheduler not available")
 
 
 @app.on_event("shutdown")

@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useNavigate } from 'react-router-dom'
 import DonorFeatureNav from '../components/DonorFeatureNav'
@@ -7,6 +7,18 @@ import PostcodeMap from '../components/PostcodeMap'
 import { predictionApiClient } from '../services/api'
 import { getSavedDonorPostcode } from '../utils/donorPostcode'
 import suburbLookup from '../data/vic_postcode_suburbs.json'
+import { POSTCODE_COORDS } from '../utils/postcodeCoords'
+import '../styles/LiveListingBoard.css'
+
+function haversineKm([lat1, lon1], [lat2, lon2]) {
+  const R = 6371
+  const toRad = d => d * Math.PI / 180
+  const dLat = toRad(lat2 - lat1)
+  const dLon = toRad(lon2 - lon1)
+  const a = Math.sin(dLat / 2) ** 2 +
+    Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2
+  return R * 2 * Math.asin(Math.sqrt(a))
+}
 
 function severityColor(score) {
   if (score >= 0.75) return '#e53e3e'
@@ -31,7 +43,7 @@ const LEGEND = [
 
 const SEVERITY_FILTER_MAP = { critical: 0.75, high: 0.5, watch: 0.25, low: 0 }
 
-const MAP_HEIGHT = 'calc(100vh - 112px)'
+const MAP_HEIGHT = '58vh'
 
 export default function HotspotMap() {
   const { t } = useTranslation()
@@ -39,38 +51,73 @@ export default function HotspotMap() {
   const [hotspots, setHotspots] = useState([])
   const [selected, setSelected] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [fetchError, setFetchError] = useState(false)
   const [severityFilter, setSeverityFilter] = useState('all')
+  const [sortMode, setSortMode] = useState('priority') // 'priority' | 'distance'
+  const [userLocation, setUserLocation] = useState(null) // [lat, lon]
+  const [locating, setLocating] = useState(false)
 
+  const hasAutoSelectedRef = useRef(false)
   const donorPostcode = getSavedDonorPostcode()
 
-  useEffect(() => {
+  const loadHotspots = () => {
+    setLoading(true)
+    setFetchError(false)
     predictionApiClient.get('/predictions/hotspots', { params: { limit: 495 } })
       .then(res => setHotspots(res.data || []))
-      .catch(() => {})
+      .catch(() => setFetchError(true))
       .finally(() => setLoading(false))
-  }, [])
+  }
+
+  useEffect(() => { loadHotspots() }, [])
+
+  // Auto-select highest priority hotspot on first data load
+  useEffect(() => {
+    if (hotspots.length > 0 && !hasAutoSelectedRef.current) {
+      setSelected(hotspots[0]) // API already sorts by risk_score desc
+      hasAutoSelectedRef.current = true
+    }
+  }, [hotspots])
 
   const filtered = useMemo(() => {
-    if (severityFilter === 'all') return hotspots
-    const minScore = SEVERITY_FILTER_MAP[severityFilter] ?? 0
-    const maxScore = severityFilter === 'critical' ? 1
-      : severityFilter === 'high' ? 0.75
-      : severityFilter === 'watch' ? 0.5
-      : 0.25
-    return hotspots.filter(h => h.risk_score >= minScore && h.risk_score < maxScore)
-  }, [hotspots, severityFilter])
+    let list = hotspots
+    if (severityFilter !== 'all') {
+      const minScore = SEVERITY_FILTER_MAP[severityFilter] ?? 0
+      const maxScore = severityFilter === 'critical' ? 1
+        : severityFilter === 'high' ? 0.75
+        : severityFilter === 'watch' ? 0.5
+        : 0.25
+      list = list.filter(h => h.risk_score >= minScore && h.risk_score < maxScore)
+    }
+    if (sortMode === 'distance' && userLocation) {
+      return [...list].sort((a, b) => {
+        const ca = POSTCODE_COORDS[a.postcode]
+        const cb = POSTCODE_COORDS[b.postcode]
+        if (!ca) return 1
+        if (!cb) return -1
+        return haversineKm(userLocation, ca) - haversineKm(userLocation, cb)
+      })
+    }
+    return list
+  }, [hotspots, severityFilter, sortMode, userLocation])
 
   const mapZones = useMemo(() =>
-    filtered.map(h => ({
-      postcode: h.postcode,
-      suburb: suburbLookup[String(h.postcode)] || String(h.postcode),
-      tone: h.risk_score >= 0.75 ? 'critical'
-          : h.risk_score >= 0.5 ? 'high'
-          : h.risk_score >= 0.25 ? 'watch'
-          : 'healthy',
-      metric: `Risk: ${(h.risk_score * 100).toFixed(0)}%`,
-    }))
-  , [filtered])
+    filtered.map(h => {
+      const coords = POSTCODE_COORDS[h.postcode]
+      const distLabel = (sortMode === 'distance' && userLocation && coords)
+        ? `${haversineKm(userLocation, coords).toFixed(0)} km away`
+        : null
+      return {
+        postcode: h.postcode,
+        suburb: suburbLookup[String(h.postcode)] || String(h.postcode),
+        tone: h.risk_score >= 0.75 ? 'critical'
+            : h.risk_score >= 0.5 ? 'high'
+            : h.risk_score >= 0.25 ? 'watch'
+            : 'healthy',
+        metric: distLabel || `Risk: ${(h.risk_score * 100).toFixed(0)}%`,
+      }
+    })
+  , [filtered, sortMode, userLocation])
 
   const counts = useMemo(() => ({
     critical: hotspots.filter(h => h.risk_score >= 0.75).length,
@@ -83,21 +130,95 @@ export default function HotspotMap() {
     setSelected(hotspots.find(h => String(h.postcode) === String(postcode)) || null)
   }
 
-  return (
-    <>
-      <WorkspaceHeader role="donor" onBackClick={() => navigate(-1)} />
-      <DonorFeatureNav active="hotspots" />
+  function handleSortByPriority() {
+    setSortMode('priority')
+    // Re-select the highest priority in current filtered view
+    const top = hotspots.find(h => {
+      if (severityFilter === 'all') return true
+      const minScore = SEVERITY_FILTER_MAP[severityFilter] ?? 0
+      const maxScore = severityFilter === 'critical' ? 1
+        : severityFilter === 'high' ? 0.75
+        : severityFilter === 'watch' ? 0.5 : 0.25
+      return h.risk_score >= minScore && h.risk_score < maxScore
+    })
+    if (top) setSelected(top)
+  }
 
-      <div style={{ display: 'flex', height: MAP_HEIGHT }}>
+  function handleSortByDistance() {
+    setLocating(true)
+
+    const applyCoords = (coords) => {
+      setUserLocation(coords)
+      setSortMode('distance')
+      setLocating(false)
+      // Find nearest hotspot and select it
+      const withDist = hotspots
+        .map(h => ({ h, coords: POSTCODE_COORDS[h.postcode] }))
+        .filter(({ coords: c }) => !!c)
+        .sort((a, b) => haversineKm(coords, a.coords) - haversineKm(coords, b.coords))
+      if (withDist.length > 0) setSelected(withDist[0].h)
+    }
+
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(
+        pos => applyCoords([pos.coords.latitude, pos.coords.longitude]),
+        () => {
+          // Fallback: use saved donor postcode coords
+          const fallback = donorPostcode ? POSTCODE_COORDS[donorPostcode] : null
+          if (fallback) applyCoords(fallback)
+          else setLocating(false)
+        },
+        { timeout: 5000, maximumAge: 60000 }
+      )
+    } else {
+      const fallback = donorPostcode ? POSTCODE_COORDS[donorPostcode] : null
+      if (fallback) applyCoords(fallback)
+      else setLocating(false)
+    }
+  }
+
+  const selectedDistKm = useMemo(() => {
+    if (!userLocation || !selected) return null
+    const coords = POSTCODE_COORDS[selected.postcode]
+    if (!coords) return null
+    return haversineKm(userLocation, coords).toFixed(0)
+  }, [userLocation, selected])
+
+  return (
+    <div className="live-listing-board donor-role-board donor-role-page">
+      <WorkspaceHeader role="donor" onBackClick={() => navigate(-1)} />
+      <main className="feed-content donor-feed-content">
+        <div className="workspace-nav-row donor-area-nav-row">
+          <DonorFeatureNav active="hotspots" />
+        </div>
+
+      <section style={{ display: 'flex', height: MAP_HEIGHT }}>
         {/* Map */}
         <div style={{ flex: 1, position: 'relative', minHeight: 0, minWidth: 0 }}>
-          {loading && (
+          {(loading || fetchError) && (
             <div style={{
-              position: 'absolute', inset: 0, display: 'flex',
+              position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column',
               alignItems: 'center', justifyContent: 'center', zIndex: 1000,
-              background: 'rgba(255,255,255,0.85)',
+              background: 'rgba(255,255,255,0.9)', gap: '0.75rem',
             }}>
-              <p style={{ color: '#4a5568' }}>{t('common.loading')}</p>
+              {loading
+                ? <p style={{ color: '#4a5568' }}>{t('common.loading')}</p>
+                : <>
+                    <p style={{ color: '#e53e3e', fontWeight: 600, fontSize: '0.9rem' }}>
+                      Unable to load hotspot data
+                    </p>
+                    <button
+                      onClick={loadHotspots}
+                      style={{
+                        padding: '0.5rem 1.2rem', borderRadius: '999px', border: 'none',
+                        background: '#b86e10', color: '#fff', fontWeight: 600,
+                        fontSize: '0.82rem', cursor: 'pointer',
+                      }}
+                    >
+                      Retry
+                    </button>
+                  </>
+              }
             </div>
           )}
           <PostcodeMap
@@ -131,29 +252,71 @@ export default function HotspotMap() {
             </p>
           </div>
 
-          {/* Priority filter chips */}
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
-            {[
-              { key: 'all', label: 'All', color: '#4a5568' },
-              { key: 'critical', label: `Critical · ${counts.critical}`, color: '#e53e3e' },
-              { key: 'high', label: `High · ${counts.high}`, color: '#dd6b20' },
-              { key: 'watch', label: `Watch · ${counts.watch}`, color: '#d69e2e' },
-              { key: 'low', label: `Low · ${counts.low}`, color: '#38a169' },
-            ].map(({ key, label, color }) => (
+          {/* Sort mode */}
+          <div>
+            <p style={{ fontSize: '0.68rem', fontWeight: 700, color: '#a0aec0', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '6px' }}>
+              Sort by
+            </p>
+            <div style={{ display: 'flex', gap: '6px' }}>
               <button
-                key={key}
-                onClick={() => setSeverityFilter(key)}
+                onClick={handleSortByPriority}
                 style={{
-                  fontSize: '0.72rem', padding: '3px 10px', borderRadius: '999px', cursor: 'pointer',
-                  border: `1.5px solid ${color}`,
-                  background: severityFilter === key ? color : 'transparent',
-                  color: severityFilter === key ? '#fff' : color,
-                  fontWeight: 600,
+                  flex: 1, fontSize: '0.75rem', padding: '5px 0', borderRadius: '999px', cursor: 'pointer',
+                  border: '1.5px solid #b86e10',
+                  background: sortMode === 'priority' ? '#b86e10' : 'transparent',
+                  color: sortMode === 'priority' ? '#fff' : '#b86e10',
+                  fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px',
                 }}
               >
-                {label}
+                <span className="material-symbols-outlined" style={{ fontSize: '0.85rem' }}>priority_high</span>
+                Priority
               </button>
-            ))}
+              <button
+                onClick={handleSortByDistance}
+                disabled={locating}
+                style={{
+                  flex: 1, fontSize: '0.75rem', padding: '5px 0', borderRadius: '999px', cursor: locating ? 'wait' : 'pointer',
+                  border: '1.5px solid #4a5568',
+                  background: sortMode === 'distance' ? '#4a5568' : 'transparent',
+                  color: sortMode === 'distance' ? '#fff' : '#4a5568',
+                  fontWeight: 600, display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px',
+                  opacity: locating ? 0.6 : 1,
+                }}
+              >
+                <span className="material-symbols-outlined" style={{ fontSize: '0.85rem' }}>near_me</span>
+                {locating ? 'Locating…' : 'Distance'}
+              </button>
+            </div>
+          </div>
+
+          {/* Severity filter chips */}
+          <div>
+            <p style={{ fontSize: '0.68rem', fontWeight: 700, color: '#a0aec0', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '6px' }}>
+              Filter
+            </p>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px' }}>
+              {[
+                { key: 'all', label: 'All', color: '#4a5568' },
+                { key: 'critical', label: `Critical · ${counts.critical}`, color: '#e53e3e' },
+                { key: 'high', label: `High · ${counts.high}`, color: '#dd6b20' },
+                { key: 'watch', label: `Watch · ${counts.watch}`, color: '#d69e2e' },
+                { key: 'low', label: `Low · ${counts.low}`, color: '#38a169' },
+              ].map(({ key, label, color }) => (
+                <button
+                  key={key}
+                  onClick={() => setSeverityFilter(key)}
+                  style={{
+                    fontSize: '0.72rem', padding: '3px 10px', borderRadius: '999px', cursor: 'pointer',
+                    border: `1.5px solid ${color}`,
+                    background: severityFilter === key ? color : 'transparent',
+                    color: severityFilter === key ? '#fff' : color,
+                    fontWeight: 600,
+                  }}
+                >
+                  {label}
+                </button>
+              ))}
+            </div>
           </div>
 
           {/* Legend */}
@@ -197,13 +360,18 @@ export default function HotspotMap() {
                 <Row label="Risk score">
                   <span style={{ fontWeight: 500 }}>{(selected.risk_score * 100).toFixed(0)}%</span>
                 </Row>
+                {selectedDistKm !== null && (
+                  <Row label="Distance">
+                    <span style={{ fontWeight: 500 }}>{selectedDistKm} km</span>
+                  </Row>
+                )}
                 <Row label="Data source">
                   <span style={{
                     fontSize: '0.7rem', fontWeight: 600, padding: '2px 7px', borderRadius: '999px',
                     background: selected.cold_start ? '#fff3cd' : selected.data_source === 'ai_forecast' ? '#e0f5ec' : '#edf2f7',
                     color: selected.cold_start ? '#7d5a00' : selected.data_source === 'ai_forecast' ? '#1a7c54' : '#4a5568',
                   }}>
-                    {selected.cold_start ? '⏳ Learning' : selected.data_source === 'ai_forecast' ? '✦ AI forecast' : '⊖ Rule-based'}
+                    {selected.cold_start ? 'Learning' : selected.data_source === 'ai_forecast' ? 'AI forecast' : 'Rule-based'}
                   </span>
                 </Row>
                 <Row label="SEIFA IRSD">
@@ -216,13 +384,9 @@ export default function HotspotMap() {
                 </Row>
               </div>
 
-              {/* Post food here CTA */}
               <button
                 onClick={() => navigate('/donor/post', {
-                  state: {
-                    postcode: donorPostcode,
-                    targetPostcode: selected.postcode,
-                  },
+                  state: { postcode: donorPostcode, targetPostcode: selected.postcode },
                 })}
                 style={{
                   width: '100%', padding: '0.6rem', borderRadius: '8px', border: 'none', cursor: 'pointer',
@@ -239,8 +403,9 @@ export default function HotspotMap() {
             </p>
           )}
         </div>
-      </div>
-    </>
+      </section>
+      </main>
+    </div>
   )
 }
 
