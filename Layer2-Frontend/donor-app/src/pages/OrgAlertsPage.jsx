@@ -94,6 +94,10 @@ const OrgAlertsPage = () => {
     () => demandAlerts.filter((a) => a.pressureScore >= 75).length,
     [demandAlerts]
   )
+  const watchAlertCount = useMemo(
+    () => demandAlerts.filter((a) => a.pressureScore < 75).length,
+    [demandAlerts]
+  )
 
   const averageConfidence = useMemo(() => {
     if (demandAlerts.length === 0) return 0
@@ -139,6 +143,12 @@ const OrgAlertsPage = () => {
   }, [alertToneFilter, demandAlerts])
 
   useEffect(() => {
+    if (alertToneFilter === 'watch' && watchAlertCount === 0) {
+      setAlertToneFilter('all')
+    }
+  }, [alertToneFilter, watchAlertCount])
+
+  useEffect(() => {
     setSelectedAlertPostcode((cur) =>
       filteredDemandAlerts.some((a) => a.postcode === cur) ? cur : filteredDemandAlerts[0]?.postcode || ''
     )
@@ -148,6 +158,8 @@ const OrgAlertsPage = () => {
     () => filteredDemandAlerts.find((a) => a.postcode === selectedAlertPostcode) || filteredDemandAlerts[0] || null,
     [filteredDemandAlerts, selectedAlertPostcode]
   )
+  const hasAnyAlerts = demandAlerts.length > 0
+  const hasFilteredAlerts = filteredDemandAlerts.length > 0
 
   const mapZones = useMemo(
     () => filteredDemandAlerts.map((a) => ({
@@ -241,7 +253,7 @@ const OrgAlertsPage = () => {
             <h2 className="empty-state-title">{t('dashboard.intelligence.loadErrorTitle')}</h2>
             <p className="empty-state-subtitle">{t('dashboard.intelligence.loadErrorHint')}</p>
           </section>
-        ) : !selectedAlert ? (
+        ) : !hasAnyAlerts ? (
           <section className="empty-state empty-state--rich" aria-live="polite">
             <span className="material-symbols-outlined empty-state-icon">notifications_off</span>
             <h2 className="empty-state-title">{t('dashboard.intelligence.noDataTitle')}</h2>
@@ -272,6 +284,8 @@ const OrgAlertsPage = () => {
                     type="button"
                     className={alertToneFilter === 'watch' ? 'org-alert-filter-btn active' : 'org-alert-filter-btn'}
                     onClick={() => setAlertToneFilter('watch')}
+                    disabled={watchAlertCount === 0}
+                    title={watchAlertCount === 0 ? t('dashboard.intelligence.noWatchFilterHint', 'No watch items are currently available.') : ''}
                   >
                     {t('dashboard.intelligence.filterWatch', 'Watch items')}
                   </button>
@@ -286,57 +300,80 @@ const OrgAlertsPage = () => {
                   defaultZoom={7}
                 />
 
-                <div className="org-demand-alert-grid" role="list" aria-label={t('dashboard.intelligence.postcodeAlerts', 'Postcode alerts')}>
-                  {filteredDemandAlerts.map((alert) => {
-                    const confidenceLevel = getConfidenceLevel(alert.confidence)
-                    const toneMeta = getDemandToneMeta(alert.demandLift)
-                    const isSelected = selectedAlert?.postcode === alert.postcode
-                    return (
-                      <button
-                        key={alert.postcode}
-                        type="button"
-                        role="listitem"
-                        className={[
-                          'org-demand-alert-card',
-                          `org-demand-alert-card--${toneMeta.tone}`,
-                          isSelected ? 'is-active' : '',
-                        ].join(' ').trim()}
-                        onClick={() => setSelectedAlertPostcode(alert.postcode)}
-                      >
-                        <div className="org-demand-alert-card-eyebrow">
-                          {isSelected ? (
-                            <span className="org-demand-alert-card-selected">
-                              {t('dashboard.intelligence.selected', 'Selected')}
-                            </span>
-                          ) : (
-                            <span className={`org-demand-alert-card-signal org-demand-alert-card-signal--${toneMeta.tone}`}>
-                              {toneMeta.cardCue}
-                            </span>
-                          )}
-                        </div>
-                        <div className="org-demand-alert-card-main">
-                          <div className="org-demand-alert-card-title-wrap">
-                            <strong>{alert.suburb}</strong>
-                            <span className="org-demand-alert-card-postcode">{alert.postcode}</span>
+                {hasFilteredAlerts ? (
+                  <div className="org-demand-alert-grid" role="list" aria-label={t('dashboard.intelligence.postcodeAlerts', 'Postcode alerts')}>
+                    {filteredDemandAlerts.map((alert) => {
+                      const confidenceLevel = getConfidenceLevel(alert.confidence)
+                      const toneMeta = getDemandToneMeta(alert.demandLift)
+                      const isSelected = selectedAlert?.postcode === alert.postcode
+                      return (
+                        <button
+                          key={alert.postcode}
+                          type="button"
+                          role="listitem"
+                          className={[
+                            'org-demand-alert-card',
+                            `org-demand-alert-card--${toneMeta.tone}`,
+                            isSelected ? 'is-active' : '',
+                          ].join(' ').trim()}
+                          onClick={() => setSelectedAlertPostcode(alert.postcode)}
+                        >
+                          <div className="org-demand-alert-card-eyebrow">
+                            {isSelected ? (
+                              <span className="org-demand-alert-card-selected">
+                                {t('dashboard.intelligence.selected', 'Selected')}
+                              </span>
+                            ) : (
+                              <span className={`org-demand-alert-card-signal org-demand-alert-card-signal--${toneMeta.tone}`}>
+                                {toneMeta.cardCue}
+                              </span>
+                            )}
                           </div>
-                          <div className="org-demand-alert-card-lift-wrap">
-                            <span className="org-demand-alert-card-lift-label">
-                              {t('dashboard.intelligence.metrics.demandLift')}
-                            </span>
-                            <strong className="org-demand-alert-card-lift">+{alert.demandLift}%</strong>
+                          <div className="org-demand-alert-card-main">
+                            <div className="org-demand-alert-card-title-wrap">
+                              <strong>{alert.suburb}</strong>
+                              <span className="org-demand-alert-card-postcode">{alert.postcode}</span>
+                            </div>
+                            <div className="org-demand-alert-card-lift-wrap">
+                              <span className="org-demand-alert-card-lift-label">
+                                {t('dashboard.intelligence.metrics.demandLift')}
+                              </span>
+                              <strong className="org-demand-alert-card-lift">+{alert.demandLift}%</strong>
+                            </div>
                           </div>
-                        </div>
-                        <p className={`org-demand-alert-card-confidence org-demand-alert-card-confidence--${confidenceLevel.tone}`}>
-                          {confidenceLevel.label} · {alert.confidence}%
-                        </p>
-                      </button>
-                    )
-                  })}
-                </div>
+                          <p className={`org-demand-alert-card-confidence org-demand-alert-card-confidence--${confidenceLevel.tone}`}>
+                            {confidenceLevel.label} · {alert.confidence}%
+                          </p>
+                        </button>
+                      )
+                    })}
+                  </div>
+                ) : (
+                  <div className="org-demand-filter-empty" aria-live="polite">
+                    <span className="material-symbols-outlined">filter_alt_off</span>
+                    <div>
+                      <strong>{t('dashboard.intelligence.noFilteredTitle', 'No alerts match this filter')}</strong>
+                      <p>
+                        {alertToneFilter === 'watch'
+                          ? t('dashboard.intelligence.noFilteredWatchHint', 'No watch items are currently flagged. Try All or Spike alerts.')
+                          : t('dashboard.intelligence.noFilteredHint', 'Try another alert filter to view available demand signals.')}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      className="org-demand-filter-reset-btn"
+                      onClick={() => setAlertToneFilter('all')}
+                    >
+                      {t('dashboard.intelligence.showAllAlerts', 'Show all alerts')}
+                    </button>
+                  </div>
+                )}
               </div>
 
               {/* Right: detail panel */}
               <article className="org-demand-primary-card">
+                {selectedAlert ? (
+                  <>
                 <div className="org-demand-primary-topline">
                   <span className="material-symbols-outlined">notifications_active</span>
                   <span>{selectedAlertTone.detailLabel}</span>
@@ -397,6 +434,14 @@ const OrgAlertsPage = () => {
                 >
                   {t('dashboard.intelligence.respondAction', 'Post extra food for this area')}
                 </button>
+                  </>
+                ) : (
+                  <div className="org-demand-detail-empty" aria-live="polite">
+                    <span className="material-symbols-outlined">info</span>
+                    <strong>{t('dashboard.intelligence.noFilteredTitle', 'No alerts match this filter')}</strong>
+                    <p>{t('dashboard.intelligence.noFilteredHint', 'Try another alert filter to view available demand signals.')}</p>
+                  </div>
+                )}
               </article>
             </div>
           </section>

@@ -53,10 +53,10 @@ export default function DisclaimerModal() {
             <strong>Accuracy:</strong> You are responsible for the accuracy of any food listing you post, including quantity, condition, and allergen information.
           </li>
           <li style={{ marginBottom: '0.5rem' }}>
-            <strong>Allergen risk:</strong> CrisisLink cannot independently verify allergen declarations. Recipients must exercise their own judgement.
+            <strong>Allergen risk:</strong> OutBackShare cannot independently verify allergen declarations. Recipients must exercise their own judgement.
           </li>
           <li>
-            <strong>Platform role:</strong> CrisisLink is an intermediary only. We do not handle, inspect, or accept liability for donated food items.
+            <strong>Platform role:</strong> OutBackShare is a coordination platform only. We do not handle, inspect, or accept liability for donated food items.
           </li>
         </ul>
 

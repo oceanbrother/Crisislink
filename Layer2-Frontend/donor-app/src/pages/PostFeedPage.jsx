@@ -65,6 +65,30 @@ function getStorageCondition(listing) {
   return String(listing?.storageCondition || listing?.storage_condition || '').trim()
 }
 
+function normalizeDateOnly(value) {
+  const raw = String(value || '').trim()
+  if (!raw) return null
+  const parsed = new Date(raw)
+  if (Number.isNaN(parsed.getTime())) return null
+  parsed.setHours(0, 0, 0, 0)
+  return parsed
+}
+
+function getExpiryMeta(expiryDate) {
+  const parsed = normalizeDateOnly(expiryDate)
+  if (!parsed) {
+    return { hasDate: false, isToday: false, isExpired: false }
+  }
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  const deltaDays = Math.round((parsed.getTime() - today.getTime()) / 86400000)
+  return {
+    hasDate: true,
+    isToday: deltaDays === 0,
+    isExpired: deltaDays < 0,
+  }
+}
+
 function formatAllergenTag(tag, t) {
   const normalized = normalizeAllergenTag(tag)
   if (!normalized) return ''
@@ -101,6 +125,28 @@ function getRelativeTime(createdAt, t) {
   if (minutes < 60) return t('listing.minutesAgo', { count: minutes })
   if (hours < 24) return t('listing.hoursAgo', { count: hours })
   return t('listing.daysAgo', { count: days })
+}
+
+function formatQuantityValue(value) {
+  const numeric = Number(value)
+  if (Number.isFinite(numeric) === false) return String(value ?? '')
+  return Number.isInteger(numeric) ? String(numeric) : String(numeric.toFixed(2)).replace(/\.00$/, '')
+}
+
+function formatApproxQuantityLabel(listing, t) {
+  const quantity = Number(listing?.quantity)
+  const formattedQuantity = formatQuantityValue(quantity)
+  const unit = String(listing?.unit || 'portions').trim().toLowerCase()
+
+  let displayUnit = t(`listing.units.${unit}`, unit)
+  if (Number.isFinite(quantity) && Math.abs(quantity - 1) < 0.00001) {
+    if (unit === 'portions') displayUnit = t('listing.units.portion', 'portion')
+    if (unit === 'meals') displayUnit = t('listing.units.meal', 'meal')
+    if (unit === 'items') displayUnit = t('listing.units.item', 'item')
+    if (unit === 'boxes') displayUnit = t('listing.units.box', 'box')
+  }
+
+  return t('listing.approxQuantity', { quantity: formattedQuantity, unit: displayUnit })
 }
 
 function tokenizeSearch(value) {
@@ -198,7 +244,9 @@ const PostFeedPage = () => {
       const ownListing = isOwnedDonorListing(listing, donorCode, postcode)
 
       if (!ownListing) return false
-      if (listingScope === 'editable' && listing.hasClaims) return false
+      const expiryMeta = getExpiryMeta(listing.expiryDate)
+      const isEditable = !listing.hasClaims && !expiryMeta.isExpired
+      if (listingScope === 'editable' && !isEditable) return false
 
       const matchesFilter = activeFilter === 'All' || category === activeFilter
       if (!matchesFilter) return false
@@ -229,7 +277,8 @@ const PostFeedPage = () => {
     return listings.reduce((acc, listing) => {
       if (!isOwnedDonorListing(listing, donorCode, postcode)) return acc
       acc.total += 1
-      if (!listing.hasClaims) {
+      const expiryMeta = getExpiryMeta(listing.expiryDate)
+      if (!listing.hasClaims && !expiryMeta.isExpired) {
         acc.editable += 1
       }
       return acc
@@ -469,10 +518,18 @@ const PostFeedPage = () => {
               const bestBefore = formatBestBeforeLabel(listing.expiryDate, i18n.language === 'zh' ? 'zh-CN' : 'en-AU')
               const category = resolveListingCategory(listing.category, listing.foodType)
               const categoryOption = FILTER_OPTIONS.find((option) => option.value === category)
-              const listingLocked = ownListing && listing.hasClaims
+              const expiryMeta = getExpiryMeta(listing.expiryDate)
+              const isExpiredListing = ownListing && expiryMeta.isExpired
+              const listingLocked = ownListing && (listing.hasClaims || isExpiredListing)
+              const listingLockReason = listing.hasClaims
+                ? t('feed.editLockedTooltip', 'This listing has already been claimed and can no longer be edited or removed.')
+                : (isExpiredListing
+                    ? t('feed.editLockedExpiredTooltip', 'This listing has expired and can no longer be edited or removed.')
+                    : '')
               const relativeTime = getRelativeTime(listing.createdAt, t)
               const imageUrl = resolveImageUrl(listing.photoUrl)
               const shouldShowImage = imageUrl && !brokenImageIds.includes(listing.id)
+              const pickupWindow = String(listing.pickupWindow || listing.pickup_window || '').trim()
 
               return (
                 <article key={listing.id} className={ownListing ? 'food-card own-listing-card donor-card' : 'food-card donor-card'}>
@@ -501,13 +558,18 @@ const PostFeedPage = () => {
                           {t('dashboard.tabs.' + (categoryOption?.key || 'other'), category)}
                         </span>
                       </div>
+                      {isExpiredListing ? (
+                        <div className="donor-card-status donor-card-status--expired">
+                          {t('dashboard.statusPills.expired', 'Expired — cannot claim')}
+                        </div>
+                      ) : null}
                     </div>
                   </div>
 
                   <div className="food-card-details donor-card-details">
                     <div className="food-card-detail-row donor-card-detail-row">
                       <span className="material-symbols-outlined">inventory_2</span>
-                      <span>{t('listing.approxQuantity', { quantity: listing.quantity, unit: t('listing.units.portions', 'portions') })}</span>
+                      <span>{formatApproxQuantityLabel(listing, t)}</span>
                     </div>
                     {listing.sizeCue ? (
                       <div className="food-card-detail-row donor-card-detail-row">
@@ -522,13 +584,23 @@ const PostFeedPage = () => {
                     {bestBefore ? (
                       <div className="food-card-detail-row donor-card-detail-row">
                         <span className="material-symbols-outlined">schedule</span>
-                        <span>{t('listing.bestBefore', 'Best before')} {bestBefore}</span>
+                        <span>
+                          {expiryMeta.isToday
+                            ? t('listing.bestBeforeToday', 'Best before today')
+                            : `${t('listing.bestBefore', 'Best before')} ${bestBefore}`}
+                        </span>
                       </div>
                     ) : null}
                     <div className="food-card-detail-row donor-card-detail-row">
                       <span className="material-symbols-outlined">kitchen</span>
                       <span>{t('listing.storageLabel', 'Storage')}: {storageLabel}</span>
                     </div>
+                    {pickupWindow ? (
+                      <div className="food-card-detail-row donor-card-detail-row">
+                        <span className="material-symbols-outlined">calendar_month</span>
+                        <span>{t('listing.pickupWindowLabel', 'Pickup window')}: {pickupWindow}</span>
+                      </div>
+                    ) : null}
                   </div>
 
                   <div className="card-supporting-stack donor-supporting-stack">
@@ -570,7 +642,7 @@ const PostFeedPage = () => {
                           className={listingLocked ? 'card-action-btn primary disabled' : 'card-action-btn primary'}
                           onClick={() => handleEdit(listing)}
                           disabled={listingLocked}
-                          title={listingLocked ? t('feed.editLockedTooltip', 'This listing has already been claimed and can no longer be edited or removed.') : ''}
+                          title={listingLocked ? listingLockReason : ''}
                         >
                           {t('donation.actions.editListing', 'Edit this listing')}
                         </button>
@@ -579,13 +651,15 @@ const PostFeedPage = () => {
                           className={listingLocked ? 'card-action-btn disabled' : 'card-action-btn'}
                           onClick={() => handleRemove(listing)}
                           disabled={listingLocked}
-                          title={listingLocked ? t('feed.editLockedTooltip', 'This listing has already been claimed and can no longer be edited or removed.') : ''}
+                          title={listingLocked ? listingLockReason : ''}
                         >
                           {t('donation.actions.removeListing', 'Remove this listing')}
                         </button>
                         {listingLocked ? (
                           <div className="donor-edit-lock-note">
-                            {t('feed.editLockedNote', 'A community group has already claimed part of this listing, so editing and removal are now locked.')}
+                            {listing.hasClaims
+                              ? t('feed.editLockedNote', 'A community group has already claimed part of this listing, so editing and removal are now locked.')
+                              : t('feed.editLockedExpiredNote', 'This listing has expired, so editing and removal are now locked.')}
                           </div>
                         ) : null}
                       </>

@@ -314,6 +314,22 @@
   font-weight: 700;
 }
 
+.donor-card-status {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.8rem;
+  padding: 0.25rem 0.65rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+
+.donor-card-status--expired {
+  background: rgba(179, 38, 30, 0.12);
+  color: #8f241f;
+}
+
 .food-card-category {
   padding: 0.45rem 0.8rem;
   border-radius: 999px;
