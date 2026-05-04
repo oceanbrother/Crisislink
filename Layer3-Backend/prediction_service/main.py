@@ -19,6 +19,7 @@ import numpy as np
 import pandas as pd
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 
 try:
@@ -43,6 +44,19 @@ if not DATABASE_URL:
 	DATABASE_URL = None
 
 app = FastAPI(title="Prediction Service")
+
+_cors_origins = [o.strip() for o in os.getenv("CORS_ALLOWED_ORIGINS", "").split(",") if o.strip()]
+if not _cors_origins:
+    _cors_origins = ["http://localhost:3004", "http://127.0.0.1:3004", "https://donor-app-dusky.vercel.app"]
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=_cors_origins,
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "PATCH", "DELETE"],
+    allow_headers=["Authorization", "Content-Type"],
+)
+
 database = databases.Database(DATABASE_URL) if DATABASE_URL else None
 risk_scorer: Optional[RiskScorer] = None
 scheduler: Optional[AsyncIOScheduler] = None
