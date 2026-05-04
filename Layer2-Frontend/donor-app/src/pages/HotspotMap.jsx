@@ -258,6 +258,41 @@ export default function HotspotMap() {
             </p>
           </div>
 
+          {/* User postcode info */}
+          {donorPostcode && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '8px',
+              padding: '8px 10px',
+              background: POSTCODE_COORDS[donorPostcode] ? '#ebf8ff' : '#fff3cd',
+              border: `1px solid ${POSTCODE_COORDS[donorPostcode] ? '#90cdf4' : '#fde68a'}`,
+              borderRadius: '8px',
+            }}>
+              <span style={{
+                width: 12, height: 12, borderRadius: '50%',
+                background: POSTCODE_COORDS[donorPostcode] ? '#3182ce' : '#a0aec0',
+                flexShrink: 0,
+                boxShadow: POSTCODE_COORDS[donorPostcode] ? '0 0 0 3px rgba(49,130,206,0.25)' : 'none',
+              }} />
+              <div style={{ fontSize: '0.75rem', lineHeight: 1.3 }}>
+                <strong style={{ color: '#2c5282' }}>Your postcode: {donorPostcode}</strong>
+                {!POSTCODE_COORDS[donorPostcode] && (
+                  <div style={{ color: '#7d5a00', marginTop: '2px' }}>
+                    Location not on map yet
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          {!donorPostcode && (
+            <div style={{
+              padding: '8px 10px', background: '#fff3cd',
+              border: '1px solid #fde68a', borderRadius: '8px',
+              fontSize: '0.75rem', color: '#7d5a00',
+            }}>
+              No postcode saved. Please set your postcode first.
+            </div>
+          )}
+
           {/* Sort mode */}
           <div>
             <p style={{ fontSize: '0.68rem', fontWeight: 700, color: '#a0aec0', textTransform: 'uppercase', letterSpacing: '0.07em', marginBottom: '6px' }}>

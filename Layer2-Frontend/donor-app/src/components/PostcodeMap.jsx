@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import L from 'leaflet'
 import 'leaflet/dist/leaflet.css'
 import { POSTCODE_COORDS } from '../utils/postcodeCoords'
@@ -72,6 +72,7 @@ export default function PostcodeMap({
   const zonesRef        = useRef(zones)
   const selectedRef     = useRef(selectedPostcode)
   const hasFitRef       = useRef(false)
+  const [mapReady, setMapReady] = useState(false)
 
   useEffect(() => { onSelectRef.current = onSelect },        [onSelect])
   useEffect(() => { zonesRef.current    = zones },           [zones])
@@ -96,12 +97,14 @@ export default function PostcodeMap({
     }).addTo(map)
 
     mapRef.current = map
+    setMapReady(true)
 
     return () => {
       map.remove()
       mapRef.current   = null
       markersRef.current = {}
       halosRef.current   = {}
+      setMapReady(false)
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -161,7 +164,7 @@ export default function PostcodeMap({
   // ── Handle user postcode marker and route ─────────────────────────────────
   useEffect(() => {
     const map = mapRef.current
-    if (!map) return
+    if (!map || !mapReady) return
 
     // Remove old user marker if exists
     if (userMarkerRef.current) {
@@ -193,6 +196,7 @@ export default function PostcodeMap({
           offset: [0, -4],
         })
         userMarker.addTo(map)
+        userMarker.bringToFront()
         userMarkerRef.current = userMarker
 
         // Add pulsing animation to user marker
@@ -212,10 +216,11 @@ export default function PostcodeMap({
           opacity: 0.7,
           dashArray: '5, 5',
         }).addTo(map)
+        polyline.bringToBack()
         routePolylineRef.current = polyline
       }
     }
-  }, [userPostcode, route])
+  }, [userPostcode, route, mapReady])
 
   // ── Handle selection changes ───────────────────────────────────────────────
   useEffect(() => {
