@@ -17,6 +17,8 @@ from .random_forest_forecaster import RandomForestForecaster
 
 _MODELS_DIR = Path(__file__).parent / "models"
 
+_DEFAULT_CLUSTER_LOOKUP = {"0": "High", "1": "MediumHigh", "2": "MediumLow", "3": "Low"}
+
 
 def _load_pickle(path: Path):
     if not path.exists():
@@ -27,7 +29,7 @@ def _load_pickle(path: Path):
 
 def _load_json(path: Path):
     if not path.exists():
-        raise FileNotFoundError(f"Required model artifact not found: {path}")
+        return None
     with open(path, "r", encoding="utf-8") as fh:
         return json.load(fh)
 
@@ -61,7 +63,7 @@ class RiskScorer:
     def __init__(self, models_dir: Path = _MODELS_DIR):
         self.scaler = _load_pickle(models_dir / "scaler.pkl")
         self.kmeans = KMeansClustering(str(models_dir / "kmeans_model.pkl"))
-        self.cluster_lookup: dict = _load_json(models_dir / "cluster_lookup.json")
+        self.cluster_lookup: dict = _load_json(models_dir / "cluster_lookup.json") or _DEFAULT_CLUSTER_LOOKUP
         self.forecaster = _load_pickle(models_dir / "demand_forecaster.pkl")
         self.shap_surrogate = _load_pickle(models_dir / "shap_surrogate.pkl")
         self.feature_names = self._resolve_feature_names()
