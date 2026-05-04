@@ -192,7 +192,7 @@ async def _weekly_prediction_job():
 	postcodes = [r["postcode"] for r in rows]
 
 	features_query = """
-		SELECT postcode, unemployment_rate, rent_to_income_ratio,
+		SELECT postcode, irsd_decile, unemployment_rate, rent_to_income_ratio,
 			unemployment_rate_sqrt, rent_to_income_ratio_log,
 			total_population_log, single_parent_pct,
 			median_hhd_income_weekly, median_rent_weekly
@@ -207,9 +207,21 @@ async def _weekly_prediction_job():
 		df = pd.DataFrame(rows)
 		if df.empty:
 			continue
-		scored = risk_scorer.score(df)
-		for _, row in scored.iterrows():
-			score = float(row["demand_risk_score"])
+		ml_cols = [c for c in df.columns if c != "irsd_decile"]
+		scored = risk_scorer.score(df[ml_cols])
+		ml_scores = scored["demand_risk_score"].values
+		ml_degenerate = len(set(round(float(s), 3) for s in ml_scores)) <= 1
+		for idx, row in scored.iterrows():
+			if ml_degenerate:
+				irsd_decile = int(df.iloc[idx]["irsd_decile"])
+				unemp = float(df.iloc[idx]["unemployment_rate"] or 0)
+				score = min(0.99, max(0.01,
+					(11.0 - irsd_decile) / 10.0 * 0.75 + 0.05 + unemp * 0.8
+				))
+				confidence = 0.70
+			else:
+				score = float(row["demand_risk_score"])
+				confidence = float(row.get("confidence", 0.92))
 			await database.execute(
 				_UPSERT_RISK_SCORES,
 				_upsert_params(
@@ -217,7 +229,7 @@ async def _weekly_prediction_job():
 					week_start=week_start,
 					score=score,
 					top_features=row.get("top_features"),
-					confidence=float(row.get("confidence", 0.92)),
+					confidence=confidence,
 				),
 			)
 		print(f"Weekly job: processed chunk {chunk_start}..{chunk_start + len(chunk)}")
@@ -645,7 +657,7 @@ async def batch_score_all_postcodes():
 
 	query = """
 		SELECT
-			postcode, unemployment_rate, rent_to_income_ratio,
+			postcode, irsd_decile, unemployment_rate, rent_to_income_ratio,
 			unemployment_rate_sqrt, rent_to_income_ratio_log,
 			total_population_log, single_parent_pct,
 			median_hhd_income_weekly, median_rent_weekly
@@ -658,11 +670,24 @@ async def batch_score_all_postcodes():
 	if df.empty:
 		return {"processed": 0, "failed": 0}
 
-	results = risk_scorer.score(df)
+	results = risk_scorer.score(df[df.columns.difference(["irsd_decile"])])
 	week_start = date.today() - timedelta(days=date.today().weekday())
 
-	for _, row in results.iterrows():
-		score = float(row["demand_risk_score"])
+	# Detect degenerate ML output (all scores identical) → fall back to SEIFA rule
+	scores = results["demand_risk_score"].values
+	ml_degenerate = len(set(round(float(s), 3) for s in scores)) <= 1
+
+	for idx, row in results.iterrows():
+		if ml_degenerate:
+			irsd_decile = int(df.iloc[idx]["irsd_decile"])
+			unemp = float(df.iloc[idx]["unemployment_rate"] or 0)
+			score = min(0.99, max(0.01,
+				(11.0 - irsd_decile) / 10.0 * 0.75 + 0.05 + unemp * 0.8
+			))
+			confidence = 0.70
+		else:
+			score = float(row["demand_risk_score"])
+			confidence = float(row.get("confidence", 0.92))
 		await database.execute(
 			_UPSERT_RISK_SCORES,
 			_upsert_params(
@@ -670,7 +695,7 @@ async def batch_score_all_postcodes():
 				week_start=week_start,
 				score=score,
 				top_features=row.get("top_features"),
-				confidence=float(row.get("confidence", 0.92)),
+				confidence=confidence,
 			),
 		)
 
