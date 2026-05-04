@@ -72,10 +72,10 @@ async def lifespan(app: FastAPI):
     global recognizer
     await database.connect()
     await ensure_schema_extensions()
-    print("✓ PostgreSQL connected")
+    print("[OK] PostgreSQL connected")
     print("Starting food recognizer...")
     recognizer = get_recognizer()
-    print("✓ Model ready")
+    print("[OK] Model ready")
     yield
     await database.disconnect()
     print("PostgreSQL disconnected")
