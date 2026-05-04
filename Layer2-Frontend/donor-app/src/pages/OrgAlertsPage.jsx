@@ -28,6 +28,7 @@ const OrgAlertsPage = () => {
   const [error, setError] = useState('')
   const [alertToneFilter, setAlertToneFilter] = useState('all')
   const [selectedAlertPostcode, setSelectedAlertPostcode] = useState('')
+  const [showInfoBanner, setShowInfoBanner] = useState(false)
 
   const savedOrgSession = (() => {
     try {
@@ -235,6 +236,48 @@ const OrgAlertsPage = () => {
               </div>
             </div>
           </div>
+        </section>
+
+        {/* Info banner */}
+        <section style={{
+          background: '#e0f2fe',
+          border: '1px solid #bae6fd',
+          borderRadius: '8px',
+          padding: '0.75rem 1rem',
+          marginBottom: '1rem',
+        }}>
+          <button
+            onClick={() => setShowInfoBanner(!showInfoBanner)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: '#0369a1',
+              fontWeight: 600,
+              fontSize: '0.9rem',
+              width: '100%',
+              textAlign: 'left',
+              padding: 0,
+            }}
+            aria-expanded={showInfoBanner}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '1.2rem', flexShrink: 0 }}>info</span>
+            <span>{t('dashboard.intelligence.alertsTitle', 'Demand alerts – what this shows')}</span>
+          </button>
+          {showInfoBanner && (
+            <p style={{
+              marginTop: '0.75rem',
+              fontSize: '0.85rem',
+              color: '#0369a1',
+              lineHeight: 1.5,
+              margin: '0.75rem 0 0 0',
+            }}>
+              {t('dashboard.intelligence.alertsDescription', 'Flags postcodes where our model predicts a spike in demand over the next 7 days — areas likely to face a shortage soon. Check these to decide where to encourage more donations before the gap appears.')}
+            </p>
+          )}
         </section>
 
         {SHOW_SAMPLE_HINT && demandInsights.source !== 'prediction' ? (

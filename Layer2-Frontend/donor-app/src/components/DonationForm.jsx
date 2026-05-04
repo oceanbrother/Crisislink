@@ -980,14 +980,23 @@ const DonationForm = () => {
                   {t('donation.pickupWindow', 'Pickup window')}
                   <span style={{ color: '#e53e3e', marginLeft: 2 }}>*</span>
                 </label>
-                <input
+                <select
                   id="pickupWindow"
                   className={pickupWindowFieldError ? 'form-input form-input--error' : 'form-input'}
-                  type="text"
                   value={formData.pickupWindow}
                   onChange={(event) => handleChange('pickupWindow', event.target.value)}
-                  placeholder={t('donation.pickupWindowPlaceholder', 'e.g. Today 4:00-6:00 pm')}
-                />
+                >
+                  <option value="">{t('donation.pickupWindowPlaceholder', 'Select a pickup time')}</option>
+                  <option value="Today · Morning (8am–12pm)">Today · Morning (8am–12pm)</option>
+                  <option value="Today · Afternoon (12pm–4pm)">Today · Afternoon (12pm–4pm)</option>
+                  <option value="Today · Evening (4pm–7pm)">Today · Evening (4pm–7pm)</option>
+                  <option value="Tomorrow · Morning (8am–12pm)">Tomorrow · Morning (8am–12pm)</option>
+                  <option value="Tomorrow · Afternoon (12pm–4pm)">Tomorrow · Afternoon (12pm–4pm)</option>
+                  <option value="Tomorrow · Evening (4pm–7pm)">Tomorrow · Evening (4pm–7pm)</option>
+                  <option value="This weekend · Morning (8am–12pm)">This weekend · Morning (8am–12pm)</option>
+                  <option value="This weekend · Afternoon (12pm–4pm)">This weekend · Afternoon (12pm–4pm)</option>
+                  <option value="Flexible – call to arrange">Flexible – call to arrange</option>
+                </select>
                 <p className={pickupWindowFieldError ? 'field-hint field-hint--error' : 'field-hint field-hint--instruction'}>
                   {t('donation.pickupWindowHint', 'When can organisations collect this food?')}
                 </p>

@@ -47,6 +47,7 @@ export default function CoverageGapMap() {
   const [riskData, setRiskData] = useState({})
   const [selectedPostcode, setSelectedPostcode] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [showInfoBanner, setShowInfoBanner] = useState(false)
   const savedOrgSession = (() => {
     try {
       return JSON.parse(window.localStorage.getItem('crisislink-org-session') || '{}')
@@ -113,6 +114,48 @@ export default function CoverageGapMap() {
               </div>
             </div>
           </div>
+        </section>
+
+        {/* Info banner */}
+        <section style={{
+          background: '#e0f2fe',
+          border: '1px solid #bae6fd',
+          borderRadius: '8px',
+          padding: '0.75rem 1rem',
+          marginBottom: '1rem',
+        }}>
+          <button
+            onClick={() => setShowInfoBanner(!showInfoBanner)}
+            style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              background: 'none',
+              border: 'none',
+              cursor: 'pointer',
+              color: '#0369a1',
+              fontWeight: 600,
+              fontSize: '0.9rem',
+              width: '100%',
+              textAlign: 'left',
+              padding: 0,
+            }}
+            aria-expanded={showInfoBanner}
+          >
+            <span className="material-symbols-outlined" style={{ fontSize: '1.2rem', flexShrink: 0 }}>info</span>
+            <span>{t('coverageMap.aroundMeTitle', 'Around me – what this shows')}</span>
+          </button>
+          {showInfoBanner && (
+            <p style={{
+              marginTop: '0.75rem',
+              fontSize: '0.85rem',
+              color: '#0369a1',
+              lineHeight: 1.5,
+              margin: '0.75rem 0 0 0',
+            }}>
+              {t('coverageMap.aroundMeDescription', 'Shows what food is currently available near your organisation. Use it to see which food types and quantities are on offer in your local area, so you can avoid duplicating supply.')}
+            </p>
+          )}
         </section>
 
         <section style={{ display: 'flex', height: MAP_HEIGHT }}>

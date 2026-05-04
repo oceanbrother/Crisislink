@@ -3,6 +3,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { getAvailableListings, claimListing, unclaimListing, deleteListing, confirmPickup } from '../services/api'
 import { DIETARY_FILTER_OPTIONS, FILTER_OPTIONS, formatBestBeforeLabel, resolveListingCategory } from '../constants/listings'
+import { resolveImageUrl } from '../utils/imageUrl'
 import OrgFeatureNav from '../components/OrgFeatureNav'
 import LogisticsGuideCard from '../components/LogisticsGuideCard'
 import WorkspaceContextCard from '../components/WorkspaceContextCard'
@@ -772,7 +773,7 @@ const LiveListingBoard = () => {
               const hasPickupWindow = pickupWindow !== ''
               return (
               <article key={listing.id} className={`food-card org-card org-card--${viewState} ${isOwnOrgListing ? 'org-card--own' : ''} ${isClaimedByCurrentOrg ? 'food-card--claimed org-card--claimed' : ''} ${viewState === 'available' ? 'org-card--available' : ''} ${isAvailableAndExpired ? 'org-card--expired' : ''}`.trim()}>
-                {listing.photoUrl ? <img className="food-card-image" src={listing.photoUrl} alt={listing.foodType} /> : null}
+                {listing.photoUrl ? <img className="food-card-image" src={resolveImageUrl(listing.photoUrl)} alt={listing.foodType} /> : null}
 
                 <div className="food-card-header org-card-header">
                   <div className="org-card-heading-stack">

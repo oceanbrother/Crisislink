@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 import DonorFeatureNav from '../components/DonorFeatureNav'
 import WorkspaceHeader from '../components/WorkspaceHeader'
 import PostcodeMap from '../components/PostcodeMap'
-import { predictionApiClient } from '../services/api'
+import { predictionApiClient, apiClient } from '../services/api'
 import { getSavedDonorPostcode } from '../utils/donorPostcode'
 import suburbLookup from '../data/vic_postcode_suburbs.json'
 import { POSTCODE_COORDS } from '../utils/postcodeCoords'
@@ -52,10 +52,11 @@ export default function HotspotMap() {
   const [selected, setSelected] = useState(null)
   const [loading, setLoading] = useState(true)
   const [fetchError, setFetchError] = useState(false)
-  const [severityFilter, setSeverityFilter] = useState('all')
+  const [severityFilter, setSeverityFilter] = useState('critical')
   const [sortMode, setSortMode] = useState('priority') // 'priority' | 'distance'
   const [userLocation, setUserLocation] = useState(null) // [lat, lon]
   const [locating, setLocating] = useState(false)
+  const [liveSupply, setLiveSupply] = useState(null) // live count for selected postcode
 
   const hasAutoSelectedRef = useRef(false)
   const donorPostcode = getSavedDonorPostcode()
@@ -79,6 +80,49 @@ export default function HotspotMap() {
     }
   }, [hotspots])
 
+  // Auto-request geolocation on mount
+  useEffect(() => {
+    const autoLocate = () => {
+      setLocating(true)
+      const applyCoords = (coords) => {
+        setUserLocation(coords)
+        setSortMode('distance')
+        setLocating(false)
+      }
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          pos => applyCoords([pos.coords.latitude, pos.coords.longitude]),
+          () => {
+            const fallback = donorPostcode ? POSTCODE_COORDS[donorPostcode] : null
+            if (fallback) applyCoords(fallback)
+            else setLocating(false)
+          },
+          { timeout: 5000, maximumAge: 60000 }
+        )
+      } else {
+        const fallback = donorPostcode ? POSTCODE_COORDS[donorPostcode] : null
+        if (fallback) applyCoords(fallback)
+        else setLocating(false)
+      }
+    }
+    autoLocate()
+  }, [donorPostcode])
+
+  // Fetch live supply count for selected postcode
+  useEffect(() => {
+    if (!selected) {
+      setLiveSupply(null)
+      return
+    }
+    apiClient.get('/listings', {
+      params: { status: 'available', postcode: selected.postcode }
+    }).then(res => {
+      const count = Array.isArray(res.data) ? res.data.length : 0
+      setLiveSupply(count)
+    }).catch(() => setLiveSupply(null))
+  }, [selected])
+
   const filtered = useMemo(() => {
     let list = hotspots
     if (severityFilter !== 'all') {
@@ -89,8 +133,9 @@ export default function HotspotMap() {
         : 0.25
       list = list.filter(h => h.risk_score >= minScore && h.risk_score < maxScore)
     }
+    let sorted = list
     if (sortMode === 'distance' && userLocation) {
-      return [...list].sort((a, b) => {
+      sorted = [...list].sort((a, b) => {
         const ca = POSTCODE_COORDS[a.postcode]
         const cb = POSTCODE_COORDS[b.postcode]
         if (!ca) return 1
@@ -98,7 +143,9 @@ export default function HotspotMap() {
         return haversineKm(userLocation, ca) - haversineKm(userLocation, cb)
       })
     }
-    return list
+    // Apply display limit based on location availability
+    const limit = userLocation ? 10 : 20
+    return sorted.slice(0, limit)
   }, [hotspots, severityFilter, sortMode, userLocation])
 
   const mapZones = useMemo(() =>
@@ -378,8 +425,8 @@ export default function HotspotMap() {
                   <span style={{ fontWeight: 500 }}>{typeof selected.irsd_score === 'number' ? selected.irsd_score.toFixed(1) : selected.irsd_score}</span>
                 </Row>
                 <Row label={t('hotspots.map.labelSupply')}>
-                  <span style={{ fontWeight: 500, color: selected.total_supply === 0 ? '#e53e3e' : '#38a169' }}>
-                    {t('hotspots.portions', { count: selected.total_supply })}
+                  <span style={{ fontWeight: 500, color: (liveSupply ?? 0) === 0 ? '#e53e3e' : '#38a169' }}>
+                    {liveSupply !== null ? t('hotspots.portions', { count: liveSupply }) : <span style={{ color: '#a0aec0' }}>Loading...</span>}
                   </span>
                 </Row>
               </div>
