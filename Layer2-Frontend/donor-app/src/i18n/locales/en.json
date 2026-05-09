@@ -3,7 +3,7 @@
   "tagline": "Food relief resource coordination platform",
   "home": {
     "eyebrow": "SELECT YOUR WORKSPACE",
-    "question": "Choose how you want to use OutBackShare",
+    "question": "Choose your OutBackShare workspace",
     "donor": {
       "title": "I want to donate food",
       "description": "Post surplus food quickly so nearby approved groups can collect it before it goes to waste.",
@@ -185,6 +185,10 @@
     "groupClaimNote": "Community groups can claim this item from their board.",
     "editLockedNote": "A community group has already claimed part of this listing, so editing and removal are now locked.",
     "editLockedTooltip": "This listing has already been claimed and can no longer be edited or removed.",
+    "editLockedClaimedNote": "This listing is currently claimed, so editing and removal are now locked.",
+    "editLockedClaimedTooltip": "This listing is currently claimed and can no longer be edited or removed.",
+    "editLockedCollectedNote": "This listing has been collected, so editing and removal are now locked.",
+    "editLockedCollectedTooltip": "This listing has already been collected and can no longer be edited or removed.",
     "editLockedExpiredNote": "This listing has expired, so editing and removal are now locked.",
     "editLockedExpiredTooltip": "This listing has expired and can no longer be edited or removed.",
     "homeLink": "Back to home",
@@ -198,10 +202,17 @@
     "filterHint": "Search by food name, notes, category, or postcode.",
     "searchingFor": "Searching for",
     "filteringCategory": "Category",
-    "scopeFilter": "Scope",
+    "scopeFilter": "Status",
     "scopeEditable": "Editable listings",
+    "statusTabs": {
+      "all": "All listings",
+      "available": "Available listings",
+      "claimed": "Claimed listings",
+      "collected": "Collected listings"
+    },
     "clearFilters": "Clear filters",
-    "showingMatches": "Showing {{count}} matching listings",
+    "showingMatches_one": "Showing {{count}} matching listing",
+    "showingMatches_other": "Showing {{count}} matching listings",
     "emptyTitle": "No donor listings yet",
     "emptyHint": "Once you post surplus food from this postcode, it will appear here for you to manage.",
     "emptySearchTitle": "No matching listings",
@@ -240,13 +251,13 @@
     },
     "success": {
       "title": "Posted!",
-      "donorMessage": "Your food is now visible to local food banks.",
+      "donorMessage": "Your listing is now visible to local organisations.",
       "donorTag": "Thank you for sharing.",
       "orgMessage": "Your surplus food is now available for other communities to claim.",
       "orgTag": "Thank you for helping the network.",
       "updatedTitle": "Listing updated",
       "nextStepLabel": "Next step",
-      "nextStepHint": "Check nearby food shortage hotspots to see where your donation can help most."
+      "nextStepHint": "We’ll notify you when an organisation claims your listing. You can then coordinate pickup through messages."
     },
     "editTitle": "Edit listing",
     "sizeCue": "Portion size",
@@ -256,7 +267,7 @@
     "bestBefore": "Best before",
     "expiryDateLabel": "Use-by / best-before date",
     "pickupWindow": "Pickup window",
-    "pickupWindowPlaceholder": "e.g. Today 4:00-6:00 pm",
+    "pickupWindowPlaceholder": "Choose a pickup window",
     "pickupWindowHint": "When can organisations collect this food?",
     "pickupWindowRequiredHint": "Required: add a pickup date and time window so organisations know when to collect.",
     "storageCondition": "Storage condition",
@@ -277,13 +288,14 @@
       "viewHotspots": "See where food is needed",
       "editListing": "Edit this listing",
       "removeListing": "Remove this listing",
-      "postAnother": "Post another listing"
+      "postAnother": "Post another listing",
+      "removeConfirmMessage": "Are you sure you want to remove this listing?\nThis action cannot be undone."
     },
     "safety": {
       "title": "Food safety reminder",
       "accuracy": "You are responsible for the accuracy of this listing, including quantity, condition, and allergen information.",
       "allergen": "OutBackShare cannot independently verify allergen declarations. Recipients must exercise their own judgement.",
-      "platform": "OutBackShare is a coordination platform only and does not inspect or accept liability for donated food items."
+      "platform": "OutBackShare is a coordination platform only and does not inspect donated food items."
     },
     "reviewTitle": "Suggested details — please review before posting.",
     "reviewHintFood": "Check the food name and category.",
@@ -375,13 +387,16 @@
       "expired": "Expired — cannot claim",
       "safetyRequired": "Food safety info required",
       "posted": "Posted by us",
-      "claimed": "Claimed by us: {{quantity}}"
+      "claimed": "Claimed by us · Claim #{{claimId}}",
+      "claimedSimple": "Claimed",
+      "collected": "✓ Collected"
     },
     "statusTabs": {
       "all": "All listings",
       "available": "Available listings",
       "posted": "Posted by us",
-      "claimed": "Claimed by us"
+      "claimed": "Claimed by us",
+      "collected": "Collected by us"
     },
     "claimDialog": {
       "title": "Choose claim quantity",
@@ -398,12 +413,14 @@
       "availableLabel": "Available"
     },
     "claimQuickSuccess": "Listing claimed successfully.",
+    "collectedInfo": "Collection confirmed. This donation has been completed.",
     "filterHint": "Search by food name, notes, source code, or postcode.",
     "searchingFor": "Searching for",
     "filteringCategory": "Category",
     "filteringStatus": "Status",
     "clearFilters": "Clear filters",
-    "showingMatches": "Showing {{count}} matching listings",
+    "showingMatches_one": "Showing {{count}} matching listing",
+    "showingMatches_other": "Showing {{count}} matching listings",
     "emptyTitle": "No listings yet",
     "emptyHint": "Listings from donors and organisations will appear here as soon as they are posted.",
     "emptySearchTitle": "No matching listings",

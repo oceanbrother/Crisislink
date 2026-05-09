@@ -127,6 +127,18 @@ function getRelativeTime(createdAt, t) {
   return t('listing.daysAgo', { count: days })
 }
 
+function formatCollectedAtLabel(collectedAt, locale) {
+  if (!collectedAt) return ''
+  const date = new Date(collectedAt)
+  if (Number.isNaN(date.getTime())) return ''
+  return date.toLocaleString(locale || 'en-AU', {
+    hour: 'numeric',
+    minute: '2-digit',
+    day: '2-digit',
+    month: 'short',
+  })
+}
+
 function formatQuantityValue(value) {
   const numeric = Number(value)
   if (Number.isFinite(numeric) === false) return String(value ?? '')
@@ -215,12 +227,26 @@ const PostFeedPage = () => {
   const fetchListings = async () => {
     try {
       setLoading(true)
-      const filters = { status: 'available' }
-      if (postcode) {
-        filters.postcode = postcode
+      const buildFilters = (status) => {
+        const filters = { status }
+        if (postcode) filters.postcode = postcode
+        return filters
       }
-      const data = await getAvailableListings(filters)
-      const safeListings = (Array.isArray(data) ? data : []).map((listing) => mergeListingSafetyFallback(listing))
+
+      const [availableData, claimedData, collectedData] = await Promise.all([
+        getAvailableListings(buildFilters('available')).catch(() => []),
+        getAvailableListings(buildFilters('claimed')).catch(() => []),
+        getAvailableListings(buildFilters('collected')).catch(() => []),
+      ])
+
+      const mergedById = new Map()
+      ;[availableData, claimedData, collectedData].forEach((bucket) => {
+        ;(Array.isArray(bucket) ? bucket : []).forEach((listing) => {
+          mergedById.set(listing.id, listing)
+        })
+      })
+
+      const safeListings = Array.from(mergedById.values()).map((listing) => mergeListingSafetyFallback(listing))
       setListings(safeListings)
       setError('')
     } catch (err) {
@@ -244,9 +270,9 @@ const PostFeedPage = () => {
       const ownListing = isOwnedDonorListing(listing, donorCode, postcode)
 
       if (!ownListing) return false
-      const expiryMeta = getExpiryMeta(listing.expiryDate)
-      const isEditable = !listing.hasClaims && !expiryMeta.isExpired
-      if (listingScope === 'editable' && !isEditable) return false
+      const statusValue = String(listing.status || '').toLowerCase()
+      const normalizedStatus = statusValue === 'picked_up' ? 'collected' : statusValue
+      if (listingScope !== 'all' && normalizedStatus !== listingScope) return false
 
       const matchesFilter = activeFilter === 'All' || category === activeFilter
       if (!matchesFilter) return false
@@ -277,12 +303,13 @@ const PostFeedPage = () => {
     return listings.reduce((acc, listing) => {
       if (!isOwnedDonorListing(listing, donorCode, postcode)) return acc
       acc.total += 1
-      const expiryMeta = getExpiryMeta(listing.expiryDate)
-      if (!listing.hasClaims && !expiryMeta.isExpired) {
-        acc.editable += 1
-      }
+      const statusValue = String(listing.status || '').toLowerCase()
+      const normalizedStatus = statusValue === 'picked_up' ? 'collected' : statusValue
+      if (normalizedStatus === 'available') acc.available += 1
+      if (normalizedStatus === 'claimed') acc.claimed += 1
+      if (normalizedStatus === 'collected') acc.collected += 1
       return acc
-    }, { total: 0, editable: 0 })
+    }, { total: 0, available: 0, claimed: 0, collected: 0 })
   }, [donorCode, listings, postcode])
 
 
@@ -365,22 +392,42 @@ const PostFeedPage = () => {
             <button
               type="button"
               className={listingScope === 'all'
-                ? 'workspace-summary-metric workspace-summary-metric--button is-active'
-                : 'workspace-summary-metric workspace-summary-metric--button'}
+                ? 'workspace-summary-metric workspace-summary-metric--button donor-summary-card donor-summary-card--all is-active'
+                : 'workspace-summary-metric workspace-summary-metric--button donor-summary-card donor-summary-card--all'}
               onClick={() => setListingScope('all')}
             >
-              <span className="workspace-summary-metric__label">{t('dashboard.statusTabs.all', 'All listings')}</span>
+              <span className="workspace-summary-metric__label">{t('feed.statusTabs.all', 'All listings')}</span>
               <strong className="workspace-summary-metric__value">{donorSummary.total}</strong>
             </button>
             <button
               type="button"
-              className={listingScope === 'editable'
-                ? 'workspace-summary-metric workspace-summary-metric--soft workspace-summary-metric--button is-active'
-                : 'workspace-summary-metric workspace-summary-metric--soft workspace-summary-metric--button'}
-              onClick={() => setListingScope('editable')}
+              className={listingScope === 'available'
+                ? 'workspace-summary-metric workspace-summary-metric--soft workspace-summary-metric--button donor-summary-card donor-summary-card--available is-active'
+                : 'workspace-summary-metric workspace-summary-metric--soft workspace-summary-metric--button donor-summary-card donor-summary-card--available'}
+              onClick={() => setListingScope('available')}
             >
-              <span className="workspace-summary-metric__label">{t('feed.editableListings', 'Editable listings')}</span>
-              <strong className="workspace-summary-metric__value">{donorSummary.editable}</strong>
+              <span className="workspace-summary-metric__label">{t('feed.statusTabs.available', 'Available listings')}</span>
+              <strong className="workspace-summary-metric__value">{donorSummary.available}</strong>
+            </button>
+            <button
+              type="button"
+              className={listingScope === 'claimed'
+                ? 'workspace-summary-metric workspace-summary-metric--soft workspace-summary-metric--button donor-summary-card donor-summary-card--claimed is-active'
+                : 'workspace-summary-metric workspace-summary-metric--soft workspace-summary-metric--button donor-summary-card donor-summary-card--claimed'}
+              onClick={() => setListingScope('claimed')}
+            >
+              <span className="workspace-summary-metric__label">{t('feed.statusTabs.claimed', 'Claimed listings')}</span>
+              <strong className="workspace-summary-metric__value">{donorSummary.claimed}</strong>
+            </button>
+            <button
+              type="button"
+              className={listingScope === 'collected'
+                ? 'workspace-summary-metric workspace-summary-metric--soft workspace-summary-metric--button donor-summary-card donor-summary-card--collected is-active'
+                : 'workspace-summary-metric workspace-summary-metric--soft workspace-summary-metric--button donor-summary-card donor-summary-card--collected'}
+              onClick={() => setListingScope('collected')}
+            >
+              <span className="workspace-summary-metric__label">{t('feed.statusTabs.collected', 'Collected listings')}</span>
+              <strong className="workspace-summary-metric__value">{donorSummary.collected}</strong>
             </button>
           </div>
         </WorkspaceSummaryCard>
@@ -447,7 +494,7 @@ const PostFeedPage = () => {
           </div>
 
           {hasActiveControls ? (
-            <div className="filter-feedback-row" aria-live="polite">
+            <div className={`filter-feedback-row ${hasActiveSearch ? '' : 'filter-feedback-row--minimal'}`.trim()} aria-live="polite">
               <div className="filter-feedback-pills">
                 {hasActiveSearch ? (
                   <span className="filter-feedback-pill filter-feedback-pill--query">
@@ -467,7 +514,7 @@ const PostFeedPage = () => {
                 ) : null}
                 {hasActiveScopeFilter ? (
                   <span className="filter-feedback-pill">
-                    {t('feed.scopeFilter', 'Scope')} · {t('feed.scopeEditable', 'Editable listings')}
+                    {t('dashboard.filterLabels.status', 'Status')} · {t(`feed.statusTabs.${listingScope}`, listingScope)}
                   </span>
                 ) : null}
               </div>
@@ -483,7 +530,7 @@ const PostFeedPage = () => {
             <div className="feed-meta-row">
               <span className={hasActiveControls ? 'feed-count feed-count--filtered' : 'feed-count'}>
                 {hasActiveControls
-                  ? t('feed.showingMatches', { count: filteredListings.length, defaultValue: `Showing ${filteredListings.length} matching listings` })
+                  ? t('feed.showingMatches', { count: filteredListings.length })
                   : t('listing.itemsAvailable', { count: filteredListings.length })}
               </span>
             </div>
@@ -520,12 +567,23 @@ const PostFeedPage = () => {
               const categoryOption = FILTER_OPTIONS.find((option) => option.value === category)
               const expiryMeta = getExpiryMeta(listing.expiryDate)
               const isExpiredListing = ownListing && expiryMeta.isExpired
-              const listingLocked = ownListing && (listing.hasClaims || isExpiredListing)
+              const statusValue = String(listing.status || '').toLowerCase()
+              const isClaimedListing = statusValue === 'claimed'
+              const isCollectedListing = statusValue === 'collected' || statusValue === 'picked_up'
+              const collectedAtLabel = formatCollectedAtLabel(
+                listing.pickedUpAt || listing.picked_up_at,
+                i18n.language === 'zh' ? 'zh-CN' : 'en-AU',
+              )
+              const listingLocked = ownListing && (listing.hasClaims || isExpiredListing || isClaimedListing || isCollectedListing)
               const listingLockReason = listing.hasClaims
                 ? t('feed.editLockedTooltip', 'This listing has already been claimed and can no longer be edited or removed.')
-                : (isExpiredListing
-                    ? t('feed.editLockedExpiredTooltip', 'This listing has expired and can no longer be edited or removed.')
-                    : '')
+                : (isCollectedListing
+                    ? t('feed.editLockedCollectedTooltip', 'This listing has already been collected and can no longer be edited or removed.')
+                    : (isClaimedListing
+                        ? t('feed.editLockedClaimedTooltip', 'This listing is currently claimed and can no longer be edited or removed.')
+                        : (isExpiredListing
+                            ? t('feed.editLockedExpiredTooltip', 'This listing has expired and can no longer be edited or removed.')
+                            : '')))
               const relativeTime = getRelativeTime(listing.createdAt, t)
               const imageUrl = resolveImageUrl(listing.photoUrl)
               const shouldShowImage = imageUrl && !brokenImageIds.includes(listing.id)
@@ -558,6 +616,19 @@ const PostFeedPage = () => {
                           {t('dashboard.tabs.' + (categoryOption?.key || 'other'), category)}
                         </span>
                       </div>
+                      {isCollectedListing ? (
+                        <div className="donor-card-status donor-card-status--collected">
+                          {t('dashboard.statusPills.collected', 'Collected')}
+                        </div>
+                      ) : isClaimedListing ? (
+                        <div className="donor-card-status donor-card-status--claimed">
+                          {t('dashboard.statusPills.claimedSimple', 'Claimed')}
+                        </div>
+                      ) : (
+                        <div className="donor-card-status donor-card-status--available">
+                          {t('dashboard.statusPills.available', 'Available to claim')}
+                        </div>
+                      )}
                       {isExpiredListing ? (
                         <div className="donor-card-status donor-card-status--expired">
                           {t('dashboard.statusPills.expired', 'Expired — cannot claim')}
@@ -599,6 +670,12 @@ const PostFeedPage = () => {
                       <div className="food-card-detail-row donor-card-detail-row">
                         <span className="material-symbols-outlined">calendar_month</span>
                         <span>{t('listing.pickupWindowLabel', 'Pickup window')}: {pickupWindow}</span>
+                      </div>
+                    ) : null}
+                    {isCollectedListing && collectedAtLabel ? (
+                      <div className="food-card-detail-row donor-card-detail-row">
+                        <span className="material-symbols-outlined">event_available</span>
+                        <span>{t('listing.collectedAtLabel', 'Collected at')}: {collectedAtLabel}</span>
                       </div>
                     ) : null}
                   </div>
@@ -659,7 +736,11 @@ const PostFeedPage = () => {
                           <div className="donor-edit-lock-note">
                             {listing.hasClaims
                               ? t('feed.editLockedNote', 'A community group has already claimed part of this listing, so editing and removal are now locked.')
-                              : t('feed.editLockedExpiredNote', 'This listing has expired, so editing and removal are now locked.')}
+                              : (isCollectedListing
+                                  ? t('feed.editLockedCollectedNote', 'This listing has been collected, so editing and removal are now locked.')
+                                  : (isClaimedListing
+                                      ? t('feed.editLockedClaimedNote', 'This listing is currently claimed, so editing and removal are now locked.')
+                                      : t('feed.editLockedExpiredNote', 'This listing has expired, so editing and removal are now locked.')))}
                           </div>
                         ) : null}
                       </>

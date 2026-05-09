@@ -43,7 +43,7 @@ recognizer = None
 ALLOWED_TYPES = {"image/jpeg", "image/png", "image/webp"}
 MAX_SIZE = 5 * 1024 * 1024
 EXT_MAP = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp"}
-ALLOWED_STATUSES = {"available", "claimed", "expired", "picked_up"}
+ALLOWED_STATUSES = {"available", "claimed", "expired", "picked_up", "collected"}
 CATEGORY_MAP = {
     "baked goods": "Baked goods",
     "bakery": "Baked goods",
@@ -69,8 +69,39 @@ async def ensure_schema_extensions():
     await database.execute("ALTER TABLE food_listing ADD COLUMN IF NOT EXISTS contact_name VARCHAR(100)")
     await database.execute("ALTER TABLE food_listing ADD COLUMN IF NOT EXISTS pickup_notes TEXT")
     await database.execute("ALTER TABLE food_listing ADD COLUMN IF NOT EXISTS picked_up_at TIMESTAMP")
+    await database.execute("ALTER TABLE food_listing ADD COLUMN IF NOT EXISTS claim_id VARCHAR(36)")
     await database.execute("ALTER TABLE food_listing ADD COLUMN IF NOT EXISTS allergen_tags VARCHAR(500)")
     await database.execute("ALTER TABLE food_listing ADD COLUMN IF NOT EXISTS storage_condition VARCHAR(100)")
+    await database.execute(
+        """
+        CREATE TABLE IF NOT EXISTS claim_thread (
+            claim_id VARCHAR(36) PRIMARY KEY,
+            listing_id VARCHAR(36) NOT NULL,
+            source_listing_id VARCHAR(36),
+            donor_org_code VARCHAR(20) NOT NULL,
+            claiming_org_code VARCHAR(20) NOT NULL,
+            is_closed BOOLEAN NOT NULL DEFAULT FALSE,
+            created_at TIMESTAMP NOT NULL,
+            closed_at TIMESTAMP
+        )
+        """
+    )
+    await database.execute("CREATE INDEX IF NOT EXISTS idx_claim_thread_listing_id ON claim_thread(listing_id)")
+    await database.execute(
+        """
+        CREATE TABLE IF NOT EXISTS claim_message (
+            message_id VARCHAR(36) PRIMARY KEY,
+            claim_id VARCHAR(36) NOT NULL REFERENCES claim_thread(claim_id) ON DELETE CASCADE,
+            sender_type VARCHAR(20) NOT NULL,
+            sender_org_code VARCHAR(20) NOT NULL,
+            content TEXT NOT NULL,
+            sent_at TIMESTAMP NOT NULL,
+            read_at TIMESTAMP
+        )
+        """
+    )
+    await database.execute("CREATE INDEX IF NOT EXISTS idx_claim_message_claim_id ON claim_message(claim_id)")
+    await database.execute("UPDATE food_listing SET status = 'collected' WHERE status = 'picked_up'")
 
 
 @asynccontextmanager
@@ -213,6 +244,7 @@ class Listing(ListingBase):
     claimedBy: Optional[str] = None
     claimedAt: Optional[datetime] = None
     hasClaims: bool = False
+    claimId: Optional[str] = None
     quantity: float = Field(..., ge=0, le=10000)  # 0 is valid for fully-claimed items
 
 
@@ -228,6 +260,11 @@ class UnclaimRequest(BaseModel):
 
 class PickupRequest(BaseModel):
     orgId: str = Field(..., min_length=1, max_length=50)
+
+
+class MessageCreateRequest(BaseModel):
+    senderOrgCode: str = Field(..., min_length=1, max_length=20)
+    content: str = Field(..., min_length=1, max_length=2000)
 
 
 class ImageRecognitionResult(BaseModel):
@@ -353,6 +390,7 @@ def row_to_listing(row) -> dict:
         "claimedBy": row["claimed_by_org_code"],
         "claimedAt": row["claimed_at"],
         "hasClaims": bool(row["has_claims"]) if "has_claims" in row._mapping else False,
+        "claimId": row["claim_id"] if "claim_id" in row._mapping else None,
         "sourceListingId": row["source_listing_id"],
         "allergenTags": allergen_list,
         "storageCondition": row["storage_condition"] if "storage_condition" in row._mapping else None,
@@ -361,6 +399,74 @@ def row_to_listing(row) -> dict:
         "pickupNotes": row["pickup_notes"] if "pickup_notes" in row._mapping else None,
         "pickedUpAt": row["picked_up_at"] if "picked_up_at" in row._mapping else None,
     }
+
+
+def normalize_status_for_response(status: str) -> str:
+    return "collected" if status == "picked_up" else status
+
+
+async def create_claim_thread_if_missing(
+    claim_id: str,
+    listing_id: str,
+    source_listing_id: Optional[str],
+    donor_org_code: str,
+    claiming_org_code: str,
+    created_at: datetime,
+):
+    await database.execute(
+        """
+        INSERT INTO claim_thread (
+            claim_id, listing_id, source_listing_id, donor_org_code, claiming_org_code, created_at
+        )
+        VALUES (
+            :claim_id, :listing_id, :source_listing_id, :donor_org_code, :claiming_org_code, :created_at
+        )
+        ON CONFLICT (claim_id) DO NOTHING
+        """,
+        {
+            "claim_id": claim_id,
+            "listing_id": listing_id,
+            "source_listing_id": source_listing_id,
+            "donor_org_code": donor_org_code,
+            "claiming_org_code": claiming_org_code,
+            "created_at": created_at,
+        },
+    )
+
+
+async def close_claim_thread(claim_id: str, closed_at: datetime):
+    await database.execute(
+        """
+        UPDATE claim_thread
+        SET is_closed = TRUE, closed_at = :closed_at
+        WHERE claim_id = :claim_id
+        """,
+        {"claim_id": claim_id, "closed_at": closed_at},
+    )
+
+
+async def fetch_claim_thread_or_404(claim_id: str):
+    row = await database.fetch_one(
+        "SELECT * FROM claim_thread WHERE claim_id = :claim_id",
+        {"claim_id": claim_id},
+    )
+    if not row:
+        raise HTTPException(status_code=404, detail="Claim thread not found")
+    return row
+
+
+def ensure_thread_member(thread_row, org_code: str):
+    code = (org_code or "").strip()
+    if code not in {thread_row["donor_org_code"], thread_row["claiming_org_code"]}:
+        raise HTTPException(status_code=403, detail="Access denied for this claim thread")
+
+
+def classify_sender(thread_row, sender_org_code: str) -> str:
+    if sender_org_code == thread_row["claiming_org_code"]:
+        return "organisation"
+    if sender_org_code == thread_row["donor_org_code"]:
+        return "donor"
+    raise HTTPException(status_code=403, detail="Sender is not part of this claim thread")
 
 
 @app.get("/health")
@@ -425,7 +531,7 @@ async def get_listings(
     status: str = "available",
 ):
     if status not in ALLOWED_STATUSES:
-        raise HTTPException(status_code=400, detail="status must be one of: available, claimed, expired")
+        raise HTTPException(status_code=400, detail="status must be one of: available, claimed, expired, collected")
 
     query = """
         SELECT
@@ -441,9 +547,15 @@ async def get_listings(
         FROM food_listing fl
         LEFT JOIN organization o  ON fl.org_id = o.org_id
         LEFT JOIN organization co ON fl.claimed_by_org_id = co.org_id
-        WHERE fl.status = :status
+        WHERE 1=1
     """
-    params: dict = {"status": status}
+    params: dict = {}
+
+    if status == "collected" or status == "picked_up":
+        query += " AND fl.status IN ('collected', 'picked_up')"
+    else:
+        query += " AND fl.status = :status"
+        params["status"] = status
 
     if postcode:
         query += " AND fl.postcode = :postcode"
@@ -459,7 +571,10 @@ async def get_listings(
 
     query += " ORDER BY fl.created_at DESC"
     rows = await database.fetch_all(query, params)
-    return [row_to_listing(r) for r in rows]
+    data = [row_to_listing(r) for r in rows]
+    for item in data:
+        item["status"] = normalize_status_for_response(item["status"])
+    return data
 
 
 @app.get("/listings/{listing_id}", response_model=Listing)
@@ -468,7 +583,9 @@ async def get_listing(request: Request, listing_id: str):
     row = await fetch_listing_row(listing_id)
     if not row:
         raise HTTPException(status_code=404, detail="Listing not found")
-    return row_to_listing(row)
+    data = row_to_listing(row)
+    data["status"] = normalize_status_for_response(data["status"])
+    return data
 
 
 @app.patch("/listings/{listing_id}", response_model=Listing)
@@ -548,6 +665,7 @@ async def claim_listing(request: Request, listing_id: str, claim: ClaimRequest):
 
     claimer_org_id = await get_or_create_org(claim.orgId)
     claimed_at = datetime.now()
+    claim_id = str(uuid.uuid4())
 
     if abs(claim_quantity - available_quantity) < 0.00001:
         await database.execute(
@@ -555,12 +673,14 @@ async def claim_listing(request: Request, listing_id: str, claim: ClaimRequest):
             UPDATE food_listing
             SET status = 'claimed',
                 claimed_by_org_id = :claimer_org_id,
-                claimed_at = :claimed_at
+                claimed_at = :claimed_at,
+                claim_id = :claim_id
             WHERE listing_id = :listing_id
             """,
             {
                 "claimer_org_id": claimer_org_id,
                 "claimed_at": claimed_at,
+                "claim_id": claim_id,
                 "listing_id": listing_id,
             },
         )
@@ -581,13 +701,13 @@ async def claim_listing(request: Request, listing_id: str, claim: ClaimRequest):
                     food_category, dietary_tags, photo_url,
                     postcode, org_code, expiry_date, pickup_time,
                     status, created_at, claimed_at, org_id, claimed_by_org_id,
-                    location_id, source_listing_id, allergen_tags, storage_condition, pickup_window
+                    location_id, source_listing_id, allergen_tags, storage_condition, pickup_window, claim_id
                 ) VALUES (
                     :listing_id, :title, :description, :quantity, :unit,
                     :food_category, :dietary_tags, :photo_url,
                     :postcode, :org_code, :expiry_date, :pickup_time,
                     'claimed', :created_at, :claimed_at, :org_id, :claimed_by_org_id,
-                    :location_id, :source_listing_id, :allergen_tags, :storage_condition, :pickup_window
+                    :location_id, :source_listing_id, :allergen_tags, :storage_condition, :pickup_window, :claim_id
                 )
                 """,
                 {
@@ -612,12 +732,23 @@ async def claim_listing(request: Request, listing_id: str, claim: ClaimRequest):
                     "allergen_tags": row["allergen_tags"],
                     "storage_condition": row["storage_condition"],
                     "pickup_window": row["pickup_window"],
+                    "claim_id": claim_id,
                 },
             )
+
+    await create_claim_thread_if_missing(
+        claim_id=claim_id,
+        listing_id=claimed_listing_id,
+        source_listing_id=row["source_listing_id"] or listing_id,
+        donor_org_code=row["owner_org_code"] or "",
+        claiming_org_code=claim.orgId,
+        created_at=claimed_at,
+    )
 
     return {
         "success": True,
         "listing_id": claimed_listing_id,
+        "claim_id": claim_id,
         "source_listing_id": row["source_listing_id"] or listing_id,
         "claimed_by": claim.orgId,
         "claimed_quantity": claim_quantity,
@@ -634,6 +765,7 @@ async def unclaim_listing(request: Request, listing_id: str, payload: UnclaimReq
             fl.status,
             fl.quantity,
             fl.source_listing_id,
+            fl.claim_id,
             co.org_code AS claimed_by_org_code
         FROM food_listing fl
         LEFT JOIN organization co ON fl.claimed_by_org_id = co.org_id
@@ -649,6 +781,7 @@ async def unclaim_listing(request: Request, listing_id: str, payload: UnclaimReq
         raise HTTPException(status_code=403, detail="Only the claiming organization can remove this claim")
 
     source_listing_id = row["source_listing_id"]
+    claim_id = row["claim_id"]
 
     if source_listing_id:
         async with database.transaction():
@@ -673,6 +806,7 @@ async def unclaim_listing(request: Request, listing_id: str, payload: UnclaimReq
                     SET status = 'available',
                         claimed_by_org_id = NULL,
                         claimed_at = NULL,
+                        claim_id = NULL,
                         source_listing_id = NULL
                     WHERE listing_id = :listing_id
                     """,
@@ -684,11 +818,15 @@ async def unclaim_listing(request: Request, listing_id: str, payload: UnclaimReq
             UPDATE food_listing
             SET status = 'available',
                 claimed_by_org_id = NULL,
-                claimed_at = NULL
+                claimed_at = NULL,
+                claim_id = NULL
             WHERE listing_id = :listing_id
             """,
             {"listing_id": listing_id},
         )
+
+    if claim_id:
+        await close_claim_thread(claim_id, datetime.now())
 
     return {"success": True, "listing_id": listing_id, "status": "available"}
 
@@ -698,7 +836,7 @@ async def unclaim_listing(request: Request, listing_id: str, payload: UnclaimReq
 async def pickup_listing(request: Request, listing_id: str, payload: PickupRequest):
     row = await database.fetch_one(
         """
-        SELECT fl.status, co.org_code AS claimed_by_org_code
+        SELECT fl.status, fl.claim_id, co.org_code AS claimed_by_org_code
         FROM food_listing fl
         LEFT JOIN organization co ON fl.claimed_by_org_id = co.org_id
         WHERE fl.listing_id = :listing_id
@@ -716,12 +854,14 @@ async def pickup_listing(request: Request, listing_id: str, payload: PickupReque
     await database.execute(
         """
         UPDATE food_listing
-        SET status = 'picked_up', picked_up_at = :picked_up_at
+        SET status = 'collected', picked_up_at = :picked_up_at
         WHERE listing_id = :listing_id
         """,
         {"listing_id": listing_id, "picked_up_at": picked_up_at},
     )
-    return {"success": True, "listing_id": listing_id, "status": "picked_up", "picked_up_at": picked_up_at}
+    if row["claim_id"]:
+        await close_claim_thread(row["claim_id"], picked_up_at)
+    return {"success": True, "listing_id": listing_id, "status": "collected", "picked_up_at": picked_up_at}
 
 
 @app.patch("/listings/{listing_id}/expire")
@@ -739,6 +879,98 @@ async def expire_listing(request: Request, listing_id: str):
         {"listing_id": listing_id},
     )
     return {"success": True, "listing_id": listing_id, "status": "expired"}
+
+
+@app.get("/claims/{claim_id}", response_model=dict)
+@limiter.limit("30/minute")
+async def get_claim_thread(request: Request, claim_id: str, orgCode: str):
+    thread_row = await fetch_claim_thread_or_404(claim_id)
+    ensure_thread_member(thread_row, orgCode)
+    return {
+        "claim_id": thread_row["claim_id"],
+        "listing_id": thread_row["listing_id"],
+        "source_listing_id": thread_row["source_listing_id"],
+        "donor_org_code": thread_row["donor_org_code"],
+        "claiming_org_code": thread_row["claiming_org_code"],
+        "is_closed": bool(thread_row["is_closed"]),
+        "created_at": thread_row["created_at"],
+        "closed_at": thread_row["closed_at"],
+    }
+
+
+@app.get("/claims/{claim_id}/messages", response_model=list[dict])
+@limiter.limit("30/minute")
+async def list_claim_messages(request: Request, claim_id: str, orgCode: str):
+    thread_row = await fetch_claim_thread_or_404(claim_id)
+    ensure_thread_member(thread_row, orgCode)
+    rows = await database.fetch_all(
+        """
+        SELECT message_id, claim_id, sender_type, sender_org_code, content, sent_at, read_at
+        FROM claim_message
+        WHERE claim_id = :claim_id
+        ORDER BY sent_at ASC
+        """,
+        {"claim_id": claim_id},
+    )
+    return [dict(r) for r in rows]
+
+
+@app.post("/claims/{claim_id}/messages", response_model=dict)
+@limiter.limit("20/minute")
+async def send_claim_message(request: Request, claim_id: str, payload: MessageCreateRequest):
+    thread_row = await fetch_claim_thread_or_404(claim_id)
+    sender_org_code = payload.senderOrgCode.strip()
+    sender_type = classify_sender(thread_row, sender_org_code)
+    if thread_row["is_closed"]:
+        raise HTTPException(status_code=400, detail="Thread is closed")
+
+    message_id = str(uuid.uuid4())
+    sent_at = datetime.now()
+    await database.execute(
+        """
+        INSERT INTO claim_message (message_id, claim_id, sender_type, sender_org_code, content, sent_at)
+        VALUES (:message_id, :claim_id, :sender_type, :sender_org_code, :content, :sent_at)
+        """,
+        {
+            "message_id": message_id,
+            "claim_id": claim_id,
+            "sender_type": sender_type,
+            "sender_org_code": sender_org_code,
+            "content": payload.content.strip(),
+            "sent_at": sent_at,
+        },
+    )
+    return {
+        "message_id": message_id,
+        "claim_id": claim_id,
+        "sender_type": sender_type,
+        "sender_org_code": sender_org_code,
+        "content": payload.content.strip(),
+        "sent_at": sent_at,
+        "read_at": None,
+    }
+
+
+@app.patch("/claims/{claim_id}/messages/read", response_model=dict)
+@limiter.limit("30/minute")
+async def mark_claim_messages_read(request: Request, claim_id: str, orgCode: str):
+    thread_row = await fetch_claim_thread_or_404(claim_id)
+    reader_org_code = (orgCode or "").strip()
+    ensure_thread_member(thread_row, reader_org_code)
+
+    reader_sender_type = classify_sender(thread_row, reader_org_code)
+    now = datetime.now()
+    await database.execute(
+        """
+        UPDATE claim_message
+        SET read_at = :read_at
+        WHERE claim_id = :claim_id
+          AND read_at IS NULL
+          AND sender_type <> :reader_sender_type
+        """,
+        {"read_at": now, "claim_id": claim_id, "reader_sender_type": reader_sender_type},
+    )
+    return {"success": True, "claim_id": claim_id, "read_at": now}
 
 
 @app.post("/image-recognition/recognize", response_model=ImageRecognitionResult)

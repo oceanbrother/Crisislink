@@ -187,22 +187,25 @@
 
 .filter-chips {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.75rem;
-  overflow-x: auto;
-  scrollbar-width: none;
-  padding-bottom: 4px;
+  overflow: visible;
+  padding-bottom: 0;
+  padding-right: 0;
 }
 
-.filter-chips::-webkit-scrollbar { display: none; }
-
 .filter-chip {
-  flex-shrink: 0;
+  flex: 0 1 auto;
+  min-width: 0;
   padding: 0.58rem 1.4rem;
   border-radius: var(--radius-full);
   font-family: var(--font-body);
   font-weight: 650;
   font-size: 0.92rem;
-  white-space: nowrap;
+  white-space: normal;
+  line-height: 1.25;
+  text-align: center;
+  max-width: 100%;
   border: 1px solid transparent;
   cursor: pointer;
   background: var(--surface-low);
@@ -258,6 +261,10 @@
 
 .feed-count--filtered {
   color: var(--role-primary);
+}
+
+.donor-role-page .feed-count--filtered {
+  color: #c67a00;
 }
 
 .board-error {
@@ -317,10 +324,10 @@
 .donor-card-status {
   display: inline-flex;
   align-items: center;
-  min-height: 1.8rem;
-  padding: 0.25rem 0.65rem;
+  min-height: 2.1rem;
+  padding: 0.42rem 0.9rem;
   border-radius: 999px;
-  font-size: 0.75rem;
+  font-size: 0.92rem;
   font-weight: 800;
   letter-spacing: 0.02em;
 }
@@ -328,6 +335,21 @@
 .donor-card-status--expired {
   background: rgba(179, 38, 30, 0.12);
   color: #8f241f;
+}
+
+.donor-card-status--claimed {
+  background: rgba(34, 84, 138, 0.16);
+  color: #1f4f86;
+}
+
+.donor-card-status--collected {
+  background: rgba(31, 122, 72, 0.18);
+  color: #135a34;
+}
+
+.donor-card-status--available {
+  background: rgba(21, 128, 61, 0.12);
+  color: #1f6a3a;
 }
 
 .food-card-category {
@@ -1438,6 +1460,56 @@
   border-color: rgba(var(--role-primary-rgb), 0.34);
 }
 
+.workspace-listings-summary--donor .donor-summary-card--all {
+  background: rgba(255, 255, 255, 0.95);
+}
+
+.workspace-listings-summary--donor .donor-summary-card--available {
+  background: rgba(255, 246, 231, 0.98);
+  border-color: rgba(186, 124, 18, 0.22);
+}
+
+.workspace-listings-summary--donor .donor-summary-card--available .workspace-summary-metric__label {
+  color: #b16f00;
+}
+
+.workspace-listings-summary--donor .donor-summary-card--claimed {
+  background: rgba(247, 238, 227, 0.98);
+  border-color: rgba(146, 101, 38, 0.22);
+}
+
+.workspace-listings-summary--donor .donor-summary-card--claimed .workspace-summary-metric__label {
+  color: #8a5b1c;
+}
+
+.workspace-listings-summary--donor .donor-summary-card--collected {
+  background: rgba(236, 231, 223, 0.98);
+  border-color: rgba(115, 88, 52, 0.24);
+}
+
+.workspace-listings-summary--donor .donor-summary-card--collected .workspace-summary-metric__label {
+  color: #6f5431;
+}
+
+.workspace-listings-summary--donor .donor-summary-card--all.is-active {
+  border-color: rgba(var(--role-primary-rgb), 0.5);
+}
+
+.workspace-listings-summary--donor .donor-summary-card--available.is-active {
+  border-color: rgba(186, 124, 18, 0.6);
+  box-shadow: 0 12px 26px rgba(186, 124, 18, 0.2);
+}
+
+.workspace-listings-summary--donor .donor-summary-card--claimed.is-active {
+  border-color: rgba(146, 101, 38, 0.6);
+  box-shadow: 0 12px 26px rgba(146, 101, 38, 0.18);
+}
+
+.workspace-listings-summary--donor .donor-summary-card--collected.is-active {
+  border-color: rgba(115, 88, 52, 0.62);
+  box-shadow: 0 12px 26px rgba(115, 88, 52, 0.2);
+}
+
 .donor-card-detail-row {
   font-size: 1rem;
 }
@@ -1565,11 +1637,13 @@
   flex-wrap: wrap;
 }
 
+
 .filter-feedback-pills {
   display: flex;
   flex-wrap: wrap;
   gap: 0.6rem;
 }
+
 
 .filter-feedback-pill {
   display: inline-flex;
