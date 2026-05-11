@@ -12,6 +12,7 @@ const DonorDashboardPage = () => {
   const [showLanguageMenu, setShowLanguageMenu] = useState(false)
 
   const postcode = useMemo(() => {
+    // Prefer explicit navigation context, then persisted donor preference.
     return String(location.state?.postcode || getSavedDonorPostcode() || '').trim()
   }, [location.state?.postcode])
 
@@ -28,6 +29,7 @@ const DonorDashboardPage = () => {
   }
 
   const goTo = (path) => {
+    // Preserve postcode context across dashboard feature hops.
     navigate(path, { state: { postcode } })
   }
 

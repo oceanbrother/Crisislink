@@ -31,6 +31,7 @@ const DEFAULT_CATEGORY = 'Baked goods'
 const MAX_CONFIDENT_AI_QUANTITY = 30
 
 function getSuggestedQuantity(resultQuantity, fallbackQuantity) {
+  // Guard against unrealistic AI quantity spikes; keep donor in control.
   const parsed = parseQuantityValue(resultQuantity)
   if (parsed === null || parsed <= 0) {
     return {
@@ -138,6 +139,7 @@ function isExpiryPast(value) {
 
 function buildInitialState({ postcode, orgMode, initialOrgCode, listing }) {
   if (listing) {
+    // Edit mode hydrates from existing listing while preserving legacy field aliases.
     const listingAllergenTags = Array.isArray(listing.allergenTags)
       ? listing.allergenTags
       : (Array.isArray(listing.allergen_tags) ? listing.allergen_tags : [])
@@ -165,6 +167,7 @@ function buildInitialState({ postcode, orgMode, initialOrgCode, listing }) {
   }
 
   return {
+    // Create mode defaults are role-aware (org workspace vs donor workspace).
     foodType: '',
     quantity: '1',
     category: DEFAULT_CATEGORY,
@@ -231,6 +234,7 @@ const DonationForm = () => {
   const currentOrgCode = String(initialOrgCode || formData.orgCode || '').trim().toUpperCase()
 
   const goToWorkspaceHome = () => {
+    // Route back to role-specific listing board after cancel/success actions.
     if (orgMode) {
       navigate('/org/listings', { state: { orgCode: currentOrgCode } })
       return
@@ -239,6 +243,7 @@ const DonationForm = () => {
   }
 
   useEffect(() => {
+    // Reinitialize full form when route context or edit target changes.
     setFormData(buildInitialState({ postcode, orgMode, initialOrgCode, listing: editingListing }))
     setError('')
     setAiWarning('')

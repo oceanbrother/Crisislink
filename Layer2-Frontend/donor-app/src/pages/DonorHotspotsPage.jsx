@@ -55,7 +55,7 @@ const DonorHotspotsPage = () => {
           return
         }
       } catch {
-        // prediction service is optional during frontend-only development
+        // Prediction service is optional in local/demo mode; fallback keeps UX usable.
       }
 
       if (!isCancelled) {
@@ -88,6 +88,7 @@ const DonorHotspotsPage = () => {
   }, [enrichedHotspots])
 
   const visibleHotspots = useMemo(() => {
+    // Apply donor-facing controls in a fixed order: scope -> distance -> tone -> sort.
     let zones = [...enrichedHotspots]
 
     if (regionFilter !== 'all') {
@@ -141,6 +142,7 @@ const DonorHotspotsPage = () => {
   }, [visibleHotspots])
 
   const topPriorityHotspot = useMemo(() => {
+    // Tie-break by nearest distance so call-to-action remains practical for donors.
     if (visibleHotspots.length === 0) return null
     const ranked = [...visibleHotspots].sort((a, b) => {
       if (b.priorityScore !== a.priorityScore) {

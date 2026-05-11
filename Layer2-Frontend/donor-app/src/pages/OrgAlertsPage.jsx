@@ -9,6 +9,7 @@ import WorkspaceHeader from '../components/WorkspaceHeader'
 import '../styles/LiveListingBoard.css'
 
 function suburbName(postcode) {
+  // UI copy prefers human-readable suburb names over raw postcode IDs.
   return suburbLookup[String(postcode)] || `Postcode ${postcode}`
 }
 
@@ -75,6 +76,7 @@ const OrgAlertsPage = () => {
             }
           })
           .sort((a, b) => b.demandLift - a.demandLift)
+        // Keep top alert deterministic for stable demo and map focus behavior.
         setDemandInsights({ source: 'prediction', alerts, topAlert: alerts[0] || null, fallbackTopAlert: alerts[0] || null })
       })
       .catch(() => setError('alerts-load-failed'))
@@ -138,6 +140,7 @@ const OrgAlertsPage = () => {
   }
 
   const filteredDemandAlerts = useMemo(() => {
+    // Chip-level filtering: all, high-risk spike, and watch list.
     if (alertToneFilter === 'all') return demandAlerts
     if (alertToneFilter === 'spike') return demandAlerts.filter((a) => a.pressureScore >= 75)
     return demandAlerts.filter((a) => a.pressureScore < 75)
