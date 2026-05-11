@@ -19,6 +19,7 @@ const ARRAY_KEYS = ['results', 'items', 'rows', 'data', 'alerts', 'postcodes', '
 const normalizePostcode = (value) => String(value || '').trim()
 
 const toArray = (payload) => {
+  // Accept multiple backend response envelopes without breaking UI parsing.
   if (Array.isArray(payload)) return payload
   if (!payload || typeof payload !== 'object') return []
 
@@ -46,6 +47,7 @@ const getNumber = (value, fallback = 0) => {
 const clamp = (value, min, max) => Math.min(max, Math.max(min, value))
 
 const readField = (row, keys, fallback = undefined) => {
+  // Field alias reader for schema drift across prediction-service payload versions.
   if (!row || typeof row !== 'object') return fallback
 
   for (const key of keys) {
@@ -112,6 +114,7 @@ const formatPredictedWindow = (row) => {
 }
 
 const normalizeDemandLift = (row) => {
+  // Prefer explicit demand lift, else derive a stable visualized percentage from risk.
   const explicitValue = readField(row, ['demandLift', 'demand_lift', 'lift_pct', 'lift'])
   if (explicitValue !== undefined) return Math.round(getNumber(explicitValue, 0))
 
@@ -155,6 +158,7 @@ const normalizeCoverageLevel = (value, fallback = 'watch') => {
 }
 
 const deriveCoverageLevel = ({ listingCount, coverageRatePercent, shortfallPortions }) => {
+  // Heuristic buckets tuned for dashboard colour-coding and sorting.
   if (listingCount <= 0 || coverageRatePercent < 35 || shortfallPortions >= 180) return 'none'
   if (coverageRatePercent < 60 || shortfallPortions >= 110) return 'low'
   if (coverageRatePercent < 85 || shortfallPortions >= 40) return 'watch'

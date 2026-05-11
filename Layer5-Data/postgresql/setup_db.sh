@@ -11,7 +11,7 @@ set -e   # stop on first error
 
 DB_NAME="crisislink_db"
 DB_USER="$(whoami)"   # uses your macOS login (default Homebrew postgres user)
-SCHEMA_FILE="Layer5-Data/postgresql/schema/01_init.sql"
+SCHEMA_DIR="Layer5-Data/postgresql/schema"
 
 echo "──────────────────────────────────────────"
 echo " CrisisLink Database Setup"
@@ -25,10 +25,14 @@ psql -U "${DB_USER}" -d postgres -tc \
   || psql -U "${DB_USER}" -d postgres -c "CREATE DATABASE ${DB_NAME};"
 echo "  ✓ Database ready"
 
-# 2. Run the schema
-echo "→ Applying schema from ${SCHEMA_FILE}..."
-psql -U "${DB_USER}" -d "${DB_NAME}" -f "${SCHEMA_FILE}"
-echo "  ✓ Schema applied"
+# 2. Run ordered schema files
+echo "→ Applying schema files from ${SCHEMA_DIR}..."
+for schema_file in "${SCHEMA_DIR}"/0*.sql; do
+  [ -f "${schema_file}" ] || continue
+  echo "   - $(basename "${schema_file}")"
+  psql -U "${DB_USER}" -d "${DB_NAME}" -f "${schema_file}"
+done
+echo "  ✓ Schemas applied"
 
 # 3. Verify tables were created
 echo "→ Tables created in '${DB_NAME}':"

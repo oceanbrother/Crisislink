@@ -63,6 +63,7 @@ scheduler: Optional[AsyncIOScheduler] = None
 
 
 def _risk_label(score: float) -> str:
+	"""Map numeric score to stable UI-facing risk bands."""
 	if score >= 0.75:
 		return "high"
 	if score >= 0.5:
@@ -109,6 +110,7 @@ async def startup():
 	try:
 		from pathlib import Path as _Path
 		_models_dir = _Path(__file__).parent / "models"
+		# Auto-fetch model artifacts when URLs are provided in env vars.
 		_ensure_models(_models_dir)
 		risk_scorer = RiskScorer(models_dir=_models_dir)
 		print("[OK] Risk scorer models loaded successfully")
@@ -202,6 +204,7 @@ async def _weekly_prediction_job():
 	week_start = date.today() - timedelta(days=date.today().weekday())
 
 	for chunk_start in range(0, len(postcodes), 200):
+		# Process in chunks to cap memory and keep DB round-trips predictable.
 		chunk = postcodes[chunk_start:chunk_start + 200]
 		rows = await database.fetch_all(features_query, {"postcodes": chunk})
 		df = pd.DataFrame(rows)
@@ -213,6 +216,7 @@ async def _weekly_prediction_job():
 		ml_degenerate = len(set(round(float(s), 3) for s in ml_scores)) <= 1
 		for idx, row in scored.iterrows():
 			if ml_degenerate:
+				# Fallback heuristic if model output collapses to near-constant values.
 				irsd_decile = int(df.iloc[idx]["irsd_decile"])
 				unemp = float(df.iloc[idx]["unemployment_rate"] or 0)
 				score = min(0.99, max(0.01,
@@ -264,6 +268,7 @@ async def _daily_gap_detection_job():
 		ORDER BY ps.postcode;
 	"""
 	rows = await database.fetch_all(query)
+	# Cache lightweight result in app state for fast API reads.
 	app.state.gap_postcodes = [{"postcode": r["postcode"], "total_population": int(r["total_population"])} for r in rows]
 	print(f"Daily gap detection complete: found {len(rows)} postcodes")
 

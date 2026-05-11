@@ -9,6 +9,7 @@ import WorkspaceHeader from '../components/WorkspaceHeader'
 import '../styles/LiveListingBoard.css'
 
 function suburbName(postcode) {
+  // Normalize postcode labels for cards/map legends.
   return suburbLookup[String(postcode)] || `Postcode ${postcode}`
 }
 
@@ -78,6 +79,7 @@ const OrgSupplyGapPage = () => {
             gapScore: shortfall + (100 - coverageRate),
           }
         }).sort((a, b) => b.gapScore - a.gapScore)
+        // Rank by blended urgency so zero-supply and large-shortfall areas float first.
 
         const hotspotZones = zones.filter(z => z.coverageLevel === 'none')
         const watchZones = zones.filter(z => z.coverageLevel === 'low' || z.coverageLevel === 'watch')
@@ -101,6 +103,7 @@ const OrgSupplyGapPage = () => {
   }, [])
 
   const filteredZones = useMemo(() => {
+    // Summary-card filter drives map/list content in one place.
     if (coverageFilter === 'all') return coverageInsights.zones
     if (coverageFilter === 'critical') return coverageInsights.zones.filter((z) => z.coverageLevel === 'none')
     if (coverageFilter === 'low') return coverageInsights.zones.filter((z) => z.coverageLevel === 'low')
