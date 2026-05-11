@@ -3,6 +3,7 @@ import '../styles/WorkspaceShell.css'
 
 const WorkspaceContextCard = ({ label, value, supportingText = '', icon = 'info', className = '' }) => {
   return (
+    // Compact metadata card (postcode/org code/etc.) for consistent dashboard context.
     <div className={`workspace-context-card ${className}`.trim()}>
       <div className="workspace-context-card__badge">
         <span className="material-symbols-outlined">{icon}</span>

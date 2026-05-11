@@ -20,6 +20,7 @@ import OrgSupplyGapPage from './pages/OrgSupplyGapPage'
 import CoverageGapMap from './pages/CoverageGapMap'
 
 class MapErrorBoundary extends Component {
+  // Prevent map rendering failures from taking down the full workspace app shell.
   constructor(props) { super(props); this.state = { error: null } }
   static getDerivedStateFromError(error) { return { error } }
   render() {
@@ -50,6 +51,7 @@ function PasswordGate({ expectedPassword, children }) {
 
   useEffect(() => {
     if (!expectedPassword) {
+      // No password configured: keep local/dev flow frictionless.
       setIsUnlocked(true)
       return
     }
@@ -61,6 +63,7 @@ function PasswordGate({ expectedPassword, children }) {
     event.preventDefault()
 
     if (inputPassword.trim() === expectedPassword) {
+      // Session-scoped unlock avoids persistent auth state across browser restarts.
       window.sessionStorage.setItem(ACCESS_STORAGE_KEY, 'true')
       setIsUnlocked(true)
       setError('')
@@ -158,6 +161,7 @@ function AppRoutes() {
 
 function App() {
   const expectedPassword = useMemo(
+    // Optional deployment gate; empty value means public preview mode.
     () => import.meta.env.VITE_SITE_PASSWORD?.trim() || '',
     [],
   )

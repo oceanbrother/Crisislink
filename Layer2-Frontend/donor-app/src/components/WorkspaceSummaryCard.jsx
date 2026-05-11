@@ -3,6 +3,7 @@ import '../styles/WorkspaceShell.css'
 
 const WorkspaceSummaryCard = ({ role = 'org', title, subtitle = '', action = null, context = null, children = null, className = '' }) => {
   return (
+    // Reusable workspace header card: used by both donor and organisation pages.
     <section className={`workspace-summary-card workspace-summary-card--${role} ${className}`.trim()}>
       <div className="workspace-summary-card__header">
         <div className="workspace-summary-card__heading">
