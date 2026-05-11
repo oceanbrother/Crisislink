@@ -204,6 +204,7 @@
 
 .role-card-title.org {
   color: var(--primary);
+  max-width: 22ch;
 }
 
 .role-card-desc {
@@ -297,6 +298,10 @@
 
   .role-card-title {
     max-width: 14ch;
+  }
+
+  .role-card-title.org {
+    max-width: 22ch;
   }
 
   .role-card-desc {
