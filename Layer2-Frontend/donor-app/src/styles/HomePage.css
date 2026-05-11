@@ -196,6 +196,7 @@
   font-size: clamp(1.65rem, 3vw, 2.2rem);
   line-height: 1.08;
   letter-spacing: -0.045em;
+  text-wrap: balance;
 }
 
 .role-card-title.donor {

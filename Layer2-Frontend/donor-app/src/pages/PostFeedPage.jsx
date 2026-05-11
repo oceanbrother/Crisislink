@@ -240,6 +240,8 @@ const PostFeedPage = () => {
       ])
 
       const mergedById = new Map()
+      // We fetch status buckets separately, then merge by listing id so a listing
+      // appears once even if backend transitions happen between requests.
       ;[availableData, claimedData, collectedData].forEach((bucket) => {
         ;(Array.isArray(bucket) ? bucket : []).forEach((listing) => {
           mergedById.set(listing.id, listing)
@@ -270,6 +272,7 @@ const PostFeedPage = () => {
       const ownListing = isOwnedDonorListing(listing, donorCode, postcode)
 
       if (!ownListing) return false
+      // Treat legacy `picked_up` as `collected` in UI filters.
       const statusValue = String(listing.status || '').toLowerCase()
       const normalizedStatus = statusValue === 'picked_up' ? 'collected' : statusValue
       if (listingScope !== 'all' && normalizedStatus !== listingScope) return false
@@ -303,6 +306,7 @@ const PostFeedPage = () => {
     return listings.reduce((acc, listing) => {
       if (!isOwnedDonorListing(listing, donorCode, postcode)) return acc
       acc.total += 1
+      // Keep summary counters aligned with status filter semantics.
       const statusValue = String(listing.status || '').toLowerCase()
       const normalizedStatus = statusValue === 'picked_up' ? 'collected' : statusValue
       if (normalizedStatus === 'available') acc.available += 1

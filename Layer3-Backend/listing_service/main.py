@@ -64,6 +64,8 @@ SIZE_PREFIX = "[sizeCue:"
 
 
 async def ensure_schema_extensions():
+    # Keep local/dev environments forward-compatible without requiring a manual
+    # migration step before startup. This is intentionally idempotent.
     await database.execute("ALTER TABLE food_listing ADD COLUMN IF NOT EXISTS source_listing_id VARCHAR(36)")
     await database.execute("ALTER TABLE food_listing ADD COLUMN IF NOT EXISTS pickup_window VARCHAR(100)")
     await database.execute("ALTER TABLE food_listing ADD COLUMN IF NOT EXISTS contact_name VARCHAR(100)")
@@ -291,6 +293,8 @@ def normalize_category(value: Optional[str]) -> str:
 
 
 def encode_description(description: Optional[str], size_cue: Optional[str]) -> Optional[str]:
+    # Persist `sizeCue` inside description using a hidden marker so older schema
+    # deployments can round-trip the extra field without adding a dedicated column.
     parts: list[str] = []
     if description and description.strip():
         parts.append(description.strip())
@@ -300,6 +304,8 @@ def encode_description(description: Optional[str], size_cue: Optional[str]) -> O
 
 
 def decode_description(raw: Optional[str]) -> tuple[Optional[str], Optional[str]]:
+    # Reverse `encode_description`: extract hidden size cue marker and return the
+    # user-visible notes separately.
     if not raw:
         return None, None
     size_cue = None
@@ -372,6 +378,8 @@ def row_to_listing(row) -> dict:
     allergen_raw = row["allergen_tags"] if "allergen_tags" in row._mapping else None
     allergen_list = [t.strip() for t in (allergen_raw or "").split(",") if t.strip()]
 
+    # API response adapter: convert DB naming to frontend naming and include
+    # compatibility fields used by both old and new clients.
     return {
         "id": row["listing_id"],
         "foodType": row["title"] or row["food_category"] or "",
@@ -402,6 +410,7 @@ def row_to_listing(row) -> dict:
 
 
 def normalize_status_for_response(status: str) -> str:
+    # Backward compatibility: old records may still contain `picked_up`.
     return "collected" if status == "picked_up" else status
 
 

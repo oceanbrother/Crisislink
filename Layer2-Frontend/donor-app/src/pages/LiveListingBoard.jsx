@@ -116,6 +116,8 @@ const getListingViewState = (listing, orgCode) => {
     (listing?.status === 'collected' || listing?.status === 'picked_up') &&
     String(listing?.claimedBy || '').trim().toUpperCase() === currentOrgCode
 
+  // View-state precedence mirrors the Iteration 3 workflow from the current
+  // organisation perspective.
   if (isOwnOrgListing) return 'posted'
   if (isCollectedByCurrentOrg) return 'collected'
   if (isClaimedByCurrentOrg) return 'claimed'
@@ -319,7 +321,7 @@ const LiveListingBoard = () => {
     filterAndDisplayListings()
   }, [listings, searchTerm, filterCategory, filterFoodType, filterStatus, orgCode])
 
-  const loadListings = async () => {
+const loadListings = async () => {
     setLoading(true)
     setError('')
     try {
@@ -330,6 +332,8 @@ const LiveListingBoard = () => {
       ])
       const claimedData = Array.isArray(claimedResult) ? claimedResult : []
       const collectedData = Array.isArray(collectedResult) ? collectedResult : []
+      // Only include claimed/collected records that belong to this organisation.
+      // This keeps the board focused on "my active work" rather than all claims.
       const mergedData = [
         ...availableData,
         ...claimedData.filter(
@@ -379,6 +383,8 @@ const LiveListingBoard = () => {
       )
     }
 
+    // Stable status-first ordering helps demo/readability: posted -> available
+    // -> claimed -> collected.
     filtered = [...filtered].sort((a, b) => {
       const stateA = getListingViewState(a, orgCode)
       const stateB = getListingViewState(b, orgCode)
