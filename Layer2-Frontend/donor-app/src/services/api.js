@@ -35,6 +35,7 @@ apiClient.interceptors.response.use(
   (response) => response,
   async (error) => {
     const requestConfig = error?.config
+    // If direct localhost target is down in local dev, retry once via Vite proxy.
     const shouldRetryWithProxy =
       IS_LOCAL_DIRECT_BASE &&
       requestConfig &&
@@ -52,6 +53,7 @@ apiClient.interceptors.response.use(
 )
 
 export const recognizeFoodFromImage = async (imageFormData) => {
+  // Listing-service endpoint for food class prediction + optional quantity hints.
   const response = await apiClient.post("/image-recognition/recognize", imageFormData, {
     headers: { "Content-Type": "multipart/form-data" },
   })
@@ -105,6 +107,7 @@ export const getGapPostcodes = async (params = {}) => {
 }
 
 export const getHotspots = async (params = {}) => {
+  // Hotspots always come from prediction service route (proxy to :8001 in dev).
   const response = await predictionApiClient.get('/predictions/hotspots', { params })
   return response.data
 }
@@ -130,6 +133,7 @@ export const getClaimThread = async (claimId, orgCode) => {
 }
 
 export const getClaimMessages = async (claimId, orgCode) => {
+  // Claim thread is role-scoped by orgCode to enforce access boundaries.
   const response = await apiClient.get("/claims/" + claimId + "/messages", { params: { orgCode } })
   return response.data
 }
