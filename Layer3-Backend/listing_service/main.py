@@ -88,6 +88,9 @@ async def ensure_schema_extensions():
         )
         """
     )
+    # Backfill columns for older claim_thread schemas created before these fields existed.
+    await database.execute("ALTER TABLE claim_thread ADD COLUMN IF NOT EXISTS is_closed BOOLEAN NOT NULL DEFAULT FALSE")
+    await database.execute("ALTER TABLE claim_thread ADD COLUMN IF NOT EXISTS closed_at TIMESTAMP")
     await database.execute("CREATE INDEX IF NOT EXISTS idx_claim_thread_listing_id ON claim_thread(listing_id)")
     await database.execute(
         """
@@ -247,6 +250,7 @@ class Listing(ListingBase):
     claimedAt: Optional[datetime] = None
     hasClaims: bool = False
     claimId: Optional[str] = None
+    collectedAt: Optional[datetime] = None
     quantity: float = Field(..., ge=0, le=10000)  # 0 is valid for fully-claimed items
 
 
@@ -399,6 +403,7 @@ def row_to_listing(row) -> dict:
         "claimedAt": row["claimed_at"],
         "hasClaims": bool(row["has_claims"]) if "has_claims" in row._mapping else False,
         "claimId": row["claim_id"] if "claim_id" in row._mapping else None,
+        "collectedAt": row["picked_up_at"] if "picked_up_at" in row._mapping else None,
         "sourceListingId": row["source_listing_id"],
         "allergenTags": allergen_list,
         "storageCondition": row["storage_condition"] if "storage_condition" in row._mapping else None,
@@ -601,8 +606,12 @@ async def get_listing(request: Request, listing_id: str):
 @limiter.limit("10/minute")
 async def update_listing(request: Request, listing_id: str, listing: ListingUpdate):
     row = await ensure_owner(listing_id, listing.orgCode)
-    if row["status"] == "claimed" or bool(row["has_claims"]):
-        raise HTTPException(status_code=400, detail="Listings that have already been claimed cannot be edited")
+    normalized_status = normalize_status_for_response(str(row["status"] or ""))
+    if normalized_status in {"claimed", "collected"} or bool(row["has_claims"]):
+        raise HTTPException(
+            status_code=400,
+            detail="Listings that are already claimed or collected cannot be edited",
+        )
 
     tags_str = ",".join(listing.dietary_tags)
     allergen_str = ",".join(listing.allergenTags)
@@ -647,8 +656,12 @@ async def update_listing(request: Request, listing_id: str, listing: ListingUpda
 @limiter.limit("10/minute")
 async def delete_listing(request: Request, listing_id: str, orgCode: str):
     row = await ensure_owner(listing_id, orgCode)
-    if row["status"] == "claimed" or bool(row["has_claims"]):
-        raise HTTPException(status_code=400, detail="Listings that have already been claimed cannot be removed")
+    normalized_status = normalize_status_for_response(str(row["status"] or ""))
+    if normalized_status in {"claimed", "collected"} or bool(row["has_claims"]):
+        raise HTTPException(
+            status_code=400,
+            detail="Listings that are already claimed or collected cannot be removed",
+        )
     await database.execute(
         "DELETE FROM food_listing WHERE listing_id = :listing_id",
         {"listing_id": listing_id},
@@ -855,7 +868,7 @@ async def pickup_listing(request: Request, listing_id: str, payload: PickupReque
     if not row:
         raise HTTPException(status_code=404, detail="Listing not found")
     if row["status"] != "claimed":
-        raise HTTPException(status_code=400, detail="Only claimed listings can be marked as picked up")
+        raise HTTPException(status_code=400, detail="Only claimed listings can be marked as collected")
     if (row["claimed_by_org_code"] or "") != payload.orgId:
         raise HTTPException(status_code=403, detail="Only the claiming organisation can confirm pickup")
 
@@ -870,7 +883,13 @@ async def pickup_listing(request: Request, listing_id: str, payload: PickupReque
     )
     if row["claim_id"]:
         await close_claim_thread(row["claim_id"], picked_up_at)
-    return {"success": True, "listing_id": listing_id, "status": "collected", "picked_up_at": picked_up_at}
+    return {
+        "success": True,
+        "listing_id": listing_id,
+        "status": "collected",
+        "collected_at": picked_up_at,
+        "picked_up_at": picked_up_at,  # legacy compatibility
+    }
 
 
 @app.patch("/listings/{listing_id}/expire")

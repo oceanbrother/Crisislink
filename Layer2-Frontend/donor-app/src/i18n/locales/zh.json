@@ -644,8 +644,8 @@
       },
       "step4": {
         "title": "确认完成",
-        "desc": "取货完成后将该条目标记为已取走。",
-        "status": "状态：Picked up"
+        "desc": "取货完成后将该条目标记为已完成取货。",
+        "status": "状态：Collected"
       }
     },
     "org": {
@@ -665,8 +665,8 @@
       },
       "step4": {
         "title": "确认取货",
-        "desc": "取货后将条目标记为已取走。",
-        "status": "状态：Picked up"
+        "desc": "取货后将条目标记为已完成取货。",
+        "status": "状态：Collected"
       }
     }
   },

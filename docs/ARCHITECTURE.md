@@ -2,7 +2,7 @@
 
 ## Executive Summary
 
-CrisisLink is a 5-layer system designed to connect surplus food providers with relief organizations through AI-powered matching and real-time coordination.
+CrisisLink is a 5-layer system designed to connect surplus food providers with relief organizations through rule-based filtering baseline logic, forecasting support, and real-time coordination.
 
 ## Layer Descriptions
 
@@ -31,7 +31,7 @@ CrisisLink is a 5-layer system designed to connect surplus food providers with r
 
 #### Services
 - **Listing Service**: CRUD operations for food listings
-- **Matching Service**: NLP-based surplus-to-need matching with notifications
+- **Matching Service**: rule-based surplus-to-need filtering baseline with notifications
 - **Prediction Service**: Weekly demand forecasting and gap alerts
 - **API Router**: Request routing and orchestration
 
@@ -48,10 +48,10 @@ CrisisLink is a 5-layer system designed to connect surplus food providers with r
    - Output: Food type, estimated portions, confidence score
    - Fallback: Google Cloud Vision API (confidence < 70%)
 
-2. **Surplus-to-Org Matcher**
-   - Model: Sentence Transformer
-   - Input: Donation description, org needs
-   - Output: Similarity scores (0-1) for ranking
+2. **Surplus-to-Org Matcher (Current Baseline)**
+   - Approach: rule-based filtering and ranking heuristics
+   - Input: Donation metadata + org preference/profile fields
+   - Output: Filtered/ranked candidates for board views
 
 3. **K-Means Postcode Clustering**
    - Input: SEIFA deciles, housing stress, income
@@ -86,8 +86,8 @@ Layer 2: Donor App
     ↓ [POST /listings]
 Layer 3: Listing Service → PostgreSQL
     ↓ [New Listing Event]
-Layer 3: Matching Service → Layer 4: NLP Matcher
-    ↓ [Ranked matches]
+Layer 3: Matching Service (rule-based baseline)
+    ↓ [Filtered/ranked candidates]
 Layer 3: Matching Service → PostgreSQL (log matches)
     ↓ [Push notification]
 Layer 2: Org App → Sarah (Organization) [WebSocket update]
@@ -97,7 +97,7 @@ ORGANIZATION PATH:
 Sarah (Organization) → Layer 2: Org App Dashboard
     ↓ [View available listings]
 Layer 2 connects to Layer 3: Listing Service [WebSocket for real-time updates]
-    ↓ [Browse matches ranked by NLP]
+    ↓ [Browse matches ranked by rule-based baseline]
 Layer 3: Matching Service (displays ranked matches)
     ↓ [Click claim]
 Layer 3: Listing Service → PostgreSQL (update status)

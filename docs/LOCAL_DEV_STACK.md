@@ -16,7 +16,8 @@ This prevents:
 
 ## Recommended Local Ports
 
-- Listing service: `127.0.0.1:8001`
+- Listing service: `127.0.0.1:8000`
+- Prediction service: `127.0.0.1:8001`
 - Frontend (Vite): `localhost:3004` (auto-fallback if occupied)
 
 ## Donor App Env Example
@@ -25,7 +26,8 @@ This prevents:
 
 ```bash
 VITE_SITE_PASSWORD=CrisisLink2026
-VITE_BACKEND_ORIGIN=http://127.0.0.1:8001
+VITE_BACKEND_ORIGIN=http://127.0.0.1:8000
+VITE_PREDICTION_ORIGIN=http://127.0.0.1:8001
 # VITE_API_URL is optional for non-local direct environments only.
 ```
 
@@ -36,10 +38,18 @@ Terminal A (backend):
 ```bash
 cd Layer3-Backend/listing_service
 source .venv/bin/activate
+uvicorn main:app --host 127.0.0.1 --port 8000
+```
+
+Terminal B (prediction service):
+
+```bash
+cd Layer3-Backend/prediction_service
+source .venv/bin/activate
 uvicorn main:app --host 127.0.0.1 --port 8001
 ```
 
-Terminal B (frontend):
+Terminal C (frontend):
 
 ```bash
 cd Layer2-Frontend/donor-app
@@ -49,8 +59,9 @@ npm run dev
 ## Quick Health Check
 
 ```bash
-curl -i "http://127.0.0.1:8001/listings?status=available"
-curl -I "http://127.0.0.1:8001/static/README.md"
+curl -i "http://127.0.0.1:8000/listings?status=available"
+curl -I "http://127.0.0.1:8000/static/README.md"
+curl -i "http://127.0.0.1:8001/health"
 ```
 
 If the backend checks pass, frontend image URLs under `/static/...` should render via Vite proxy.

@@ -15,7 +15,7 @@ CrisisLink eliminates information barriers by seamlessly connecting surplus food
 
 - ✨ **Lightning-Fast Posting**: Donors can list surplus food in just 60 seconds
 - 🤖 **AI-Powered Recognition**: Snap a photo, and AI automatically identifies food type and quantity
-- 🗺️ **Intelligent Matching**: NLP-driven matching between surplus food and organizational needs
+- 🗺️ **Intelligent Matching**: Rule-based filtering baseline between surplus food and organizational needs
 - 🚨 **Smart Alerts**: ML-powered demand forecasting and coverage gap visualization
 - 🌍 **Multi-Language Support**: Automatic translation breaking down language barriers
 
@@ -37,7 +37,7 @@ Layer 3: Backend Microservices (Python FastAPI)
            ↓
 Layer 4: AI Engine (Python)
            ├── Image Recognition (SegFormer)
-           ├── NLP Matching (Sentence Transformer)
+           ├── Rule-Based Filtering Baseline
            └── Demand Forecasting (K-Means + Random Forest)
            ↓
 Layer 5: Data (PostgreSQL + SEIFA Data + Datasets)
@@ -58,7 +58,7 @@ CrisisLink/
 │
 ├── Layer4-AI/                      # AI/ML Engine
 │   ├── image_recognition/          # Image recognition models
-│   ├── nlp_matching/               # NLP matching engine
+│   ├── nlp_matching/               # reserved module path (rule-based baseline currently active)
 │   └── demand_prediction/          # Demand forecasting models
 │
 ├── Layer3-Backend/                 # Backend Microservices
@@ -100,6 +100,24 @@ cd CrisisLink
 # Setup instructions for each layer can be found in their respective README.md files
 ```
 
+Quick local run (current contract):
+
+```bash
+# Terminal A: listing service (port 8000)
+cd Layer3-Backend/listing_service
+source .venv/bin/activate
+uvicorn main:app --host 127.0.0.1 --port 8000
+
+# Terminal B: prediction service (port 8001)
+cd Layer3-Backend/prediction_service
+source .venv/bin/activate
+uvicorn main:app --host 127.0.0.1 --port 8001
+
+# Terminal C: frontend (port 3004 by default)
+cd Layer2-Frontend/donor-app
+npm run dev
+```
+
 ---
 
 ## 📚 Documentation
@@ -123,7 +141,7 @@ cd CrisisLink
 - [ ] PostgreSQL schema design
 - [ ] SEIFA data import
 - [ ] Image recognition model fine-tuning
-- [ ] NLP matching engine training
+- [ ] Improve rule-based filtering baseline and evaluate future NLP upgrade path
 - [ ] Demand forecasting model development
 
 ### Phase 2: Backend Microservices (Layer 3)

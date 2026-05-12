@@ -20,7 +20,7 @@ const DONOR_STEPS = [
     titleKey: 'logisticsGuide.donor.step3.title',
     titleDefault: 'Coordinate pickup',
     descKey: 'logisticsGuide.donor.step3.desc',
-    descDefault: 'Share pickup time, contact details, and collection notes.',
+    descDefault: 'Confirm pickup window and collection notes in-app.',
     statusKey: 'logisticsGuide.donor.step3.status',
     statusDefault: 'Status: Claimed',
   },
@@ -28,9 +28,9 @@ const DONOR_STEPS = [
     titleKey: 'logisticsGuide.donor.step4.title',
     titleDefault: 'Confirm collection',
     descKey: 'logisticsGuide.donor.step4.desc',
-    descDefault: 'Mark the listing as picked up after collection.',
+    descDefault: 'Mark the listing as collected after pickup completes.',
     statusKey: 'logisticsGuide.donor.step4.status',
-    statusDefault: 'Status: Picked up',
+    statusDefault: 'Status: Collected',
   },
 ]
 
@@ -53,7 +53,7 @@ const ORG_STEPS = [
     titleKey: 'logisticsGuide.org.step3.title',
     titleDefault: 'Arrange pickup',
     descKey: 'logisticsGuide.org.step3.desc',
-    descDefault: 'Check pickup window, contact details, and collection notes.',
+    descDefault: 'Check pickup window and collection notes.',
     statusKey: 'logisticsGuide.org.step3.status',
     statusDefault: 'Status: Claimed',
   },
@@ -61,9 +61,9 @@ const ORG_STEPS = [
     titleKey: 'logisticsGuide.org.step4.title',
     titleDefault: 'Confirm collected',
     descKey: 'logisticsGuide.org.step4.desc',
-    descDefault: 'Mark the item as picked up after collection.',
+    descDefault: 'Mark the item as collected after pickup.',
     statusKey: 'logisticsGuide.org.step4.status',
-    statusDefault: 'Status: Picked up',
+    statusDefault: 'Status: Collected',
   },
 ]
 
