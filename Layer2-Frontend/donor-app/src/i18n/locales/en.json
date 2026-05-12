@@ -413,7 +413,11 @@
       "availableLabel": "Available"
     },
     "claimQuickSuccess": "Listing claimed successfully.",
-    "collectedInfo": "Collection confirmed. This donation has been completed.",
+    "markCollectedButton": "✓ Mark as collected",
+    "markingCollectedButton": "Marking...",
+    "markCollectedSuccess": "Marked as collected. This donation has been completed.",
+    "markCollectedFailed": "Unable to mark this listing as collected right now.",
+    "collectedInfo": "Marked as collected. This donation has been completed.",
     "filterHint": "Search by food name, notes, source code, or postcode.",
     "searchingFor": "Searching for",
     "filteringCategory": "Category",

@@ -411,7 +411,11 @@
       "availableLabel": "可领取数量"
     },
     "claimQuickSuccess": "已成功认领该物品。",
-    "collectedInfo": "已确认取货，这笔捐赠已完成。",
+    "markCollectedButton": "✓ 标记为已完成领取",
+    "markingCollectedButton": "正在标记...",
+    "markCollectedSuccess": "已标记为已完成领取，这笔捐赠已完成。",
+    "markCollectedFailed": "暂时无法将该物品标记为已完成领取。",
+    "collectedInfo": "已标记为已完成领取，这笔捐赠已完成。",
     "filterHint": "可按食物名称、备注、来源代码或邮编搜索。",
     "searchingFor": "正在搜索",
     "filteringCategory": "类别",

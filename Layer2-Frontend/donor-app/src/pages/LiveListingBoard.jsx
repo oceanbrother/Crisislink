@@ -429,11 +429,11 @@ const loadListings = async () => {
     setSuccess('')
     try {
       await confirmPickup(listingId, { orgId: orgCode })
-      setSuccess('Pickup confirmed! This listing is now marked as collected.')
+      setSuccess(t('dashboard.markCollectedSuccess', 'Marked as collected. This donation has been completed.'))
       await loadListings()
       setTimeout(() => setSuccess(''), 3000)
     } catch (err) {
-      setError('Unable to confirm pickup right now.')
+      setError(t('dashboard.markCollectedFailed', 'Unable to mark this listing as collected right now.'))
       setTimeout(() => setError(''), 3000)
     } finally {
       setPickingUpId(null)
@@ -951,7 +951,9 @@ const loadListings = async () => {
                       disabled={pickingUpId === listing.id || removingId === listing.id}
                       type="button"
                     >
-                      {pickingUpId === listing.id ? 'Confirming...' : '✓ Confirm pickup'}
+                      {pickingUpId === listing.id
+                        ? t('dashboard.markingCollectedButton', 'Marking...')
+                        : t('dashboard.markCollectedButton', '✓ Mark as collected')}
                     </button>
                     <button
                       className="card-action-btn claim-btn--remove"
