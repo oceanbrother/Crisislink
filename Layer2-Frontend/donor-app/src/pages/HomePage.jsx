@@ -1,4 +1,3 @@
-import React from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import LanguageSwitcher from '../components/LanguageSwitcher'
@@ -22,7 +21,7 @@ const HomePage = () => {
 
         <div className="cards-grid">
           {/* Donor card */}
-          <div className="role-card" onClick={() => navigate('/postcode')}>
+          <div className="role-card" onClick={() => navigate('/register/donor')}>
             <div className="role-card-accent donor" />
             <div className="role-card-inner">
               <div className="role-icon-circle donor">
@@ -32,7 +31,7 @@ const HomePage = () => {
               <p className="role-card-desc">{t('home.donor.description')}</p>
               <button
                 className="role-btn donor"
-                onClick={(e) => { e.stopPropagation(); navigate('/postcode') }}
+                onClick={(e) => { e.stopPropagation(); navigate('/register/donor') }}
               >
                 {t('home.donor.button')}
               </button>
@@ -40,7 +39,7 @@ const HomePage = () => {
           </div>
 
           {/* Org / community card */}
-          <div className="role-card" onClick={() => navigate('/org/code')}>
+          <div className="role-card" onClick={() => navigate('/register/org')}>
             <div className="role-card-accent org" />
             <div className="role-card-inner">
               <div className="role-icon-circle org">
@@ -50,7 +49,7 @@ const HomePage = () => {
               <p className="role-card-desc">{t('home.organization.description')}</p>
               <button
                 className="role-btn org"
-                onClick={(e) => { e.stopPropagation(); navigate('/org/code') }}
+                onClick={(e) => { e.stopPropagation(); navigate('/register/org') }}
               >
                 {t('home.organization.button')}
               </button>

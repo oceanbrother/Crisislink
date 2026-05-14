@@ -82,11 +82,20 @@ UPLOADS_DIR = os.path.join(os.path.dirname(__file__), "uploads")
 os.makedirs(UPLOADS_DIR, exist_ok=True)
 app.mount("/static", StaticFiles(directory=UPLOADS_DIR), name="static")
 
+_ALLOWED_ORIGINS = [
+    o.strip()
+    for o in os.getenv(
+        "CORS_ALLOWED_ORIGINS",
+        "https://donor-app-dusky.vercel.app,http://localhost:3000,http://localhost:3004,http://localhost:5173",
+    ).split(",")
+    if o.strip()
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://donor-app-dusky.vercel.app/"],
+    allow_origins=_ALLOWED_ORIGINS,
     allow_credentials=True,
-    allow_methods=["GET", "POST", "PATCH"],
+    allow_methods=["GET", "POST", "PATCH", "DELETE"],
     allow_headers=["Authorization", "Content-Type"],
 )
 
@@ -140,13 +149,59 @@ class ImageRecognitionResult(BaseModel):
     description: Optional[str] = None
 
 
+# Codes starting with DNR- are donors; CBO- are community organisations.
+# Anything else is a legacy code and defaults to 'donor'.
+
+class RegisterRequest(BaseModel):
+    """Body for POST /register — creates or upserts an org identity.
+
+    Field order matters: orgType must come before orgCode so that the
+    cross-field validator can read the already-validated orgType value
+    from info.data (Pydantic v2 validates fields in declaration order).
+    """
+    orgType:             str           = Field(..., pattern=r"^(donor|community_org)$")
+    orgCode:             str           = Field(..., min_length=3, max_length=20,
+                                               pattern=r"^[A-Z0-9-]+$")
+    orgName:             str           = Field(..., min_length=1, max_length=255)
+    businessAddress:     Optional[str] = Field(default=None, max_length=500)
+    preferredLocation:   Optional[str] = Field(default=None, max_length=500)
+    maxPickupDistanceKm: Optional[int] = Field(default=None, ge=1, le=500)
+
+    @field_validator("orgName")
+    @classmethod
+    def clean_org_name(cls, v):
+        cleaned = v.strip()
+        if not cleaned:
+            raise ValueError("Organisation name cannot be blank")
+        return cleaned
+
+    @field_validator("orgCode")
+    @classmethod
+    def code_matches_type(cls, v, info):
+        # info.data already contains orgType because it is declared first
+        org_type = info.data.get("orgType")
+        if org_type == "donor" and not v.startswith("DNR-"):
+            raise ValueError("Donor codes must begin with DNR-")
+        if org_type == "community_org" and not v.startswith("CBO-"):
+            raise ValueError("Organisation codes must begin with CBO-")
+        return v
+
+
 # ── DB helpers ────────────────────────────────────────────────────────────────
+
+def _infer_org_type(org_code: str) -> str:
+    """Derive org_type from code prefix; legacy codes default to 'donor'."""
+    if org_code.startswith("DNR-"):
+        return "donor"
+    if org_code.startswith("CBO-"):
+        return "community_org"
+    return "donor"
+
 
 async def get_or_create_org(org_code: str) -> int:
     """
     Lookup an organisation by its short code. If it doesn't exist yet,
     insert a minimal record and return the new org_id.
-
     """
     row = await database.fetch_one(
         "SELECT org_id FROM organization WHERE org_code = :org_code",
@@ -155,14 +210,14 @@ async def get_or_create_org(org_code: str) -> int:
     if row:
         return row["org_id"]
 
-    # Minimal insert — org_name defaults to the code until staff fills it in
+    org_type = _infer_org_type(org_code)
     result = await database.fetch_one(
         """
         INSERT INTO organization (org_name, org_code, org_type)
-        VALUES (:org_name, :org_code, 'donor')
+        VALUES (:org_name, :org_code, :org_type)
         RETURNING org_id
         """,
-        {"org_name": org_code, "org_code": org_code},
+        {"org_name": org_code, "org_code": org_code, "org_type": org_type},
     )
     return result["org_id"]
 
@@ -201,6 +256,52 @@ def row_to_listing(row) -> dict:
 @app.get("/health")
 def health_check():
     return {"status": "ok", "service": "listing-service", "db": "postgresql"}
+
+
+@app.post("/register", status_code=201)
+@limiter.limit("5/minute")
+async def register_identity(request: Request, body: RegisterRequest):
+    """
+    Create or update an organisation identity (donor or community org).
+
+    Called once from the frontend registration page immediately after a
+    code is generated. Subsequent interactions use get_or_create_org().
+
+    Uses INSERT … ON CONFLICT so re-registering with the same code is safe
+    and idempotent — it only updates the org_name if one is provided.
+    Returns only the code and type; internal IDs are never exposed.
+    """
+    try:
+        result = await database.fetch_one(
+            """
+            INSERT INTO organization (
+                org_name, org_code, org_type,
+                business_address, preferred_location, max_pickup_distance_km
+            )
+            VALUES (
+                :org_name, :org_code, :org_type,
+                :business_address, :preferred_location, :max_pickup_distance_km
+            )
+            ON CONFLICT (org_code) DO UPDATE SET
+                org_name             = EXCLUDED.org_name,
+                business_address     = COALESCE(EXCLUDED.business_address,     organization.business_address),
+                preferred_location   = COALESCE(EXCLUDED.preferred_location,   organization.preferred_location),
+                max_pickup_distance_km = COALESCE(EXCLUDED.max_pickup_distance_km, organization.max_pickup_distance_km)
+            RETURNING org_code, org_type
+            """,
+            {
+                "org_name":               body.orgName,
+                "org_code":               body.orgCode,
+                "org_type":               body.orgType,
+                "business_address":       body.businessAddress,
+                "preferred_location":     body.preferredLocation,
+                "max_pickup_distance_km": body.maxPickupDistanceKm,
+            },
+        )
+    except Exception:
+        raise HTTPException(status_code=500, detail="Registration failed. Please try again.")
+
+    return {"orgCode": result["org_code"], "orgType": result["org_type"]}
 
 
 @app.post("/listings", response_model=Listing)

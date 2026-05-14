@@ -1,4 +1,3 @@
-import React from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
 import './App.css'
 
@@ -12,12 +11,18 @@ import DonationFormPage from './pages/DonationFormPage'
 import OrgCodeInputPage from './pages/OrgCodeInputPage'
 import LiveListingBoard from './pages/LiveListingBoard'
 
+// Pages - Registration Flow
+import RegisterPage from './pages/RegisterPage'
+
 function App() {
   return (
     <BrowserRouter>
       <Routes>
         {/* Home page - role selection */}
         <Route path="/" element={<HomePage />} />
+
+        {/* Registration — /register/donor or /register/org */}
+        <Route path="/register/:role" element={<RegisterPage />} />
 
         {/* Donor flow: postcode -> feed -> form */}
         <Route path="/postcode" element={<PostcodeInputPage />} />
@@ -27,7 +32,7 @@ function App() {
         <Route path="/form/:postcode" element={<DonationFormPage />} />
         <Route path="/form" element={<DonationFormPage />} />
 
-        {/* Organization flow: code -> dashboard */}
+        {/* Organization flow: legacy code entry or dashboard */}
         <Route path="/org/code" element={<OrgCodeInputPage />} />
         <Route path="/org/dashboard" element={<LiveListingBoard />} />
 

@@ -1,7 +1,8 @@
-import React, { useState, useRef } from 'react'
+import { useState, useRef } from 'react'
 import { useParams, useNavigate, useLocation } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import { recognizeFoodFromImage, submitListing, uploadImage } from '../services/api'
+import { getStoredDonorCode } from '../utils/codeGeneration'
 import '../styles/DonationForm.css'
 
 const CATEGORIES = ['Bakery & Grains', 'Fresh Produce', 'Dairy & Eggs', 'Canned Goods', 'Prepared Meals', 'Other']
@@ -16,7 +17,9 @@ const DonationForm = () => {
 
   // Get org mode from location state
   const orgMode = location.state?.orgMode || false
-  const initialOrgCode = location.state?.orgCode || ''
+  // Prefer org code from router state (org dashboard flow); fall back to the
+  // donor code stored during registration so donors never need to type it.
+  const initialOrgCode = location.state?.orgCode || getStoredDonorCode() || ''
   const orgName = location.state?.orgName || ''
   const initialPostcode = location.state?.postcode || postcode || ''
 
@@ -75,35 +78,24 @@ const DonationForm = () => {
     setError(null)
 
     try {
-      console.log('Form validation:', {
-        foodType: formData.foodType,
-        quantity: formData.quantity,
-        postcode: formData.postcode,
-        orgCode: formData.orgCode,
-      })
-      
       if (!formData.foodType) throw new Error(t('donation.errors.foodType'))
       if (!formData.quantity || Number(formData.quantity) <= 0) throw new Error(t('donation.errors.quantity'))
       if (!formData.postcode) throw new Error(t('donation.errors.postcode'))
       if (!formData.orgCode) throw new Error(t('donation.errors.orgCode'))
-      
+
       // Upload the image first if we have one, to get a permanent URL
       let permanentPhotoUrl = null
       if (selectedFileRef.current) {
         try {
-          console.log('Starting image upload...')
           const uploadResult = await uploadImage(selectedFileRef.current)
           permanentPhotoUrl = uploadResult.url
-          console.log('Image upload success:', permanentPhotoUrl)
         } catch (err) {
           // Image upload failed — post without photo rather than blocking submission
-          console.warn('Image upload failed, submitting without photo:', err)
+          console.error('Image upload failed, submitting without photo:', err)
         }
       }
 
-      console.log('Submitting listing with data:', { ...formData, photoUrl: permanentPhotoUrl })
       await submitListing({ ...formData, photoUrl: permanentPhotoUrl })
-      console.log('Listing submitted successfully')
       
       setSuccess(true)
       setFormData({

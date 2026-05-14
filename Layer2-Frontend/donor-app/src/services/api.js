@@ -91,4 +91,14 @@ export const claimListing = async (listingId, claimData) => {
   }
 }
 
+/**
+ * Register a new donor or community organisation identity.
+ * @param {{ orgCode: string, orgType: 'donor'|'community_org', orgName?: string }} data
+ * @returns {Promise<{ orgCode: string, orgType: string }>}
+ */
+export const registerUser = async ({ orgCode, orgType, orgName }) => {
+  const response = await apiClient.post('/register', { orgCode, orgType, orgName })
+  return response.data
+}
+
 export default apiClient

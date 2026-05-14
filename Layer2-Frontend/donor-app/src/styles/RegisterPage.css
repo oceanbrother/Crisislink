@@ -1,0 +1,382 @@
+/* ── RegisterPage.css ───────────────────────────────────────── */
+
+.register-page {
+  min-height: 100vh;
+  background: var(--bg);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem 1.5rem;
+  position: relative;
+}
+
+/* ── Back button ───────────────────────────────────────────── */
+.back-link {
+  position: absolute;
+  top: 1.5rem;
+  left: 1.5rem;
+  background: none;
+  border: none;
+  border-radius: 50%;
+  width: 2.5rem;
+  height: 2.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--on-surface-variant);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.back-link:hover {
+  background: var(--surface-low);
+}
+
+/* ── Card ──────────────────────────────────────────────────── */
+.register-main {
+  width: 100%;
+  max-width: 440px;
+}
+
+.register-card {
+  background: var(--surface-container-lowest);
+  border-radius: var(--radius-xl);
+  padding: 3rem 2rem;
+  box-shadow: var(--shadow-card);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.85rem;
+}
+
+/* ── Role icon ─────────────────────────────────────────────── */
+.register-icon-circle {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.25rem;
+}
+
+.register-icon-circle.donor {
+  background: var(--donor-fixed, #fff3e0);
+}
+
+.register-icon-circle.org {
+  background: var(--primary-fixed, #d2f4e8);
+}
+
+.register-icon-circle .material-symbols-outlined {
+  font-size: 2rem;
+  color: var(--on-primary-fixed);
+}
+
+/* ── Text ──────────────────────────────────────────────────── */
+.register-brand {
+  font-family: var(--font-headline);
+  font-weight: 900;
+  font-size: 1.75rem;
+  letter-spacing: -0.03em;
+  color: var(--primary);
+  margin-bottom: 0.25rem;
+}
+
+.register-title {
+  font-family: var(--font-headline);
+  font-weight: 700;
+  font-size: 1.4rem;
+  color: var(--on-surface);
+  letter-spacing: -0.02em;
+  margin: 0;
+}
+
+.register-desc {
+  color: var(--on-surface-variant);
+  font-size: 0.9rem;
+  line-height: 1.55;
+  margin: 0 0 0.5rem;
+}
+
+/* ── Mode tabs (org only) ──────────────────────────────────── */
+.register-mode-tabs {
+  display: flex;
+  gap: 0.25rem;
+  background: var(--surface-container-high);
+  padding: 0.25rem;
+  border-radius: var(--radius);
+  width: 100%;
+}
+
+.mode-tab {
+  flex: 1;
+  padding: 0.55rem 0.5rem;
+  border: none;
+  border-radius: calc(var(--radius) - 0.2rem);
+  cursor: pointer;
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 500;
+  background: transparent;
+  color: var(--on-surface-variant);
+  transition: background 0.15s, color 0.15s;
+}
+
+.mode-tab.active {
+  background: var(--surface-container-lowest);
+  color: var(--on-surface);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* ── Generated code display ────────────────────────────────── */
+.code-display-box {
+  width: 100%;
+  padding: 1.25rem 1rem;
+  border-radius: var(--radius);
+  text-align: center;
+  user-select: all;
+  cursor: text;
+}
+
+.code-display-box.donor {
+  background: #fff8f0;
+  border: 2px dashed var(--donor-accent, #e88b2e);
+}
+
+.code-display-box.org {
+  background: var(--primary-fixed, #d2f4e8);
+  border: 2px dashed var(--primary);
+}
+
+.code-display-text {
+  font-family: 'Courier New', Courier, monospace;
+  font-size: 1.6rem;
+  font-weight: 700;
+  letter-spacing: 0.15em;
+  color: var(--on-surface);
+}
+
+/* ── Code action buttons ───────────────────────────────────── */
+.code-actions {
+  display: flex;
+  gap: 0.75rem;
+  width: 100%;
+}
+
+.btn-copy,
+.btn-regenerate {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.7rem 1rem;
+  border-radius: var(--radius-full);
+  font-family: var(--font-body);
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: filter 0.15s, transform 0.15s;
+  border: none;
+}
+
+.btn-copy {
+  background: var(--primary);
+  color: var(--on-primary);
+}
+
+.btn-regenerate {
+  background: var(--surface-container-high);
+  color: var(--on-surface-variant);
+}
+
+.btn-copy:hover,
+.btn-regenerate:hover {
+  filter: brightness(0.92);
+}
+
+.btn-copy:active,
+.btn-regenerate:active {
+  transform: scale(0.97);
+}
+
+/* ── Existing code input ───────────────────────────────────── */
+.org-code-input {
+  width: 100%;
+  background: var(--surface-container-high);
+  border: none;
+  border-radius: var(--radius);
+  padding: 1.1rem 1.25rem;
+  font-family: var(--font-headline);
+  font-size: 1.2rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  text-align: center;
+  color: var(--on-surface);
+  transition: box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.org-code-input::placeholder {
+  color: var(--outline);
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  font-size: 0.9rem;
+}
+
+.org-code-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 105, 76, 0.3);
+}
+
+/* ── Error ─────────────────────────────────────────────────── */
+.error-message {
+  width: 100%;
+  padding: 0.75rem;
+  background: rgba(179, 38, 30, 0.1);
+  border-radius: var(--radius);
+  color: #b3261e;
+  font-size: 0.875rem;
+  text-align: center;
+}
+
+/* ── Continue button ───────────────────────────────────────── */
+.submit-btn {
+  width: 100%;
+  padding: 1.1rem;
+  background: var(--primary);
+  color: var(--on-primary);
+  border-radius: var(--radius-full);
+  font-family: var(--font-headline);
+  font-weight: 700;
+  font-size: 1rem;
+  border: none;
+  cursor: pointer;
+  transition: filter 0.15s, transform 0.15s;
+  box-shadow: var(--shadow-float);
+}
+
+.submit-btn:hover:not(:disabled) {
+  filter: brightness(0.9);
+}
+
+.submit-btn:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.submit-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+/* ── Privacy note ──────────────────────────────────────────── */
+.privacy-note {
+  font-size: 0.75rem;
+  color: var(--outline);
+  line-height: 1.5;
+  margin: 0;
+}
+
+/* ── Registration form (Step 1) ────────────────────────────── */
+.register-form {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  text-align: left;
+}
+
+.field-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.field-label {
+  font-family: var(--font-body);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--on-surface-variant);
+}
+
+.field-label .required {
+  color: #b3261e;
+  margin-left: 0.15rem;
+}
+
+.field-input {
+  width: 100%;
+  background: var(--surface-container-high);
+  border: none;
+  border-radius: var(--radius);
+  padding: 0.85rem 1rem;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--on-surface);
+  transition: box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.field-input::placeholder {
+  color: var(--outline);
+  font-size: 0.875rem;
+}
+
+.field-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 105, 76, 0.3);
+}
+
+/* ── Select ────────────────────────────────────────────────── */
+.select-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.field-select {
+  width: 100%;
+  background: var(--surface-container-high);
+  border: none;
+  border-radius: var(--radius);
+  padding: 0.85rem 2.5rem 0.85rem 1rem;
+  font-family: var(--font-body);
+  font-size: 0.95rem;
+  color: var(--on-surface);
+  appearance: none;
+  cursor: pointer;
+  transition: box-shadow 0.2s;
+  box-sizing: border-box;
+}
+
+.field-select:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(0, 105, 76, 0.3);
+}
+
+.select-arrow {
+  position: absolute;
+  right: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  pointer-events: none;
+  color: var(--on-surface-variant);
+  font-size: 1.2rem;
+}
+
+/* ── Field hint ────────────────────────────────────────────── */
+.field-hint {
+  font-size: 0.775rem;
+  color: var(--outline);
+  line-height: 1.45;
+}
+
+/* ── Scroll affordance for tall form on small screens ──────── */
+@media (max-height: 700px) {
+  .register-page {
+    justify-content: flex-start;
+    padding-top: 4rem;
+  }
+}
