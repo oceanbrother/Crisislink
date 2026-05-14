@@ -12,7 +12,7 @@ from recognizer import get_recognizer
 
 # ── Standard + third-party imports ────────────────────────────────────────────
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, HTTPException, UploadFile, File, Request
+from fastapi import FastAPI, HTTPException, UploadFile, File, Request, WebSocket, WebSocketDisconnect
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field, field_validator
@@ -24,6 +24,8 @@ from slowapi.errors import RateLimitExceeded
 import uuid
 import databases
 from dotenv import load_dotenv
+import re
+import json
 
 # ── Load .env (DATABASE_URL, HOST, PORT) ──────────────────────────────────────
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
@@ -55,10 +57,14 @@ async def lifespan(app: FastAPI):
     await database.connect()
     print("✓ PostgreSQL connected")
 
-    # Load ML model
-    print("Starting food recognizer...")
-    recognizer = get_recognizer()
-    print("✓ Model ready")
+    # Load ML model (optional — server starts even if .pth weights are absent)
+    try:
+        print("Starting food recognizer...")
+        recognizer = get_recognizer()
+        print("✓ Model ready")
+    except FileNotFoundError as e:
+        print(f"⚠ Model weights not found ({e}). Image recognition disabled.")
+        recognizer = None
 
     yield  # server is running
 
@@ -98,6 +104,66 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PATCH", "DELETE"],
     allow_headers=["Authorization", "Content-Type"],
 )
+
+
+# ── WebSocket connection manager ──────────────────────────────────────────────
+
+class ConnectionManager:
+    """
+    Tracks active WebSocket connections grouped by listing_id.
+    Each room (listing_id) can have at most 2 connections: donor + claimer.
+    """
+
+    def __init__(self):
+        self._rooms: dict[str, list[tuple[WebSocket, str]]] = {}
+
+    async def connect(self, listing_id: str, ws: WebSocket, org_code: str):
+        await ws.accept()
+        self._rooms.setdefault(listing_id, []).append((ws, org_code))
+
+    def disconnect(self, listing_id: str, ws: WebSocket):
+        if listing_id in self._rooms:
+            self._rooms[listing_id] = [
+                (w, c) for w, c in self._rooms[listing_id] if w is not ws
+            ]
+            if not self._rooms[listing_id]:
+                del self._rooms[listing_id]
+
+    async def broadcast(self, listing_id: str, payload: dict):
+        for ws, _ in list(self._rooms.get(listing_id, [])):
+            try:
+                await ws.send_json(payload)
+            except Exception:
+                pass
+
+
+manager = ConnectionManager()
+
+# ── Pydantic models (chat) ─────────────────────────────────────────────────────
+
+_SAFE_CODE_RE = re.compile(r"^[A-Z0-9-]{3,50}$")
+
+
+def _validate_org_code(code: str) -> str:
+    if not _SAFE_CODE_RE.match(code):
+        raise ValueError("Invalid org code format")
+    return code
+
+
+class PublicKeyUpload(BaseModel):
+    senderOrgCode: str = Field(..., min_length=3, max_length=50)
+    publicKey: str = Field(..., min_length=10, max_length=8000)
+
+    @field_validator("senderOrgCode")
+    @classmethod
+    def validate_sender(cls, v):
+        return _validate_org_code(v)
+
+
+class WsChatMessage(BaseModel):
+    senderOrgCode: str = Field(..., min_length=3, max_length=50)
+    ciphertext: str = Field(..., min_length=1, max_length=50000)
+    iv: str = Field(..., min_length=1, max_length=200)
 
 
 # ── Pydantic models ───────────────────────────────────────────────────────────
@@ -306,7 +372,7 @@ async def register_identity(request: Request, body: RegisterRequest):
 
 @app.post("/listings", response_model=Listing)
 @limiter.limit("10/minute")
-async def create_listing(listing: ListingCreate):
+async def create_listing(request: Request, listing: ListingCreate):
     """
     Create a new food listing and persist it to PostgreSQL.
 
@@ -360,17 +426,20 @@ async def create_listing(listing: ListingCreate):
         "claimedAt":    None,
     }
 
-ALLOWED_STATUSES = {"available", "claimed", "expired"}
+ALLOWED_STATUSES = {"available", "claimed", "expired", "collected"}
 
 @app.get("/listings", response_model=list[Listing])
 @limiter.limit("30/minute")
 async def get_listings(
+    request: Request,
     postcode: Optional[str] = None,
     foodType: Optional[str] = None,
     status: str = "available",
+    claimedByOrgCode: Optional[str] = None,
+    postedByOrgCode: Optional[str] = None,
 ):
     if status not in ALLOWED_STATUSES:
-        raise HTTPException(status_code=400, detail=f"status must be one of: available, claimed, expired")
+        raise HTTPException(status_code=400, detail="status must be one of: available, claimed, expired, collected")
     """
     Fetch listings from PostgreSQL with optional filters.
 
@@ -398,6 +467,14 @@ async def get_listings(
         query += " AND LOWER(fl.food_category) LIKE :food_type"
         params["food_type"] = f"%{foodType.lower()}%"
 
+    if claimedByOrgCode:
+        query += " AND co.org_code = :claimed_by_org_code"
+        params["claimed_by_org_code"] = claimedByOrgCode
+
+    if postedByOrgCode:
+        query += " AND o.org_code = :posted_by_org_code"
+        params["posted_by_org_code"] = postedByOrgCode
+
     query += " ORDER BY fl.created_at DESC"
 
     rows = await database.fetch_all(query, params)
@@ -406,7 +483,7 @@ async def get_listings(
 
 @app.get("/listings/{listing_id}", response_model=Listing)
 @limiter.limit("30/minute")
-async def get_listing(listing_id: str):
+async def get_listing(request: Request, listing_id: str):
     """Get a single listing by its UUID."""
     row = await database.fetch_one(
         """
@@ -428,7 +505,7 @@ async def get_listing(listing_id: str):
 
 @app.post("/listings/{listing_id}/claim", response_model=dict)
 @limiter.limit("5/minute")
-async def claim_listing(listing_id: str, claim: ClaimRequest):
+async def claim_listing(request: Request, listing_id: str, claim: ClaimRequest):
     """
     Claim a listing — marks it taken and records which org claimed it.
 
@@ -467,6 +544,30 @@ async def claim_listing(listing_id: str, claim: ClaimRequest):
         },
     )
 
+    # Auto-create a chat session so both parties can exchange keys.
+    donor_row = await database.fetch_one(
+        """
+        SELECT o.org_code FROM food_listing fl
+        JOIN organization o ON fl.org_id = o.org_id
+        WHERE fl.listing_id = :listing_id
+        """,
+        {"listing_id": listing_id},
+    )
+    donor_org_code = donor_row["org_code"] if donor_row else ""
+
+    await database.execute(
+        """
+        INSERT INTO chat_session (listing_id, donor_org_code, claimer_org_code)
+        VALUES (:listing_id, :donor_org_code, :claimer_org_code)
+        ON CONFLICT (listing_id) DO NOTHING
+        """,
+        {
+            "listing_id":       listing_id,
+            "donor_org_code":   donor_org_code,
+            "claimer_org_code": claim.orgId,
+        },
+    )
+
     return {
         "success":    True,
         "listing_id": listing_id,
@@ -477,7 +578,7 @@ async def claim_listing(listing_id: str, claim: ClaimRequest):
 
 @app.patch("/listings/{listing_id}/expire")
 @limiter.limit("10/minute")
-async def expire_listing(listing_id: str):
+async def expire_listing(request: Request, listing_id: str):
     """Mark a listing as expired."""
     row = await database.fetch_one(
         "SELECT listing_id FROM food_listing WHERE listing_id = :listing_id",
@@ -497,11 +598,13 @@ async def expire_listing(listing_id: str):
 
 @app.post("/image-recognition/recognize", response_model=ImageRecognitionResult)
 @limiter.limit("5/minute")
-async def recognize_food_from_image(image: UploadFile = File(...)):
+async def recognize_food_from_image(request: Request, image: UploadFile = File(...)):
     """
     Run the uploaded image through ConvNeXt (classification) +
     Grounding DINO (quantity counting) and return autofill data.
     """
+    if recognizer is None:
+        raise HTTPException(status_code=503, detail="Image recognition model not loaded. Add the .pth weights file.")
     if not image:
         raise HTTPException(status_code=400, detail="No image provided")
     
@@ -529,7 +632,7 @@ async def recognize_food_from_image(image: UploadFile = File(...)):
 
 @app.post("/upload")
 @limiter.limit("5/minute")
-async def upload_food_image(image: UploadFile = File(...)):
+async def upload_food_image(request: Request, image: UploadFile = File(...)):
     if not image:
         raise HTTPException(status_code=400, detail="No image provided")
 
@@ -551,6 +654,220 @@ async def upload_food_image(image: UploadFile = File(...)):
         f.write(contents)
 
     return {"url": f"/static/{filename}"}
+
+
+# ── Chat Routes ───────────────────────────────────────────────────────────────
+
+@app.get("/chat/sessions/{listing_id}")
+@limiter.limit("30/minute")
+async def get_chat_session(request: Request, listing_id: str, orgCode: str):
+    """
+    Return session metadata + both parties' public keys.
+    Only participants may call this.
+    """
+    row = await database.fetch_one(
+        "SELECT * FROM chat_session WHERE listing_id = :listing_id",
+        {"listing_id": listing_id},
+    )
+    if not row:
+        raise HTTPException(status_code=404, detail="Chat session not found")
+
+    if orgCode not in (row["donor_org_code"], row["claimer_org_code"]):
+        raise HTTPException(status_code=403, detail="Not a participant of this chat")
+
+    return {
+        "listingId":         row["listing_id"],
+        "donorOrgCode":      row["donor_org_code"],
+        "claimerOrgCode":    row["claimer_org_code"],
+        "donorPublicKey":    row["donor_public_key"],
+        "claimerPublicKey":  row["claimer_public_key"],
+    }
+
+
+@app.post("/chat/sessions/{listing_id}/keys")
+@limiter.limit("10/minute")
+async def upload_public_key(request: Request, listing_id: str, body: PublicKeyUpload):
+    """
+    Upload the caller's ephemeral EC P-256 public key (JWK JSON).
+    The server stores it so the other party can fetch it to derive the shared secret.
+    Private keys never leave the browser.
+    """
+    row = await database.fetch_one(
+        "SELECT donor_org_code, claimer_org_code FROM chat_session WHERE listing_id = :listing_id",
+        {"listing_id": listing_id},
+    )
+    if not row:
+        raise HTTPException(status_code=404, detail="Chat session not found")
+
+    if body.senderOrgCode == row["donor_org_code"]:
+        await database.execute(
+            "UPDATE chat_session SET donor_public_key = :key WHERE listing_id = :lid",
+            {"key": body.publicKey, "lid": listing_id},
+        )
+    elif body.senderOrgCode == row["claimer_org_code"]:
+        await database.execute(
+            "UPDATE chat_session SET claimer_public_key = :key WHERE listing_id = :lid",
+            {"key": body.publicKey, "lid": listing_id},
+        )
+    else:
+        raise HTTPException(status_code=403, detail="Not a participant of this chat")
+
+    # Notify other party (if connected via WebSocket) that a key is now available
+    await manager.broadcast(listing_id, {"type": "key_ready", "from": body.senderOrgCode})
+    return {"success": True}
+
+
+@app.get("/chat/messages/{listing_id}")
+@limiter.limit("60/minute")
+async def get_chat_messages(request: Request, listing_id: str, orgCode: str):
+    """
+    Return encrypted message history for a session.
+    Ciphertexts are returned as-is; decryption happens client-side.
+    """
+    row = await database.fetch_one(
+        "SELECT donor_org_code, claimer_org_code FROM chat_session WHERE listing_id = :listing_id",
+        {"listing_id": listing_id},
+    )
+    if not row:
+        raise HTTPException(status_code=404, detail="Chat session not found")
+
+    if orgCode not in (row["donor_org_code"], row["claimer_org_code"]):
+        raise HTTPException(status_code=403, detail="Not a participant")
+
+    messages = await database.fetch_all(
+        """
+        SELECT sender_org_code, ciphertext, iv, created_at
+        FROM chat_message
+        WHERE listing_id = :listing_id
+        ORDER BY created_at ASC
+        """,
+        {"listing_id": listing_id},
+    )
+    return [
+        {
+            "senderOrgCode": m["sender_org_code"],
+            "ciphertext":    m["ciphertext"],
+            "iv":            m["iv"],
+            "createdAt":     m["created_at"],
+        }
+        for m in messages
+    ]
+
+
+@app.delete("/chat/sessions/{listing_id}")
+@limiter.limit("5/minute")
+async def terminate_chat(request: Request, listing_id: str, orgCode: str):
+    """
+    Mark food as physically collected, delete the chat session + all messages,
+    and broadcast a termination notice to any connected WebSocket clients.
+
+    Only the claiming org may call this endpoint (they are the one collecting).
+    """
+    row = await database.fetch_one(
+        "SELECT claimer_org_code FROM chat_session WHERE listing_id = :listing_id",
+        {"listing_id": listing_id},
+    )
+    if not row:
+        raise HTTPException(status_code=404, detail="Chat session not found")
+
+    if row["claimer_org_code"] != orgCode:
+        raise HTTPException(status_code=403, detail="Only the claiming org can mark food as collected")
+
+    # Notify connected clients before wiping data
+    await manager.broadcast(listing_id, {"type": "chat_terminated", "reason": "food_collected"})
+
+    # Cascade delete removes chat_message rows automatically
+    await database.execute(
+        "DELETE FROM chat_session WHERE listing_id = :listing_id",
+        {"listing_id": listing_id},
+    )
+
+    # Mark listing as physically collected (beyond 'claimed')
+    await database.execute(
+        "UPDATE food_listing SET status = 'collected' WHERE listing_id = :listing_id",
+        {"listing_id": listing_id},
+    )
+
+    return {"success": True, "listing_id": listing_id}
+
+
+@app.websocket("/chat/ws/{listing_id}/{org_code}")
+async def chat_websocket(websocket: WebSocket, listing_id: str, org_code: str):
+    """
+    Real-time encrypted chat channel for a food listing.
+
+    Protocol:
+      client → server  { "type": "message", "senderOrgCode": "...", "ciphertext": "...", "iv": "..." }
+      server → clients { "type": "message", "senderOrgCode": "...", "ciphertext": "...", "iv": "...", "createdAt": "..." }
+      server → clients { "type": "key_ready", "from": "..." }
+      server → clients { "type": "chat_terminated", "reason": "food_collected" }
+
+    Ciphertexts are AES-256-GCM; the server only relays and persists them.
+    """
+    # Validate participant before accepting connection
+    row = await database.fetch_one(
+        "SELECT donor_org_code, claimer_org_code FROM chat_session WHERE listing_id = :listing_id",
+        {"listing_id": listing_id},
+    )
+    if not row or org_code not in (row["donor_org_code"], row["claimer_org_code"]):
+        await websocket.close(code=4003)
+        return
+
+    await manager.connect(listing_id, websocket, org_code)
+
+    try:
+        while True:
+            raw = await websocket.receive_text()
+            try:
+                data = json.loads(raw)
+            except json.JSONDecodeError:
+                continue
+
+            if data.get("type") != "message":
+                continue
+
+            sender     = str(data.get("senderOrgCode", ""))
+            ciphertext = str(data.get("ciphertext", ""))
+            iv         = str(data.get("iv", ""))
+
+            # Basic integrity checks — sender must match the authenticated org_code
+            if sender != org_code or not ciphertext or not iv:
+                continue
+
+            # Impose a reasonable size cap to prevent abuse
+            if len(ciphertext) > 50000 or len(iv) > 200:
+                continue
+
+            now = datetime.now()
+            await database.execute(
+                """
+                INSERT INTO chat_message (listing_id, sender_org_code, ciphertext, iv, created_at)
+                VALUES (:lid, :sender, :ciphertext, :iv, :created_at)
+                """,
+                {
+                    "lid":        listing_id,
+                    "sender":     sender,
+                    "ciphertext": ciphertext,
+                    "iv":         iv,
+                    "created_at": now,
+                },
+            )
+
+            await manager.broadcast(
+                listing_id,
+                {
+                    "type":          "message",
+                    "senderOrgCode": sender,
+                    "ciphertext":    ciphertext,
+                    "iv":            iv,
+                    "createdAt":     now.isoformat(),
+                },
+            )
+
+    except WebSocketDisconnect:
+        manager.disconnect(listing_id, websocket)
+    except Exception:
+        manager.disconnect(listing_id, websocket)
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────

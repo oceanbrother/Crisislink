@@ -101,4 +101,80 @@ export const registerUser = async ({ orgCode, orgType, orgName }) => {
   return response.data
 }
 
+// ── Chat API ──────────────────────────────────────────────────────────────────
+
+/**
+ * Fetch chat session metadata + both parties' public keys.
+ * @param {string} listingId
+ * @param {string} orgCode - caller's org code (participant check)
+ */
+export const getChatSession = async (listingId, orgCode) => {
+  const response = await apiClient.get(`/chat/sessions/${listingId}`, {
+    params: { orgCode },
+  })
+  return response.data
+}
+
+/**
+ * Upload the caller's ephemeral EC public key (JWK object) to the server.
+ * @param {string} listingId
+ * @param {string} senderOrgCode
+ * @param {Object} publicKeyJwk  - JWK object from exportPublicKeyJwk()
+ */
+export const uploadPublicKey = async (listingId, senderOrgCode, publicKeyJwk) => {
+  const response = await apiClient.post(`/chat/sessions/${listingId}/keys`, {
+    senderOrgCode,
+    publicKey: JSON.stringify(publicKeyJwk),
+  })
+  return response.data
+}
+
+/**
+ * Retrieve encrypted message history for a listing session.
+ * @param {string} listingId
+ * @param {string} orgCode - participant check
+ */
+export const getChatMessages = async (listingId, orgCode) => {
+  const response = await apiClient.get(`/chat/messages/${listingId}`, {
+    params: { orgCode },
+  })
+  return response.data
+}
+
+/**
+ * Terminate chat + mark food as physically collected.
+ * Deletes the session (CASCADE removes messages) and updates listing status.
+ * Only the claiming org may call this.
+ * @param {string} listingId
+ * @param {string} orgCode - must be the claimer
+ */
+export const terminateChat = async (listingId, orgCode) => {
+  const response = await apiClient.delete(`/chat/sessions/${listingId}`, {
+    params: { orgCode },
+  })
+  return response.data
+}
+
+/**
+ * Get listings claimed by a specific org (org's "My Claims" view).
+ * @param {string} claimedByOrgCode
+ */
+export const getClaimedListings = async (claimedByOrgCode) => {
+  const response = await apiClient.get('/listings', {
+    params: { status: 'claimed', claimedByOrgCode },
+  })
+  return response.data
+}
+
+/**
+ * Get a donor's own listings that have been claimed (donor chat view).
+ * @param {string} postedByOrgCode - donor's org code
+ */
+export const getDonorClaimedListings = async (postedByOrgCode) => {
+  const response = await apiClient.get('/listings', {
+    params: { status: 'claimed', postedByOrgCode },
+  })
+  return response.data
+}
+
 export default apiClient

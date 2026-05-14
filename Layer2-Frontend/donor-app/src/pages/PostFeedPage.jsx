@@ -2,6 +2,9 @@ import React, { useState, useEffect } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
 import axios from 'axios'
+import { getDonorClaimedListings } from '../services/api'
+import { getStoredDonorCode } from '../utils/codeGeneration'
+import ChatModal from '../components/ChatModal'
 import '../styles/PostFeedPage.css'
 
 const ICON_MAP = {
@@ -49,11 +52,25 @@ const PostFeedPage = () => {
   const [loading, setLoading] = useState(true)
   const [showLanguageMenu, setShowLanguageMenu] = useState(false)
 
+  // Donor's own claimed-by-org listings (for chat access)
+  const [donorClaimedListings, setDonorClaimedListings] = useState([])
+  const [chatListing, setChatListing] = useState(null)
+
+  const myDonorCode = getStoredDonorCode()
+
   const handleLanguageChange = (lang) => {
     i18n.changeLanguage(lang)
     localStorage.setItem('preferredLanguage', lang)
     setShowLanguageMenu(false)
   }
+
+  useEffect(() => {
+    if (myDonorCode) {
+      getDonorClaimedListings(myDonorCode)
+        .then(data => setDonorClaimedListings(data))
+        .catch(() => {})
+    }
+  }, [myDonorCode]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     const fetchListings = async () => {
@@ -247,6 +264,44 @@ const PostFeedPage = () => {
           </div>
         </section>
 
+        {/* ── My Active Donations (donor's claimed listings) ── */}
+        {donorClaimedListings.length > 0 && (
+          <section className="donor-active-donations">
+            <h2 className="donor-active-title">
+              <span className="material-symbols-outlined">chat</span>
+              My Active Donations
+              <span className="donor-active-badge">{donorClaimedListings.length}</span>
+            </h2>
+            <p className="donor-active-hint">
+              An organisation has claimed your food. Tap Chat to coordinate pickup.
+            </p>
+            <div className="donor-active-list">
+              {donorClaimedListings.map(listing => (
+                <div key={listing.id} className="donor-active-card">
+                  <div className="donor-active-info">
+                    <span className="donor-active-icon">
+                      <span className="material-symbols-outlined">restaurant</span>
+                    </span>
+                    <div>
+                      <p className="donor-active-food">{listing.foodType}</p>
+                      <p className="donor-active-meta">
+                        Claimed by {listing.claimedBy || 'an organisation'}
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    className="donor-chat-btn"
+                    onClick={() => setChatListing(listing)}
+                  >
+                    <span className="material-symbols-outlined">forum</span>
+                    Chat
+                  </button>
+                </div>
+              ))}
+            </div>
+          </section>
+        )}
+
         {/* Cards grid */}
         <div className="food-grid">
           {loading ? (
@@ -352,6 +407,20 @@ const PostFeedPage = () => {
           )}
         </div>
       </main>
+
+      {/* ── Donor Chat Modal ─────────────────────────────────── */}
+      {chatListing && myDonorCode && (
+        <ChatModal
+          listingId={chatListing.id}
+          listingTitle={chatListing.foodType}
+          myOrgCode={myDonorCode}
+          onClose={() => setChatListing(null)}
+          onFoodCollected={(id) => {
+            setDonorClaimedListings(prev => prev.filter(l => l.id !== id))
+            setChatListing(null)
+          }}
+        />
+      )}
 
       {/* FAB — Post surplus */}
       <button className="fab" onClick={() => navigate(`/form/${postcode}`)} aria-label="Post food">

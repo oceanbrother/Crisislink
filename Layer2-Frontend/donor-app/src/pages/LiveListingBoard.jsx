@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useTranslation } from 'react-i18next'
-import { getAvailableListings, claimListing } from '../services/api'
+import { getAvailableListings, claimListing, getClaimedListings } from '../services/api'
+import ChatModal from '../components/ChatModal'
 import '../styles/LiveListingBoard.css'
 
 const categoryOptions = ['All', 'Bakery', 'Produce', 'Prepared', 'Grocery']
@@ -15,22 +16,17 @@ const inferCategory = (foodType = '') => {
 }
 
 const getCategoryEmoji = (category) => {
-  const map = {
-    'Bakery': '🥐',
-    'Produce': '🥕',
-    'Prepared': '🍜',
-    'Grocery': '🛒'
-  }
+  const map = { Bakery: '🥐', Produce: '🥕', Prepared: '🍜', Grocery: '🛒' }
   return map[category] || '📦'
 }
 
 const getTranslatedCategory = (category, t) => {
   const map = {
-    'All': t('dashboard.tabs.all'),
-    'Bakery': t('dashboard.tabs.bakery'),
-    'Produce': t('dashboard.tabs.produce'),
-    'Prepared': t('dashboard.tabs.prepared'),
-    'Grocery': t('dashboard.tabs.grocery')
+    All:      t('dashboard.tabs.all'),
+    Bakery:   t('dashboard.tabs.bakery'),
+    Produce:  t('dashboard.tabs.produce'),
+    Prepared: t('dashboard.tabs.prepared'),
+    Grocery:  t('dashboard.tabs.grocery'),
   }
   return map[category] || category
 }
@@ -38,43 +34,51 @@ const getTranslatedCategory = (category, t) => {
 const getRelativeTime = (createdAt, t) => {
   if (!createdAt) return t('listing.justNow')
   const created = new Date(createdAt)
-  const diff = Date.now() - created.getTime()
+  const diff    = Date.now() - created.getTime()
   const minutes = Math.floor(diff / 60000)
-  const hours = Math.floor(diff / 3600000)
-  const days = Math.floor(diff / 86400000)
-  
-  if (minutes < 1) return t('listing.justNow')
+  const hours   = Math.floor(diff / 3600000)
+  const days    = Math.floor(diff / 86400000)
+  if (minutes < 1)  return t('listing.justNow')
   if (minutes < 60) return t('listing.minutesAgo', { count: minutes })
-  if (hours < 24) return t('listing.hoursAgo', { count: hours })
+  if (hours < 24)   return t('listing.hoursAgo',   { count: hours })
   return t('listing.daysAgo', { count: days })
 }
 
 const LiveListingBoard = () => {
   const navigate = useNavigate()
   const location = useLocation()
-  const { t } = useTranslation()
-  const [listings, setListings] = useState([])
-  const [filteredListings, setFilteredListings] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [claimingId, setClaimingId] = useState(null)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
-  const [searchTerm, setSearchTerm] = useState('')
-  const [filterCategory, setFilterCategory] = useState('All')
+  const { t }    = useTranslation()
 
   const orgCode = location.state?.orgCode || 'HCFB-2841'
   const postcode = location.state?.postcode || '3000'
-  
-  // Create category options array with indices for easy lookup
-  const categoryOptionsArray = ['All', 'Bakery', 'Produce', 'Prepared', 'Grocery']
 
+  // ── Available listings state ───────────────────────────────────
+  const [listings,         setListings]         = useState([])
+  const [filteredListings, setFilteredListings] = useState([])
+  const [loading,          setLoading]          = useState(true)
+  const [claimingId,       setClaimingId]       = useState(null)
+  const [error,            setError]            = useState('')
+  const [success,          setSuccess]          = useState('')
+  const [searchTerm,       setSearchTerm]       = useState('')
+  const [filterCategory,   setFilterCategory]   = useState('All')
+
+  // ── My Claims state ────────────────────────────────────────────
+  const [claimedListings, setClaimedListings] = useState([])
+  const [claimsLoading,   setClaimsLoading]   = useState(true)
+
+  // ── Chat modal state ───────────────────────────────────────────
+  const [chatListing, setChatListing] = useState(null)
+  // null | { id, foodType }
+
+  // ── Load data on mount ─────────────────────────────────────────
   useEffect(() => {
     loadListings()
-  }, [])
+    loadClaimedListings()
+  }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     filterAndDisplayListings()
-  }, [listings, searchTerm, filterCategory])
+  }, [listings, searchTerm, filterCategory]) // eslint-disable-line react-hooks/exhaustive-deps
 
   const loadListings = async () => {
     setLoading(true)
@@ -84,10 +88,10 @@ const LiveListingBoard = () => {
       const formatted = data.map(listing => ({
         ...listing,
         category: inferCategory(listing.foodType),
-        emoji: getCategoryEmoji(inferCategory(listing.foodType))
+        emoji:    getCategoryEmoji(inferCategory(listing.foodType)),
       }))
       setListings(formatted)
-    } catch (err) {
+    } catch {
       setError(t('feed.noListings'))
       setListings([])
     } finally {
@@ -95,42 +99,51 @@ const LiveListingBoard = () => {
     }
   }
 
+  const loadClaimedListings = async () => {
+    setClaimsLoading(true)
+    try {
+      const data = await getClaimedListings(orgCode)
+      setClaimedListings(data)
+    } catch {
+      setClaimedListings([])
+    } finally {
+      setClaimsLoading(false)
+    }
+  }
+
   const filterAndDisplayListings = () => {
     let filtered = listings
-    
     if (filterCategory !== 'All' && filterCategory !== t('dashboard.tabs.all')) {
-      // Handle both English and translated category names
       const englishCategory = Object.keys(categoryOptions).find(
         key => getTranslatedCategory(categoryOptions[key], t) === filterCategory
       ) || filterCategory
       filtered = filtered.filter(l => l.category === englishCategory)
     }
-    
     if (searchTerm) {
       const term = searchTerm.toLowerCase()
-      filtered = filtered.filter(l => 
+      filtered = filtered.filter(l =>
         l.foodType.toLowerCase().includes(term) ||
-        l.description.toLowerCase().includes(term) ||
-        l.orgCode.toLowerCase().includes(term)
+        (l.description || '').toLowerCase().includes(term) ||
+        (l.orgCode || '').toLowerCase().includes(term)
       )
     }
-    
     setFilteredListings(filtered)
   }
 
+  // ── Claim a listing ────────────────────────────────────────────
   const handleClaim = async (listingId) => {
     setClaimingId(listingId)
     setError('')
     setSuccess('')
-    
     try {
       await claimListing(listingId, { orgId: orgCode })
       setSuccess(t('feed.claimButton'))
       setTimeout(() => {
         setSuccess('')
         loadListings()
+        loadClaimedListings()
       }, 1500)
-    } catch (err) {
+    } catch {
       setError(t('feed.noListings'))
       setTimeout(() => setError(''), 3000)
     } finally {
@@ -138,14 +151,18 @@ const LiveListingBoard = () => {
     }
   }
 
+  // ── Chat modal handlers ────────────────────────────────────────
+  const openChat = (listing) => setChatListing(listing)
+  const closeChat = () => setChatListing(null)
+
+  const handleFoodCollected = (listingId) => {
+    // Remove the collected listing from My Claims without reloading
+    setClaimedListings(prev => prev.filter(l => l.id !== listingId))
+  }
+
   const handlePostExcess = () => {
     navigate('/form', {
-      state: {
-        orgMode: true,
-        orgCode,
-        orgName: `Organization ${orgCode}`,
-        postcode,
-      },
+      state: { orgMode: true, orgCode, orgName: `Organization ${orgCode}`, postcode },
     })
   }
 
@@ -155,7 +172,7 @@ const LiveListingBoard = () => {
         <button onClick={() => navigate('/')} className="back-btn">
           <span className="material-symbols-outlined">arrow_back</span>
         </button>
-        
+
         <div className="header-info">
           <h1 className="board-title">
             <span className="material-symbols-outlined">inventory_2</span>
@@ -171,7 +188,55 @@ const LiveListingBoard = () => {
       </header>
 
       <div className="board-container">
-        {/* Search & Filter Bar */}
+
+        {/* ── My Active Claims ─────────────────────────────────── */}
+        {(claimedListings.length > 0 || claimsLoading) && (
+          <section className="my-claims-section">
+            <h2 className="my-claims-title">
+              <span className="material-symbols-outlined">inventory</span>
+              My Active Claims
+              {claimedListings.length > 0 && (
+                <span className="claims-badge">{claimedListings.length}</span>
+              )}
+            </h2>
+
+            {claimsLoading ? (
+              <p className="claims-loading">{t('common.loading')}</p>
+            ) : (
+              <div className="claims-list">
+                {claimedListings.map(listing => (
+                  <div key={listing.id} className="claim-card">
+                    <div className="claim-card-info">
+                      <span className="claim-card-emoji">
+                        {getCategoryEmoji(inferCategory(listing.foodType))}
+                      </span>
+                      <div>
+                        <p className="claim-card-food">{listing.foodType}</p>
+                        <p className="claim-card-meta">
+                          {listing.quantity} {listing.unit} · from {listing.orgCode}
+                        </p>
+                        <p className="claim-card-time">
+                          Claimed {getRelativeTime(listing.claimedAt, t)}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="claim-card-actions">
+                      <button
+                        className="chat-open-btn"
+                        onClick={() => openChat(listing)}
+                      >
+                        <span className="material-symbols-outlined">forum</span>
+                        Chat
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </section>
+        )}
+
+        {/* ── Search & Filter Bar ──────────────────────────────── */}
         <div className="search-filter-bar">
           <input
             type="text"
@@ -180,7 +245,7 @@ const LiveListingBoard = () => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-          
+
           <div className="filter-tabs">
             {categoryOptions.map(cat => (
               <button
@@ -194,18 +259,18 @@ const LiveListingBoard = () => {
           </div>
         </div>
 
-        {/* Status Messages */}
-        {error && <div className="alert alert-error">{error}</div>}
+        {/* ── Status Messages ──────────────────────────────────── */}
+        {error   && <div className="alert alert-error">{error}</div>}
         {success && <div className="alert alert-success">{success}</div>}
 
-        {/* Listings Count */}
+        {/* ── Listings Count ────────────────────────────────────── */}
         <div className="listings-info">
           <p className="listings-count">
             {t('listing.itemsAvailable', { count: filteredListings.length })}
           </p>
         </div>
 
-        {/* Listings Grid */}
+        {/* ── Available Listings Grid ───────────────────────────── */}
         <div className="listings-grid">
           {loading ? (
             <div className="loading-state">
@@ -263,6 +328,17 @@ const LiveListingBoard = () => {
           )}
         </div>
       </div>
+
+      {/* ── Chat Modal ──────────────────────────────────────────── */}
+      {chatListing && (
+        <ChatModal
+          listingId={chatListing.id}
+          listingTitle={chatListing.foodType}
+          myOrgCode={orgCode}
+          onClose={closeChat}
+          onFoodCollected={handleFoodCollected}
+        />
+      )}
     </div>
   )
 }

@@ -456,3 +456,118 @@
   font-weight: 600;
   margin-top: 0.1rem;
 }
+
+/* ── My Active Donations (donor chat section) ─────────────── */
+.donor-active-donations {
+  background: var(--surface, #fff);
+  border: 1px solid var(--surface-low, #e0e0e0);
+  border-left: 4px solid var(--primary, #006B4C);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  margin: 1rem 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.donor-active-title {
+  font-family: var(--font-headline, sans-serif);
+  font-weight: 700;
+  font-size: 0.95rem;
+  color: var(--on-surface, #1c1b1f);
+  margin: 0;
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+}
+
+.donor-active-title .material-symbols-outlined {
+  font-size: 1.15rem;
+  color: var(--primary, #006B4C);
+}
+
+.donor-active-badge {
+  background: var(--primary, #006B4C);
+  color: #fff;
+  border-radius: 999px;
+  padding: 0.1rem 0.5rem;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.donor-active-hint {
+  font-size: 0.8rem;
+  color: var(--on-surface-variant, #666);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.donor-active-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.donor-active-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  background: var(--surface-container-low, #f5f5f5);
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+}
+
+.donor-active-info {
+  display: flex;
+  align-items: center;
+  gap: 0.7rem;
+  min-width: 0;
+}
+
+.donor-active-icon .material-symbols-outlined {
+  font-size: 1.6rem;
+  color: var(--primary, #006B4C);
+}
+
+.donor-active-food {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--on-surface, #1c1b1f);
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.donor-active-meta {
+  font-size: 0.78rem;
+  color: var(--on-surface-variant, #666);
+  margin: 0.15rem 0 0;
+}
+
+.donor-chat-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.5rem 0.9rem;
+  background: var(--primary, #006B4C);
+  color: #fff;
+  border: none;
+  border-radius: 999px;
+  font-family: var(--font-headline, sans-serif);
+  font-weight: 600;
+  font-size: 0.82rem;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+
+.donor-chat-btn:hover {
+  filter: brightness(0.88);
+}
+
+.donor-chat-btn .material-symbols-outlined {
+  font-size: 0.95rem;
+}

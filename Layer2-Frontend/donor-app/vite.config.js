@@ -16,6 +16,11 @@ export default defineConfig({
       '/static': {
         target: 'http://localhost:8000',
         changeOrigin: true,
+      },
+      '/chat': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        ws: true,   // WebSocket proxy for the ECDHE chat channel
       }
     }
   }
