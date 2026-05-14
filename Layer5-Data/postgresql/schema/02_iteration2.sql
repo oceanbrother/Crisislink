@@ -1,9 +1,20 @@
 -- =============================================================
 -- OutbackShare Iteration 2 schema migration
 -- Layer5-Data/postgresql/schema/02_iteration2.sql
--- Adds SEIFA reference table + weekly postcode risk scores table.
+--
+-- Combines:
+--   1. SEIFA reference table + weekly postcode risk scores
+--      (for demand forecasting feature)
+--   2. Organization registration columns (business_address,
+--      preferred_location, max_pickup_distance_km)
+--
+-- Run this file ONCE against an existing database that already
+-- has the v1.1 schema applied (01_init.sql). Statements use
+-- IF NOT EXISTS / IF EXISTS where possible so the file is safe
+-- to re-run.
 -- =============================================================
 
+-- ── Demand-forecasting tables ─────────────────────────────────
 DROP TABLE IF EXISTS postcode_risk_scores CASCADE;
 DROP TABLE IF EXISTS postcode_seifa CASCADE;
 
@@ -48,3 +59,12 @@ CREATE INDEX idx_seifa_regional_category    ON postcode_seifa(regional_category)
 CREATE INDEX idx_risk_week_start            ON postcode_risk_scores(week_start);
 CREATE INDEX idx_risk_demand_score          ON postcode_risk_scores(demand_risk_score);
 CREATE INDEX idx_risk_postcode              ON postcode_risk_scores(postcode);
+
+-- ── Registration form fields on organization ──────────────────
+-- business_address      : street address of the org / donor (optional)
+-- preferred_location    : donor's preferred food drop-off address    (donor)
+-- max_pickup_distance_km: max km org will travel to collect food (community_org)
+ALTER TABLE organization
+    ADD COLUMN IF NOT EXISTS business_address          VARCHAR(500),
+    ADD COLUMN IF NOT EXISTS preferred_location        VARCHAR(500),
+    ADD COLUMN IF NOT EXISTS max_pickup_distance_km    INT;
