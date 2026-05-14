@@ -96,8 +96,8 @@ export const claimListing = async (listingId, claimData) => {
  * @param {{ orgCode: string, orgType: 'donor'|'community_org', orgName?: string }} data
  * @returns {Promise<{ orgCode: string, orgType: string }>}
  */
-export const registerUser = async ({ orgCode, orgType, orgName }) => {
-  const response = await apiClient.post('/register', { orgCode, orgType, orgName })
+export const registerUser = async ({ orgCode, orgType, orgName, businessAddress, preferredLocation, maxPickupDistanceKm }) => {
+  const response = await apiClient.post('/register', { orgCode, orgType, orgName, businessAddress, preferredLocation, maxPickupDistanceKm })
   return response.data
 }
 
