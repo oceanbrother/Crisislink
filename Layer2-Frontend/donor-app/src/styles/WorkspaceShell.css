@@ -327,8 +327,10 @@
 }
 
 .workspace-summary-metric--button.is-active {
-  border-color: rgba(var(--role-primary-rgb), 0.34);
-  box-shadow: 0 0 0 1px rgba(var(--role-primary-rgb), 0.14);
+  border-width: 2px;
+  border-color: rgba(var(--role-primary-rgb), 0.55);
+  box-shadow: 0 10px 24px rgba(var(--role-primary-rgb), 0.18);
+  transform: translateY(-1px);
 }
 
 .workspace-summary-metric--button:focus-visible {

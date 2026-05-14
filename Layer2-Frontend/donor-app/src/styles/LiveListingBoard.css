@@ -139,8 +139,9 @@
 }
 
 .org-summary-card.active {
-  border-color: rgba(0, 107, 76, 0.22);
-  box-shadow: 0 12px 24px rgba(18, 50, 39, 0.08);
+  border-width: 2px;
+  border-color: rgba(0, 107, 76, 0.5);
+  box-shadow: 0 12px 26px rgba(18, 50, 39, 0.14);
 }
 
 .org-summary-card strong {
@@ -182,6 +183,34 @@
 
 .org-summary-card--claimed .org-summary-label {
   color: #365f72;
+}
+
+.org-summary-card--collected {
+  background: rgba(227, 237, 231, 0.98);
+}
+
+.org-summary-card--collected .org-summary-label {
+  color: #255640;
+}
+
+.org-summary-card--available.active {
+  border-color: rgba(15, 107, 76, 0.56);
+  box-shadow: 0 12px 26px rgba(15, 107, 76, 0.18);
+}
+
+.org-summary-card--posted.active {
+  border-color: rgba(154, 99, 0, 0.56);
+  box-shadow: 0 12px 26px rgba(154, 99, 0, 0.16);
+}
+
+.org-summary-card--claimed.active {
+  border-color: rgba(54, 95, 114, 0.58);
+  box-shadow: 0 12px 26px rgba(54, 95, 114, 0.16);
+}
+
+.org-summary-card--collected.active {
+  border-color: rgba(37, 86, 64, 0.62);
+  box-shadow: 0 12px 26px rgba(37, 86, 64, 0.2);
 }
 
 .org-page-heading {
@@ -379,19 +408,24 @@
 
 .org-filter-chips {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.75rem;
-  overflow-x: auto;
-  scrollbar-width: none;
-  padding-bottom: 4px;
+  overflow: visible;
+  padding-bottom: 0;
+  padding-right: 0;
 }
 
 .filter-chip {
-  flex-shrink: 0;
+  flex: 0 1 auto;
+  min-width: 0;
   padding: 0.58rem 1.4rem;
   border-radius: var(--radius-full);
   font-weight: 650;
   font-size: 0.92rem;
-  white-space: nowrap;
+  white-space: normal;
+  line-height: 1.25;
+  text-align: center;
+  max-width: 100%;
   border: 1px solid transparent;
   cursor: pointer;
   background: var(--surface-low);
@@ -417,10 +451,6 @@
 .category-chip.active {
   background: #0f6b4c;
   border-color: #0f6b4c;
-}
-
-.org-filter-chips::-webkit-scrollbar {
-  display: none;
 }
 
 .feed-meta-row {
@@ -526,6 +556,16 @@
   background: linear-gradient(180deg, #365f72 0%, #5d91aa 100%);
 }
 
+.org-card--collected {
+  background: linear-gradient(180deg, rgba(241, 250, 246, 0.99) 0%, rgba(232, 246, 239, 0.99) 100%);
+  border-color: rgba(47, 106, 78, 0.2);
+  box-shadow: 0 18px 40px rgba(39, 94, 67, 0.08);
+}
+
+.org-card--collected::before {
+  background: linear-gradient(180deg, #2f6a4e 0%, #4e8a68 100%);
+}
+
 .org-card--expired {
   background: linear-gradient(180deg, rgba(255, 248, 247, 0.99) 0%, rgba(255, 242, 240, 0.99) 100%);
   border-color: rgba(176, 56, 42, 0.2);
@@ -613,16 +653,17 @@
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  padding: 0.34rem 0.7rem;
+  padding: 0.5rem 0.95rem;
   border-radius: 999px;
-  font-size: 0.82rem;
-  font-weight: 700;
-  margin: 0.7rem 0 0.2rem;
+  font-size: 1rem;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+  margin: 0.75rem 0 0.3rem;
 }
 
 .listing-status-pill--available {
-  background: rgba(15, 107, 76, 0.1);
-  color: #0d5a43;
+  background: rgba(15, 107, 76, 0.16);
+  color: #0a4a37;
 }
 
 .listing-status-pill--posted {
@@ -631,8 +672,13 @@
 }
 
 .listing-status-pill--claimed {
-  background: rgba(54, 95, 114, 0.12);
-  color: #365f72;
+  background: rgba(34, 84, 138, 0.16);
+  color: #1f4f86;
+}
+
+.listing-status-pill--collected {
+  background: rgba(31, 122, 72, 0.18);
+  color: #135a34;
 }
 
 .listing-status-pill--expired {

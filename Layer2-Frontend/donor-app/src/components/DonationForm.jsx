@@ -31,6 +31,7 @@ const DEFAULT_CATEGORY = 'Baked goods'
 const MAX_CONFIDENT_AI_QUANTITY = 30
 
 function getSuggestedQuantity(resultQuantity, fallbackQuantity) {
+  // Guard against unrealistic AI quantity spikes; keep donor in control.
   const parsed = parseQuantityValue(resultQuantity)
   if (parsed === null || parsed <= 0) {
     return {
@@ -138,6 +139,7 @@ function isExpiryPast(value) {
 
 function buildInitialState({ postcode, orgMode, initialOrgCode, listing }) {
   if (listing) {
+    // Edit mode hydrates from existing listing while preserving legacy field aliases.
     const listingAllergenTags = Array.isArray(listing.allergenTags)
       ? listing.allergenTags
       : (Array.isArray(listing.allergen_tags) ? listing.allergen_tags : [])
@@ -165,6 +167,7 @@ function buildInitialState({ postcode, orgMode, initialOrgCode, listing }) {
   }
 
   return {
+    // Create mode defaults are role-aware (org workspace vs donor workspace).
     foodType: '',
     quantity: '1',
     category: DEFAULT_CATEGORY,
@@ -231,6 +234,7 @@ const DonationForm = () => {
   const currentOrgCode = String(initialOrgCode || formData.orgCode || '').trim().toUpperCase()
 
   const goToWorkspaceHome = () => {
+    // Route back to role-specific listing board after cancel/success actions.
     if (orgMode) {
       navigate('/org/listings', { state: { orgCode: currentOrgCode } })
       return
@@ -239,6 +243,7 @@ const DonationForm = () => {
   }
 
   useEffect(() => {
+    // Reinitialize full form when route context or edit target changes.
     setFormData(buildInitialState({ postcode, orgMode, initialOrgCode, listing: editingListing }))
     setError('')
     setAiWarning('')
@@ -366,6 +371,13 @@ const DonationForm = () => {
 
   const handleRemoveListing = async (listing) => {
     if (!listing) return
+    const confirmed = window.confirm(
+      t(
+        'donation.actions.removeConfirmMessage',
+        'Are you sure you want to remove this listing?\nThis action cannot be undone.',
+      ),
+    )
+    if (!confirmed) return
     try {
       setLoading(true)
       await deleteListing(listing.id, listing.orgCode)
@@ -511,7 +523,7 @@ const DonationForm = () => {
           {!orgMode ? (
             <div className="success-next-step">
               <strong>{t('donation.success.nextStepLabel', 'Next step')}</strong>
-              <p>{t('donation.success.nextStepHint', 'Check nearby food shortage hotspots to see where your donation can help most.')}</p>
+              <p>{t('donation.success.nextStepHint', 'We’ll notify you when an organisation claims your listing. You can then coordinate pickup through messages.')}</p>
             </div>
           ) : null}
 
@@ -594,11 +606,20 @@ const DonationForm = () => {
               <button
                 type="button"
                 className="success-action-btn"
+                onClick={() => navigate('/donor/post', { state: { postcode: successListing.postcode } })}
+              >
+                {t('donation.actions.postAnother', 'Post another listing')}
+              </button>
+            )}
+            {!orgMode ? (
+              <button
+                type="button"
+                className="success-action-btn"
                 onClick={() => navigate('/donor/hotspots', { state: { postcode: successListing.postcode } })}
               >
                 {t('donation.actions.viewHotspots', 'See where food is needed')}
               </button>
-            )}
+            ) : null}
             <button
               type="button"
               className="success-action-btn"
@@ -617,15 +638,6 @@ const DonationForm = () => {
             >
               {t('donation.actions.editListing', 'Edit this listing')}
             </button>
-            {!orgMode ? (
-              <button
-                type="button"
-                className="success-action-btn"
-                onClick={() => navigate('/donor/post', { state: { postcode: successListing.postcode } })}
-              >
-                {t('donation.actions.postAnother', 'Post another listing')}
-              </button>
-            ) : null}
             <button
               type="button"
               className="success-action-btn text-danger"
@@ -986,7 +998,7 @@ const DonationForm = () => {
                   value={formData.pickupWindow}
                   onChange={(event) => handleChange('pickupWindow', event.target.value)}
                 >
-                  <option value="">{t('donation.pickupWindowPlaceholder', 'Select a pickup time')}</option>
+                  <option value="" disabled>{t('donation.pickupWindowPlaceholder', 'Choose a pickup window')}</option>
                   <option value="Today · Morning (8am–12pm)">Today · Morning (8am–12pm)</option>
                   <option value="Today · Afternoon (12pm–4pm)">Today · Afternoon (12pm–4pm)</option>
                   <option value="Today · Evening (4pm–7pm)">Today · Evening (4pm–7pm)</option>
@@ -995,7 +1007,7 @@ const DonationForm = () => {
                   <option value="Tomorrow · Evening (4pm–7pm)">Tomorrow · Evening (4pm–7pm)</option>
                   <option value="This weekend · Morning (8am–12pm)">This weekend · Morning (8am–12pm)</option>
                   <option value="This weekend · Afternoon (12pm–4pm)">This weekend · Afternoon (12pm–4pm)</option>
-                  <option value="Flexible – call to arrange">Flexible – call to arrange</option>
+                  <option value="Flexible – arrange in chat">Flexible – arrange in chat</option>
                 </select>
                 <p className={pickupWindowFieldError ? 'field-hint field-hint--error' : 'field-hint field-hint--instruction'}>
                   {t('donation.pickupWindowHint', 'When can organisations collect this food?')}

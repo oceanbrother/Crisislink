@@ -53,7 +53,7 @@ export default function HotspotMap() {
   const [selected, setSelected] = useState(null)
   const [loading, setLoading] = useState(true)
   const [fetchError, setFetchError] = useState(false)
-  const [severityFilter, setSeverityFilter] = useState('critical')
+  const [severityFilter, setSeverityFilter] = useState('all')
   const [sortMode, setSortMode] = useState('priority')
   const [showRoute, setShowRoute] = useState(null) // { from, to } for route display
   const [locating, setLocating] = useState(false)

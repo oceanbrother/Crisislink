@@ -10,7 +10,7 @@
       "button": "以捐赠者身份继续"
     },
     "organization": {
-      "title": "我管理一个社区组织",
+      "title": "我管理一个组织",
       "description": "查看可领取列表、协调领取，并识别本地食物需求更高的区域。",
       "button": "以社区组织身份继续"
     },
@@ -184,6 +184,10 @@
     "groupClaimNote": "社区组织会在他们自己的物品板中领取这条物品。",
     "editLockedNote": "这条物品已经被社区组织领取过一部分，所以现在不能再编辑，也不能删除。",
     "editLockedTooltip": "这条物品已经被领取过，不能再编辑或删除。",
+    "editLockedClaimedNote": "这条物品当前处于已领取状态，因此不能再编辑或删除。",
+    "editLockedClaimedTooltip": "这条物品当前已被领取，不能再编辑或删除。",
+    "editLockedCollectedNote": "这条物品已完成取货，因此不能再编辑或删除。",
+    "editLockedCollectedTooltip": "这条物品已完成取货，不能再编辑或删除。",
     "editLockedExpiredNote": "这条物品已过期，因此不能再编辑或删除。",
     "editLockedExpiredTooltip": "这条物品已过期，不能再编辑或删除。",
     "homeLink": "返回首页",
@@ -197,8 +201,14 @@
     "filterHint": "可按食物名称、备注、类别或邮编搜索。",
     "searchingFor": "正在搜索",
     "filteringCategory": "类别",
-    "scopeFilter": "范围",
+    "scopeFilter": "状态",
     "scopeEditable": "可编辑发布",
+    "statusTabs": {
+      "all": "全部发布",
+      "available": "可领取发布",
+      "claimed": "已认领发布",
+      "collected": "已取货发布"
+    },
     "clearFilters": "清除筛选",
     "showingMatches": "当前显示 {{count}} 条匹配物品",
     "emptyTitle": "还没有 donor 发布的物品",
@@ -239,13 +249,13 @@
     },
     "success": {
       "title": "已发布！",
-      "donorMessage": "您的食物现在对当地食物银行可见。",
+      "donorMessage": "你的发布现在对本地社区组织可见。",
       "donorTag": "感谢您的分享。",
       "orgMessage": "您的剩余食物现在可供其他社区领取。",
       "orgTag": "感谢您帮助网络。",
       "updatedTitle": "物品已更新",
       "nextStepLabel": "下一步",
-      "nextStepHint": "查看附近的食物短缺热点，看看你的捐赠最适合帮助哪里。"
+      "nextStepHint": "当有组织认领你的发布后，我们会通知你。随后你可以通过消息协调取货。"
     },
     "editTitle": "编辑物品",
     "sizeCue": "份量",
@@ -255,7 +265,7 @@
     "bestBefore": "最佳食用日期",
     "expiryDateLabel": "食用期限 / 最佳食用日期",
     "pickupWindow": "取货时间窗",
-    "pickupWindowPlaceholder": "例如：今天 4:00-6:00 pm",
+    "pickupWindowPlaceholder": "请选择取货时间窗",
     "pickupWindowHint": "社区组织可以在什么时间取货？",
     "pickupWindowRequiredHint": "必填：请填写可取货的日期和时间窗，方便社区组织安排领取。",
     "storageCondition": "存储条件",
@@ -276,13 +286,14 @@
       "viewHotspots": "看看哪里最需要食物",
       "editListing": "编辑这条物品",
       "removeListing": "删除这条物品",
-      "postAnother": "继续发布另一条物品"
+      "postAnother": "继续发布另一条物品",
+      "removeConfirmMessage": "你确定要删除这条发布吗？\n此操作无法撤销。"
     },
     "safety": {
       "title": "食品安全提醒",
       "accuracy": "您需对本次发布的所有信息负责，包括数量、食品状态及过敏原声明。",
       "allergen": "OutBackShare 无法独立核实过敏原信息，领取方须自行判断食品是否适合食用。",
-      "platform": "OutBackShare 仅作为协调平台，不检查捐赠食物，也不承担相关责任。"
+      "platform": "OutBackShare 仅作为协调平台，不会独立检查捐赠食物。"
     },
     "reviewTitle": "以下是建议填写内容，发布前请再次确认。",
     "reviewHintFood": "检查食物名称和分类是否正确。",
@@ -374,13 +385,16 @@
       "expired": "已过期，无法认领",
       "safetyRequired": "食安信息不完整",
       "posted": "我发布的",
-      "claimed": "我已领取：{{quantity}}份"
+      "claimed": "我已认领 · 编号 #{{claimId}}",
+      "claimedSimple": "已领取",
+      "collected": "已完成取货"
     },
     "statusTabs": {
       "all": "全部物品",
       "available": "可领取物品",
       "posted": "我发布的",
-      "claimed": "我已领取"
+      "claimed": "我已领取",
+      "collected": "我已完成取货"
     },
     "claimDialog": {
       "title": "选择领取数量",
@@ -397,6 +411,7 @@
       "availableLabel": "可领取数量"
     },
     "claimQuickSuccess": "已成功认领该物品。",
+    "collectedInfo": "已确认取货，这笔捐赠已完成。",
     "filterHint": "可按食物名称、备注、来源代码或邮编搜索。",
     "searchingFor": "正在搜索",
     "filteringCategory": "类别",

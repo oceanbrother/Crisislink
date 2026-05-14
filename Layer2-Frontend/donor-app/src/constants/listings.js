@@ -19,6 +19,7 @@ export const SIZE_CUE_OPTIONS = [
 ]
 
 const CATEGORY_ALIASES = {
+  // Keep legacy/backend naming variants mapped into the same UI category.
   all: 'All',
   bakery: 'Baked goods',
   bakedgoods: 'Baked goods',
@@ -42,6 +43,7 @@ const CATEGORY_ALIASES = {
 }
 
 const CATEGORY_KEYWORDS = {
+  // Fallback keyword buckets when category metadata is missing or noisy.
   'Prepared meals': [
     'sandwich',
     'burger',
@@ -103,6 +105,7 @@ export function inferCategoryFromFoodName(value) {
 }
 
 export function resolveListingCategory(category, foodName) {
+  // If upstream category is generic "Other", prefer food-name inference.
   const normalizedCategory = normalizeCategory(category)
   const inferredCategory = inferCategoryFromFoodName(foodName)
 
@@ -111,6 +114,7 @@ export function resolveListingCategory(category, foodName) {
   }
 
   if (normalizedCategory === 'Baked goods' && inferredCategory === 'Prepared meals') {
+    // Reduce false positives from model outputs that overuse "Baked goods".
     return inferredCategory
   }
 

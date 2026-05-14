@@ -112,8 +112,14 @@ const getListingViewState = (listing, orgCode) => {
   const isClaimedByCurrentOrg =
     listing?.status === 'claimed' &&
     String(listing?.claimedBy || '').trim().toUpperCase() === currentOrgCode
+  const isCollectedByCurrentOrg =
+    (listing?.status === 'collected' || listing?.status === 'picked_up') &&
+    String(listing?.claimedBy || '').trim().toUpperCase() === currentOrgCode
 
+  // View-state precedence mirrors the Iteration 3 workflow from the current
+  // organisation perspective.
   if (isOwnOrgListing) return 'posted'
+  if (isCollectedByCurrentOrg) return 'collected'
   if (isClaimedByCurrentOrg) return 'claimed'
   return 'available'
 }
@@ -122,6 +128,7 @@ const VIEW_STATE_PRIORITY = {
   posted: 0,
   available: 1,
   claimed: 2,
+  collected: 3,
 }
 
 const STATUS_OPTIONS = [
@@ -129,6 +136,7 @@ const STATUS_OPTIONS = [
   { value: 'available', key: 'available', summaryKey: 'available', className: 'org-summary-card--available' },
   { value: 'posted', key: 'posted', summaryKey: 'posted', className: 'org-summary-card--posted' },
   { value: 'claimed', key: 'claimed', summaryKey: 'claimed', className: 'org-summary-card--claimed' },
+  { value: 'collected', key: 'collected', summaryKey: 'collected', className: 'org-summary-card--collected' },
 ]
 
 const parseClaimQuantityValue = (value) => {
@@ -313,18 +321,26 @@ const LiveListingBoard = () => {
     filterAndDisplayListings()
   }, [listings, searchTerm, filterCategory, filterFoodType, filterStatus, orgCode])
 
-  const loadListings = async () => {
+const loadListings = async () => {
     setLoading(true)
     setError('')
     try {
-      const [availableData, claimedResult] = await Promise.all([
+      const [availableData, claimedResult, collectedResult] = await Promise.all([
         getAvailableListings({ status: 'available' }),
         getAvailableListings({ status: 'claimed' }).catch(() => []),
+        getAvailableListings({ status: 'collected' }).catch(() => []),
       ])
       const claimedData = Array.isArray(claimedResult) ? claimedResult : []
+      const collectedData = Array.isArray(collectedResult) ? collectedResult : []
+      // Only include claimed/collected records that belong to this organisation.
+      // This keeps the board focused on "my active work" rather than all claims.
       const mergedData = [
         ...availableData,
         ...claimedData.filter(
+          (listing) =>
+            String(listing.claimedBy || '').trim().toUpperCase() === String(orgCode || '').trim().toUpperCase(),
+        ),
+        ...collectedData.filter(
           (listing) =>
             String(listing.claimedBy || '').trim().toUpperCase() === String(orgCode || '').trim().toUpperCase(),
         ),
@@ -367,6 +383,8 @@ const LiveListingBoard = () => {
       )
     }
 
+    // Stable status-first ordering helps demo/readability: posted -> available
+    // -> claimed -> collected.
     filtered = [...filtered].sort((a, b) => {
       const stateA = getListingViewState(a, orgCode)
       const stateB = getListingViewState(b, orgCode)
@@ -493,7 +511,7 @@ const LiveListingBoard = () => {
       acc.total += 1
       acc[state] = (acc[state] || 0) + 1
       return acc
-    }, { total: 0, available: 0, posted: 0, claimed: 0 })
+    }, { total: 0, available: 0, posted: 0, claimed: 0, collected: 0 })
   }, [listings, orgCode])
 
   const openClaimDialog = (listing) => {
@@ -707,9 +725,19 @@ const LiveListingBoard = () => {
                     {t('feed.searchingFor', 'Searching for')} “{searchTerm.trim()}”
                   </span>
                 ) : null}
+                {hasActiveCategoryFilter ? (
+                  <span className="filter-feedback-pill">
+                    {t('feed.filteringCategory', 'Category')} · {t(`dashboard.tabs.${FILTER_OPTIONS.find((option) => option.value === filterCategory)?.key || 'all'}`, filterCategory)}
+                  </span>
+                ) : null}
                 {hasActiveFoodTypeFilter ? (
                   <span className="filter-feedback-pill">
                     {t('dashboard.filterLabels.foodType', 'Food type')} · {t(`listing.dietary.${resolveDietaryTranslationKey(filterFoodType)}`, filterFoodType)}
+                  </span>
+                ) : null}
+                {hasActiveStatusFilter ? (
+                  <span className="filter-feedback-pill">
+                    {t('dashboard.filterLabels.status', 'Status')} · {t(`dashboard.statusTabs.${filterStatus}`, filterStatus)}
                   </span>
                 ) : null}
               </div>
@@ -728,7 +756,7 @@ const LiveListingBoard = () => {
             <div className="feed-meta-row">
               <span className={hasActiveControls ? 'feed-count feed-count--filtered' : 'feed-count'}>
                 {hasActiveControls
-                  ? t('dashboard.showingMatches', { count: filteredListings.length, defaultValue: `Showing ${filteredListings.length} matching listings` })
+                  ? t('dashboard.showingMatches', { count: filteredListings.length })
                   : t('listing.itemsAvailable', { count: filteredListings.length })}
               </span>
             </div>
@@ -760,6 +788,7 @@ const LiveListingBoard = () => {
               const viewState = getListingViewState(listing, orgCode)
               const isOwnOrgListing = viewState === 'posted'
               const isClaimedByCurrentOrg = viewState === 'claimed'
+              const isCollectedByCurrentOrg = viewState === 'collected'
               const expiryMeta = getExpiryMeta(listing.expiryDate)
               const claimBlockReason = getClaimBlockReason(listing, t)
               const isClaimBlocked = Boolean(claimBlockReason)
@@ -772,7 +801,7 @@ const LiveListingBoard = () => {
               const pickupWindow = String(listing.pickupWindow || listing.pickup_window || '').trim()
               const hasPickupWindow = pickupWindow !== ''
               return (
-              <article key={listing.id} className={`food-card org-card org-card--${viewState} ${isOwnOrgListing ? 'org-card--own' : ''} ${isClaimedByCurrentOrg ? 'food-card--claimed org-card--claimed' : ''} ${viewState === 'available' ? 'org-card--available' : ''} ${isAvailableAndExpired ? 'org-card--expired' : ''}`.trim()}>
+              <article key={listing.id} className={`food-card org-card org-card--${viewState} ${isOwnOrgListing ? 'org-card--own' : ''} ${isClaimedByCurrentOrg ? 'food-card--claimed org-card--claimed' : ''} ${isCollectedByCurrentOrg ? 'food-card--collected org-card--collected' : ''} ${viewState === 'available' ? 'org-card--available' : ''} ${isAvailableAndExpired ? 'org-card--expired' : ''}`.trim()}>
                 {listing.photoUrl ? <img className="food-card-image" src={resolveImageUrl(listing.photoUrl)} alt={listing.foodType} /> : null}
 
                 <div className="food-card-header org-card-header">
@@ -794,7 +823,14 @@ const LiveListingBoard = () => {
 
                 {isClaimedByCurrentOrg && !isOwnOrgListing && (
                   <div className="listing-status-pill listing-status-pill--claimed">
-                    {t('dashboard.statusPills.claimed', { quantity: Number.isInteger(Number(listing.quantity)) ? Number(listing.quantity) : listing.quantity })}
+                    {t('dashboard.statusPills.claimed', {
+                      claimId: String(listing.claimId || listing.claim_id || listing.id || '').trim(),
+                    })}
+                  </div>
+                )}
+                {isCollectedByCurrentOrg && !isOwnOrgListing && (
+                  <div className="listing-status-pill listing-status-pill--collected">
+                    {t('dashboard.statusPills.collected', '✓ Collected')}
                   </div>
                 )}
 
@@ -925,6 +961,12 @@ const LiveListingBoard = () => {
                     >
                       {removingId === listing.id ? 'Removing...' : 'Remove claim'}
                     </button>
+                  </div>
+                ) : isCollectedByCurrentOrg ? (
+                  <div className="food-card-actions donor-card-actions">
+                    <div className="donor-reference-note">
+                      {t('dashboard.collectedInfo', 'Collection confirmed. This donation has been completed.')}
+                    </div>
                   </div>
                 ) : (
                   <div className="food-card-actions org-card-actions org-card-actions--split">

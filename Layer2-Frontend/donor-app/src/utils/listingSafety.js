@@ -14,7 +14,7 @@ function writeSafetyMap(map) {
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(map))
   } catch {
-    // ignore storage errors
+    // Ignore quota/private-mode failures; form flow should still continue.
   }
 }
 
@@ -34,6 +34,7 @@ function normalizePickupWindow(pickupWindow) {
 }
 
 export function rememberListingSafety(listingId, { allergenTags = [], storageCondition = '', pickupWindow = '' } = {}) {
+  // Cache donor-entered safety fields so they can be restored if backend payloads omit them.
   const key = String(listingId || '').trim()
   if (!key) return
   const map = readSafetyMap()
@@ -72,6 +73,7 @@ export function mergeListingSafetyFallback(listing) {
   const currentPickupWindow = String(listing.pickupWindow || listing.pickup_window || '').trim()
 
   if (currentAllergenTags.length > 0 && currentStorage && currentPickupWindow) {
+    // Do not override complete backend data with local cache.
     return listing
   }
 

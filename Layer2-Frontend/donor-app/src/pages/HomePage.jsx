@@ -28,6 +28,7 @@ const HomePage = () => {
           </section>
 
           <div className="cards-grid">
+            {/* Keep entry cards explicit so each role starts in its own workflow. */}
             <div className="role-card role-card--donor" onClick={() => navigate('/postcode')}>
               <div className="role-card-accent donor" />
               <div className="role-card-inner">
