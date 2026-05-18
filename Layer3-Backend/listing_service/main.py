@@ -4,6 +4,7 @@ Backed by PostgreSQL (outbackshare_db) via the `databases` async library.
 """
 
 import os
+import re
 import shutil
 import sys
 import uuid
@@ -137,6 +138,9 @@ app = FastAPI(
     description="API for creating and managing food listings",
     version="0.3.0",
     lifespan=lifespan,
+    docs_url=None,
+    redoc_url=None,
+    openapi_url=None,
 )
 
 app.state.limiter = limiter
@@ -166,6 +170,27 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type"],
 )
 
+
+from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.responses import Response as StarletteResponse
+
+class SecurityHeadersMiddleware(BaseHTTPMiddleware):
+    async def dispatch(self, request, call_next):
+        response = await call_next(request)
+        response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["X-XSS-Protection"] = "1; mode=block"
+        return response
+
+app.add_middleware(SecurityHeadersMiddleware)
+
+SAFE_CODE_RE = re.compile(r'^[A-Z0-9\-]{3,20}$')
+
+MAGIC_BYTES = {
+    "image/jpeg": b'\xff\xd8\xff',
+    "image/png":  b'\x89PNG',
+    "image/webp": b'RIFF',
+}
 
 ALLERGEN_OPTIONS = {"nuts", "dairy", "gluten", "eggs", "soy", "sesame", "shellfish", "no known allergens"}
 STORAGE_OPTIONS = {"room_temp", "refrigerated", "frozen", "keep_dry"}
@@ -1036,8 +1061,14 @@ async def upload_food_image(request: Request, image: UploadFile = File(...)):
         raise HTTPException(status_code=415, detail="Unsupported file type. Use JPEG, PNG, or WebP.")
 
     contents = await image.read()
+    if len(contents) == 0:
+        raise HTTPException(status_code=400, detail="File is empty")
     if len(contents) > MAX_SIZE:
         raise HTTPException(status_code=413, detail="File too large. Maximum size is 5 MB.")
+
+    expected_magic = MAGIC_BYTES.get(image.content_type, b'')
+    if expected_magic and not contents[:4].startswith(expected_magic):
+        raise HTTPException(status_code=415, detail="File content does not match declared type")
 
     ext = EXT_MAP[image.content_type]
     filename = f"{uuid.uuid4()}{ext}"
@@ -1083,7 +1114,10 @@ class RegisterRequest(BaseModel):
 
 
 @app.get("/check-code")
-async def check_code_availability(code: str):
+@limiter.limit("10/minute")
+async def check_code_availability(request: Request, code: str):
+    if not SAFE_CODE_RE.match(code):
+        raise HTTPException(status_code=400, detail="Invalid code format")
     row = await database.fetch_one(
         "SELECT org_id FROM organization WHERE UPPER(org_code) = UPPER(:code)",
         {"code": code},
