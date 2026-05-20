@@ -4,6 +4,8 @@ import {
   generateDonorCode,
   generateOrgCode,
   isSafeCode,
+  isNewDonorCode,
+  isNewOrgCode,
   getStoredDonorCode,
   getStoredOrgCode,
   storeDonorCode,
@@ -219,13 +221,26 @@ const RegisterPage = () => {
     setStep('signin')
   }, [role, isDonor, navigate])
 
-  const handleSignIn = () => {
+  const handleSignIn = async () => {
     setSubmitError('')
     const code = existingInput.trim()
     if (!code) { setSubmitError('Please enter your access code.'); return }
-    if (!isSafeCode(code)) { setSubmitError('Codes must be uppercase letters, digits, and hyphens only.'); return }
-    if (isDonor) { storeDonorCode(code); navigate('/postcode') }
-    else { storeOrgCode(code); navigate('/org/listings', { state: { orgCode: code } }) }
+    const isValidFormat = isDonor ? isNewDonorCode(code) : isNewOrgCode(code)
+    if (!isValidFormat) {
+      setSubmitError(isDonor ? 'Donor codes must be in the format DNR-XXXXXX.' : 'Partner codes must be in the format CBO-XXX-1234.')
+      return
+    }
+    setSubmitLoading(true)
+    try {
+      const { available } = await checkCodeAvailability(code)
+      if (available) { setSubmitError('Code not found. Check your code and try again.'); return }
+      if (isDonor) { storeDonorCode(code); navigate('/postcode') }
+      else { storeOrgCode(code); navigate('/org/listings', { state: { orgCode: code } }) }
+    } catch {
+      setSubmitError('Could not verify your code. Please try again.')
+    } finally {
+      setSubmitLoading(false)
+    }
   }
 
   const handleFormContinue = () => {
@@ -256,8 +271,22 @@ const RegisterPage = () => {
     if (!code) { setSubmitError(codeMode === 'generate' ? 'Please generate a code first.' : 'Please enter your access code.'); return }
     if (!isSafeCode(code)) { setSubmitError('Invalid code format.'); return }
     if (codeMode === 'existing') {
-      if (isDonor) { storeDonorCode(code); navigate('/postcode') }
-      else { storeOrgCode(code); navigate('/org/listings', { state: { orgCode: code } }) }
+      const isValidFormat = isDonor ? isNewDonorCode(code) : isNewOrgCode(code)
+      if (!isValidFormat) {
+        setSubmitError(isDonor ? 'Donor codes must be in the format DNR-XXXXXX.' : 'Partner codes must be in the format CBO-XXX-1234.')
+        setSubmitLoading(false)
+        return
+      }
+      try {
+        const { available } = await checkCodeAvailability(code)
+        if (available) { setSubmitError('Code not found. Check your code and try again.'); return }
+        if (isDonor) { storeDonorCode(code); navigate('/postcode') }
+        else { storeOrgCode(code); navigate('/org/listings', { state: { orgCode: code } }) }
+      } catch {
+        setSubmitError('Could not verify your code. Please try again.')
+      } finally {
+        setSubmitLoading(false)
+      }
       return
     }
     setSubmitLoading(true); setSubmitError('')
@@ -382,11 +411,15 @@ const RegisterPage = () => {
 
                 {submitError && <div style={{ fontSize: '14px', padding: '14px 18px', borderRadius: '12px', background: '#fbe2e5', color: '#9b1e28', marginTop: '12px' }} role="alert">{submitError}</div>}
 
-                <button onClick={handleSignIn} style={{ ...BTN_PRIMARY(accent), marginTop: '20px' }}
-                  onMouseEnter={e => e.currentTarget.style.opacity = '0.88'}
-                  onMouseLeave={e => e.currentTarget.style.opacity = '1'}
+                <button onClick={handleSignIn} disabled={submitLoading}
+                  style={{ ...BTN_PRIMARY(accent), marginTop: '20px', opacity: submitLoading ? 0.55 : 1, cursor: submitLoading ? 'not-allowed' : 'pointer' }}
+                  onMouseEnter={e => { if (!submitLoading) e.currentTarget.style.opacity = '0.88' }}
+                  onMouseLeave={e => { if (!submitLoading) e.currentTarget.style.opacity = '1' }}
                 >
-                  Sign in <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>arrow_forward</span>
+                  {submitLoading
+                    ? <><span className="material-symbols-outlined" style={{ fontSize: '20px' }}>progress_activity</span> Checking...</>
+                    : <>Sign in <span className="material-symbols-outlined" style={{ fontSize: '20px' }}>arrow_forward</span></>
+                  }
                 </button>
               </div>
 
