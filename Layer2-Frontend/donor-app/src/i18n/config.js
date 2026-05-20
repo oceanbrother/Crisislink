@@ -11,6 +11,7 @@ const resources = {
   zh: { translation: zh }
 }
 
+// set up i18next with browser language detection and localStorage persistence
 i18n
   .use(LanguageDetector)
   .use(initReactI18next)

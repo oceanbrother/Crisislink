@@ -21,6 +21,7 @@ import OrgSupplyGapPage from './pages/OrgSupplyGapPage'
 import OrgIntelligencePage from './pages/OrgIntelligencePage'
 import CoverageGapMap from './pages/CoverageGapMap'
 
+// Catches render errors inside map components and shows a fallback message
 class MapErrorBoundary extends Component {
   constructor(props) { super(props); this.state = { error: null } }
   static getDerivedStateFromError(error) { return { error } }
@@ -43,6 +44,7 @@ class MapErrorBoundary extends Component {
 
 const ACCESS_STORAGE_KEY = 'crisislink-site-access-granted-v2'
 
+// Gate that requires a password before showing the app
 function PasswordGate({ expectedPassword, children }) {
   const { t } = useTranslation()
   const [inputPassword, setInputPassword] = useState('')
@@ -59,6 +61,7 @@ function PasswordGate({ expectedPassword, children }) {
     setIsUnlocked(window.sessionStorage.getItem(ACCESS_STORAGE_KEY) === 'true')
   }, [expectedPassword])
 
+  // Validate password and unlock session on correct entry
   const handleSubmit = (event) => {
     event.preventDefault()
 
@@ -79,6 +82,7 @@ function PasswordGate({ expectedPassword, children }) {
 
   return (
     <div className="site-gate-shell">
+      {/* Two-column layout: intro text and password form */}
       <div className="site-gate-layout">
         <section className="site-gate-intro">
           <h1>{t('accessGate.heroTitle')}</h1>
@@ -95,6 +99,7 @@ function PasswordGate({ expectedPassword, children }) {
           <p className="site-gate-trust">{t('accessGate.trust')}</p>
         </section>
 
+        {/* Password entry card */}
         <div className="site-gate-card">
           <div className="site-gate-badge">{t('accessGate.badge')}</div>
           <h2>{t('accessGate.title')}</h2>
@@ -125,6 +130,7 @@ function PasswordGate({ expectedPassword, children }) {
   )
 }
 
+// Defines all client-side routes for the app
 function AppRoutes() {
   return (
     <Routes>
@@ -132,7 +138,7 @@ function AppRoutes() {
       <Route path="/" element={<HomePage />} />
       <Route path="/roles" element={<HomePage />} />
 
-      {/* Donor flow: workspace -> post / hotspots / listings */}
+      {/* Donor flow: workspace, post, hotspots, listings */}
       <Route path="/postcode" element={<PostcodeInputPage />} />
       <Route path="/donor" element={<DonorDashboardPage />} />
       <Route path="/donor/post" element={<DonationFormPage />} />
@@ -145,7 +151,7 @@ function AppRoutes() {
       <Route path="/form/:postcode" element={<DonationFormPage />} />
       <Route path="/form" element={<DonationFormPage />} />
 
-      {/* Organization flow: code -> listings + alerts */}
+      {/* Organization flow: code, listings, alerts */}
       <Route path="/register/:role" element={<RegisterPage />} />
       <Route path="/org/code" element={<OrgCodeInputPage />} />
       <Route path="/org/listings" element={<LiveListingBoard />} />

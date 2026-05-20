@@ -3,12 +3,14 @@ import React, { useState } from 'react'
 const STORAGE_KEY = 'crisislink-disclaimer-v1'
 
 export default function DisclaimerModal() {
+  // Read from local storage to decide if modal should show
   const [visible, setVisible] = useState(() => {
     try { return window.localStorage.getItem(STORAGE_KEY) !== '1' } catch { return true }
   })
 
   if (!visible) return null
 
+  // Save acceptance to local storage and close the modal
   const accept = () => {
     try {
       window.localStorage.setItem(STORAGE_KEY, '1')
@@ -25,6 +27,7 @@ export default function DisclaimerModal() {
       padding: '1rem',
       backdropFilter: 'blur(3px)',
     }}>
+      {/* Disclaimer card */}
       <div style={{
         background: '#fff',
         borderRadius: '1.4rem',
@@ -42,6 +45,7 @@ export default function DisclaimerModal() {
           </h2>
         </div>
 
+        {/* List of disclaimer points */}
         <ul style={{
           margin: '0 0 1.6rem',
           padding: '0 0 0 1.1rem',
@@ -76,7 +80,7 @@ export default function DisclaimerModal() {
             letterSpacing: '-0.01em',
           }}
         >
-          I understand — continue
+          I understand - continue
         </button>
 
         <p style={{ margin: '0.75rem 0 0', textAlign: 'center', fontSize: '0.7rem', color: '#a0aec0' }}>

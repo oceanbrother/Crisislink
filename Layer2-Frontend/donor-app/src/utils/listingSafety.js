@@ -1,5 +1,6 @@
 const STORAGE_KEY = 'crisislink-listing-safety-v1'
 
+// reads the safety map object from localStorage, returns empty object on failure
 function readSafetyMap() {
   try {
     const raw = window.localStorage.getItem(STORAGE_KEY)
@@ -10,6 +11,7 @@ function readSafetyMap() {
   }
 }
 
+// writes the safety map back to localStorage, silently ignores storage errors
 function writeSafetyMap(map) {
   try {
     window.localStorage.setItem(STORAGE_KEY, JSON.stringify(map))
@@ -18,21 +20,25 @@ function writeSafetyMap(map) {
   }
 }
 
+// ensures tags is always an array of trimmed non-empty strings
 function normalizeTags(tags) {
   if (!Array.isArray(tags)) return []
   return tags.map((tag) => String(tag || '').trim()).filter(Boolean)
 }
 
+// trims the storage condition string, returns empty string if blank
 function normalizeStorage(storageCondition) {
   const value = String(storageCondition || '').trim()
   return value || ''
 }
 
+// trims the pickup window string, returns empty string if blank
 function normalizePickupWindow(pickupWindow) {
   const value = String(pickupWindow || '').trim()
   return value || ''
 }
 
+// saves donor-entered safety fields to localStorage so they survive page reloads
 export function rememberListingSafety(listingId, { allergenTags = [], storageCondition = '', pickupWindow = '' } = {}) {
   // Cache donor-entered safety fields so they can be restored if backend payloads omit them.
   const key = String(listingId || '').trim()
@@ -47,6 +53,7 @@ export function rememberListingSafety(listingId, { allergenTags = [], storageCon
   writeSafetyMap(map)
 }
 
+// retrieves previously cached safety fields for a listing, returns null if not found
 export function getRememberedListingSafety(listingId) {
   const key = String(listingId || '').trim()
   if (!key) return null
@@ -60,6 +67,7 @@ export function getRememberedListingSafety(listingId) {
   }
 }
 
+// merges locally cached safety fields into a listing object when the backend data is incomplete
 export function mergeListingSafetyFallback(listing) {
   if (!listing || !listing.id) return listing
 

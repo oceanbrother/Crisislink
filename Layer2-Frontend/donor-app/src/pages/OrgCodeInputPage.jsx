@@ -13,16 +13,19 @@ const OrgCodeInputPage = () => {
   const [orgCode, setOrgCode] = useState('')
   const [error, setError] = useState('')
 
+  // focus the code input on mount
   useEffect(() => {
     document.getElementById('org-code-input')?.focus()
   }, [])
 
+  // strip invalid characters and clear any previous error on change
   const handleOrgCodeChange = (e) => {
     const value = e.target.value.replace(/[^A-Za-z0-9 -]/g, '').slice(0, 40)
     setOrgCode(value)
     if (error) setError('')
   }
 
+  // validate and save org session then navigate to listings
   const handleSubmit = (e) => {
     e.preventDefault()
     const trimmed = orgCode.trim()
@@ -40,7 +43,7 @@ const OrgCodeInputPage = () => {
       <div style={{ position: 'fixed', bottom: '10%', right: '5%', width: 400, height: 400, borderRadius: '50%', background: 'rgba(45,106,79,0.22)', filter: 'blur(80px)', pointerEvents: 'none', zIndex: 0 }} />
       <div style={{ position: 'fixed', inset: 0, backgroundImage: `url(${textureImg})`, backgroundSize: 'cover', opacity: 0.04, pointerEvents: 'none', zIndex: 0 }} />
 
-      {/* Left: Sarah story panel */}
+      {/* Left story panel */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '60px 64px', position: 'relative', zIndex: 1 }}>
         <button type="button" onClick={() => navigate('/')}
           style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'transparent', border: 'none', cursor: 'pointer', color: 'rgba(255,255,255,0.6)', fontSize: 14, fontWeight: 500, fontFamily: 'inherit', marginBottom: 48, width: 'fit-content', padding: 0 }}
@@ -96,7 +99,7 @@ const OrgCodeInputPage = () => {
         </div>
       </div>
 
-      {/* Right: login card */}
+      {/* Right login card */}
       <div style={{ width: 460, flexShrink: 0, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 48px', position: 'relative', zIndex: 1, borderLeft: '1px solid rgba(149,212,179,0.12)', background: 'rgba(15,40,28,0.5)', backdropFilter: 'blur(20px)' }}>
         <div style={{ width: '100%', maxWidth: 360 }}>
           <div style={{ width: 56, height: 56, borderRadius: 16, background: 'rgba(149,212,179,0.15)', border: '1px solid rgba(149,212,179,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24 }}>

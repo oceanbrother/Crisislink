@@ -37,7 +37,7 @@ export default function HomePage() {
 
       <main>
 
-        {/* ── Hero ── */}
+        {/* Hero */}
         <section className="relative h-screen flex items-center overflow-hidden">
 
           {/* Background image */}
@@ -139,7 +139,7 @@ export default function HomePage() {
           </button>
         </section>
 
-        {/* ── Pathfinding ── */}
+        {/* Pathfinding */}
         <section id="pathfinding" className="paper-texture" style={{ padding: '104px 0', background: '#f4f4f1' }}>
           <div className="mx-auto px-10 md:px-16" style={{ maxWidth: '1280px' }}>
             <div
@@ -204,7 +204,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ── Sharing Journey ── */}
+        {/* Sharing Journey */}
         <section className="relative overflow-hidden" style={{ padding: '104px 0', background: '#ffffff' }}>
           <div className="absolute inset-0 journey-line opacity-20" />
           <div className="relative z-10 mx-auto px-10 md:px-16" style={{ maxWidth: '1280px' }}>
@@ -248,7 +248,7 @@ export default function HomePage() {
           </div>
         </section>
 
-        {/* ── Our Vision (Impact Metrics) ── */}
+        {/* Our Vision (Impact Metrics) */}
         <section className="paper-texture" style={{ padding: '104px 0', background: '#eeeeeb' }}>
           <div className="mx-auto px-10 md:px-16" style={{ maxWidth: '1280px' }}>
             <div className="text-center" style={{ marginBottom: '88px' }}>
@@ -317,7 +317,7 @@ export default function HomePage() {
 
       </main>
 
-      {/* ── Footer ── */}
+      {/* Footer */}
       <footer style={{ background: '#2D3047', color: '#fff', paddingTop: '88px', paddingBottom: '44px', borderTop: '1px solid rgba(255,255,255,0.05)' }}>
         <div className="mx-auto px-10 md:px-16" style={{ maxWidth: '1280px' }}>
           <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-5" style={{ gap: '56px', marginBottom: '64px' }}>
@@ -371,7 +371,7 @@ export default function HomePage() {
         </div>
       </footer>
 
-      {/* ── Mobile Bottom Nav ── */}
+      {/* Mobile bottom nav */}
       <nav
         className="lg:hidden fixed bottom-0 left-0 w-full z-50 flex justify-around items-center"
         style={{ padding: '14px 16px 18px', background: 'rgba(249,249,246,0.97)', backdropFilter: 'blur(12px)', borderTop: '1px solid #e2e3e0', boxShadow: '0 -4px 20px rgba(61,64,91,0.07)' }}

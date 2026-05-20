@@ -18,8 +18,8 @@ export const SIZE_CUE_OPTIONS = [
   { value: 'Bulk / heavy', key: 'bulkHeavy' },
 ]
 
+// Keep legacy and backend naming variants mapped into the same UI category
 const CATEGORY_ALIASES = {
-  // Keep legacy/backend naming variants mapped into the same UI category.
   all: 'All',
   bakery: 'Baked goods',
   bakedgoods: 'Baked goods',
@@ -42,8 +42,8 @@ const CATEGORY_ALIASES = {
   other: 'Other',
 }
 
+// Fallback keyword buckets used when category metadata is missing or noisy
 const CATEGORY_KEYWORDS = {
-  // Fallback keyword buckets when category metadata is missing or noisy.
   'Prepared meals': [
     'sandwich',
     'burger',
@@ -78,6 +78,7 @@ const DIETARY_KEYWORDS = {
   'non-vegetarian': ['chicken', 'beef', 'pork', 'ham', 'bacon', 'fish', 'salmon', 'tuna', 'shrimp', 'meat', 'wings', 'burger', 'steak'],
 }
 
+// Search the keyword groups and return the first matching group key
 function findKeywordMatch(value, keywordGroups) {
   const text = String(value || '').trim().toLowerCase()
   if (!text) return null
@@ -91,6 +92,7 @@ function findKeywordMatch(value, keywordGroups) {
   return null
 }
 
+// Normalise a raw category string to one of the canonical UI category values
 export function normalizeCategory(value) {
   if (value === undefined || value === null || String(value).trim() === '') {
     return 'Other'
@@ -100,21 +102,23 @@ export function normalizeCategory(value) {
   return CATEGORY_ALIASES[compact] || CATEGORY_ALIASES[normalized] || inferCategoryFromFoodName(value)
 }
 
+// Infer category from food name using keyword matching
 export function inferCategoryFromFoodName(value) {
   return findKeywordMatch(value, CATEGORY_KEYWORDS) || 'Other'
 }
 
+// Resolve the best category to use, preferring food-name inference when upstream category is generic
 export function resolveListingCategory(category, foodName) {
-  // If upstream category is generic "Other", prefer food-name inference.
   const normalizedCategory = normalizeCategory(category)
   const inferredCategory = inferCategoryFromFoodName(foodName)
 
+  // If upstream category is generic "Other", prefer food-name inference
   if (normalizedCategory === 'Other' && inferredCategory !== 'Other') {
     return inferredCategory
   }
 
   if (normalizedCategory === 'Baked goods' && inferredCategory === 'Prepared meals') {
-    // Reduce false positives from model outputs that overuse "Baked goods".
+    // Reduce false positives from model outputs that overuse "Baked goods"
     return inferredCategory
   }
 
@@ -135,6 +139,7 @@ export const DIETARY_FILTER_OPTIONS = [
   { value: 'gluten-free', key: 'glutenFree' },
 ]
 
+// Return the most specific dietary choice from a tags array
 export function getPrimaryDietaryChoice(tags = []) {
   if (Array.isArray(tags) === false || tags.length === 0) {
     return 'none'
@@ -148,10 +153,12 @@ export function getPrimaryDietaryChoice(tags = []) {
   return 'none'
 }
 
+// Infer dietary choice from the food name using keyword matching
 export function inferDietaryChoiceFromFoodName(value) {
   return findKeywordMatch(value, DIETARY_KEYWORDS) || 'none'
 }
 
+// Convert a dietary choice string to the tags array expected by the API
 export function buildDietaryTags(choice) {
   if (choice === undefined || choice === null || choice === 'none' || choice === '') {
     return []
@@ -159,6 +166,7 @@ export function buildDietaryTags(choice) {
   return [choice]
 }
 
+// Format an ISO expiry date as a localised display string
 export function formatBestBeforeLabel(expiryDate, locale = 'en-AU') {
   if (expiryDate === undefined || expiryDate === null || expiryDate === '') {
     return null

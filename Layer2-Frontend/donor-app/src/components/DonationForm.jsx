@@ -30,6 +30,7 @@ import '../styles/DonationForm.css'
 const DEFAULT_CATEGORY = 'Baked goods'
 const MAX_CONFIDENT_AI_QUANTITY = 30
 
+// Pick a safe quantity from AI result, fall back to previous value if the number seems too high
 function getSuggestedQuantity(resultQuantity, fallbackQuantity) {
   const parsed = parseQuantityValue(resultQuantity)
   if (parsed === null || parsed <= 0) {
@@ -52,6 +53,7 @@ function getSuggestedQuantity(resultQuantity, fallbackQuantity) {
   }
 }
 
+// Convert an ISO or DD/MM/YYYY date string to DD/MM/YYYY for display
 function formatDateForDisplay(value) {
   const raw = String(value || '').trim()
   if (!raw) return ''
@@ -65,12 +67,14 @@ function formatDateForDisplay(value) {
   return raw
 }
 
+// Parse a quantity string to a float, return null if not a valid number
 function parseQuantityValue(value) {
   const parsed = Number.parseFloat(String(value ?? '').replace(',', '.').trim())
   if (Number.isFinite(parsed) === false) return null
   return parsed
 }
 
+// Read a local file and return its data URL string
 function fileToDataUrl(file) {
   return new Promise((resolve, reject) => {
     const reader = new FileReader()
@@ -80,6 +84,7 @@ function fileToDataUrl(file) {
   })
 }
 
+// Accept DD/MM/YYYY or YYYY-MM-DD and always return YYYY-MM-DD (or null)
 function normalizeDateInput(value) {
   const raw = String(value || '').trim()
   if (!raw) return null
@@ -94,11 +99,13 @@ function normalizeDateInput(value) {
   return null
 }
 
+// Return YYYY-MM-DD string suitable for a native date input element
 function formatDateForPicker(value) {
   const normalized = normalizeDateInput(value)
   return normalized || ''
 }
 
+// Return DD/MM/YYYY string for the visible text input
 function formatDateForTextInput(value) {
   const raw = String(value || '').trim()
   if (!raw) return ''
@@ -130,12 +137,14 @@ const STORAGE_OPTIONS = [
   { value: 'keep_dry', label: 'Keep dry' },
 ]
 
+// Return true if the expiry date is before today
 function isExpiryPast(value) {
   const normalized = normalizeDateInput(value)
   if (!normalized) return false
   return new Date(normalized) < new Date(new Date().toDateString())
 }
 
+// Build the initial form state from route params or an existing listing being edited
 function buildInitialState({ postcode, orgMode, initialOrgCode, listing }) {
   if (listing) {
     const listingAllergenTags = Array.isArray(listing.allergenTags)
@@ -230,6 +239,7 @@ const DonationForm = () => {
   const currentDonorPostcode = formData.postcode || postcode
   const currentOrgCode = String(initialOrgCode || formData.orgCode || '').trim().toUpperCase()
 
+  // Navigate back to the correct workspace home depending on role
   const goToWorkspaceHome = () => {
     if (orgMode) {
       navigate('/org/listings', { state: { orgCode: currentOrgCode } })
@@ -260,6 +270,7 @@ const DonationForm = () => {
     }
   }, [formData.postcode, orgMode])
 
+  // Increase or decrease quantity by one step, keeping value >= 0
   const handleQuantityAdjust = (delta) => {
     setFormData((prev) => {
       const current = parseQuantityValue(prev.quantity) ?? 0
@@ -271,6 +282,7 @@ const DonationForm = () => {
     })
   }
 
+  // Navigate back, skipping action when on the success screen
   const handleBack = () => {
     if (successListing) {
       return
@@ -293,6 +305,7 @@ const DonationForm = () => {
     goToWorkspaceHome()
   }
 
+  // Upload the selected photo to AI recognition and pre-fill form fields from the result
   const handleFileChange = async (event) => {
     const file = event.target.files && event.target.files[0]
     if (!file) return
@@ -340,6 +353,7 @@ const DonationForm = () => {
     }
   }
 
+  // Update a single form field, with special handling for quantity and date fields
   const handleChange = (field, value) => {
     let nextValue = value
     if (field === 'quantity') {
@@ -364,6 +378,7 @@ const DonationForm = () => {
   const showQuantityWarning = quantityValue !== null && quantityValue > MAX_CONFIDENT_AI_QUANTITY
   const previewImageUrl = resolveImageUrl(formData.photoUrl)
 
+  // Ask for confirmation then delete the listing and redirect to the listings page
   const handleRemoveListing = async (listing) => {
     if (!listing) return
     const confirmed = window.confirm(
@@ -392,6 +407,7 @@ const DonationForm = () => {
     }
   }
 
+  // Validate all fields, upload the photo if needed, then create or update the listing
   const handleSubmit = async (event) => {
     event.preventDefault()
     setLoading(true)
@@ -503,6 +519,7 @@ const DonationForm = () => {
   }
 
   if (successListing) {
+    // Navigate back to the correct listings page after a successful post
     const backAction = () => {
       if (orgMode) {
         navigate('/org/listings', { state: { orgCode: initialOrgCode || successListing.orgCode || '', filterStatus: 'posted' } })
@@ -514,7 +531,7 @@ const DonationForm = () => {
     return (
       <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column', fontFamily: 'Inter, system-ui, sans-serif', position: 'relative', overflow: 'hidden' }}>
 
-        {/* Background image with blur + dark overlay */}
+        {/* Background image with blur and dark overlay */}
         <div style={{ position: 'fixed', inset: 0, zIndex: 0 }}>
           <img src={produceBgImg} alt="" aria-hidden="true"
             style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block', filter: 'blur(18px) brightness(0.45)', transform: 'scale(1.06)' }} />
@@ -525,7 +542,7 @@ const DonationForm = () => {
         <div style={{ position: 'fixed', top: '10%', left: '20%', width: 500, height: 500, borderRadius: '50%', background: 'rgba(45,106,79,0.25)', filter: 'blur(100px)', pointerEvents: 'none', zIndex: 1 }} />
         <div style={{ position: 'fixed', bottom: '5%', right: '15%', width: 380, height: 380, borderRadius: '50%', background: 'rgba(45,106,79,0.18)', filter: 'blur(90px)', pointerEvents: 'none', zIndex: 1 }} />
 
-        {/* Header — centered logo */}
+        {/* Header with centered logo */}
         <header style={{ position: 'sticky', top: 0, zIndex: 10, background: 'rgba(15,45,28,0.70)', backdropFilter: 'blur(20px)', borderBottom: '1px solid rgba(149,212,179,0.18)', height: 68, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
           <button type="button" onClick={backAction} style={{ position: 'absolute', left: 32, background: 'transparent', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 6, color: 'rgba(255,255,255,0.6)', fontSize: 14, fontWeight: 500, fontFamily: 'inherit', padding: 0 }}
             onMouseEnter={e => e.currentTarget.style.color = '#fff'}
@@ -537,7 +554,7 @@ const DonationForm = () => {
           <img src={logoUrl} alt="OutBackShare" style={{ height: 36, width: 'auto', objectFit: 'contain', filter: 'brightness(0) invert(1)' }} />
         </header>
 
-        {/* Content */}
+        {/* Page content */}
         <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '40px 24px 60px', position: 'relative', zIndex: 2 }}>
           <div style={{ width: '100%', maxWidth: 520 }}>
 
@@ -551,7 +568,7 @@ const DonationForm = () => {
                 </div>
               </div>
 
-              {/* Title */}
+              {/* Success title and message */}
               <h2 style={{ fontSize: 32, fontWeight: 800, color: '#fff', textAlign: 'center', margin: '0 0 10px', letterSpacing: '-0.02em' }}>
                 {editMode ? t('donation.success.updatedTitle', 'Listing updated') : t('donation.success.title', 'Posted!')}
               </h2>
@@ -559,7 +576,7 @@ const DonationForm = () => {
                 {orgMode ? t('donation.success.orgMessage', 'Your listing is now visible to donors in your area.') : t('donation.success.donorMessage', 'Your listing is now visible to local organisations.')}
               </p>
 
-              {/* Next step */}
+              {/* Next step hint for donors */}
               {!orgMode && (
                 <div style={{ background: 'rgba(149,212,179,0.10)', border: '1px solid rgba(149,212,179,0.2)', borderRadius: 14, padding: '14px 16px', marginBottom: 20 }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: '#95d4b3', letterSpacing: '0.06em', textTransform: 'uppercase', marginBottom: 6 }}>
@@ -571,7 +588,7 @@ const DonationForm = () => {
                 </div>
               )}
 
-              {/* Food safety */}
+              {/* Food safety reminder */}
               <div style={{ background: 'rgba(252,145,116,0.08)', border: '1px solid rgba(252,145,116,0.2)', borderRadius: 14, padding: '14px 16px', marginBottom: 28 }}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
                   <span className="material-symbols-outlined" style={{ color: '#fc9174', fontSize: 18 }}>shield</span>
@@ -632,7 +649,7 @@ const DonationForm = () => {
                   </>
                 )}
 
-                {/* Muted actions */}
+                {/* Edit and remove actions */}
                 <div style={{ display: 'flex', gap: 8, paddingTop: 4 }}>
                   <button type="button"
                     onClick={() => navigate(orgMode ? '/form' : '/donor/post', { state: { postcode: successListing.postcode, editMode: true, listing: successListing, orgMode, orgCode: successListing.orgCode, orgName } })}
@@ -662,7 +679,7 @@ const DonationForm = () => {
     )
   }
 
-  // nav tabs for the new header
+  // Nav tabs for the workspace header
   const FORM_TABS = orgMode ? [
     { label: 'Listings',      path: '/org/listings', state: { orgCode: currentOrgCode }, active: false },
     { label: 'Post Food',     path: null,            state: null,                        active: true  },
@@ -681,7 +698,7 @@ const DonationForm = () => {
       {/* Texture overlay */}
       <div style={{ position: 'fixed', inset: 0, backgroundImage: `url(${textureImg})`, backgroundSize: 'cover', opacity: 0.05, zIndex: 0, pointerEvents: 'none' }} />
 
-      {/* ── Header ── */}
+      {/* Header */}
       <header style={{ position: 'sticky', top: 0, zIndex: 100, background: 'rgba(27,67,50,0.84)', backdropFilter: 'blur(18px)', borderBottom: '1px solid rgba(149,212,179,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 48px', height: 68 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
           <button type="button" onClick={handleBack}
@@ -713,10 +730,10 @@ const DonationForm = () => {
         </div>
       </header>
 
-      {/* ── 2-column layout ── */}
+      {/* Two-column layout */}
       <form onSubmit={handleSubmit} style={{ display: 'flex', alignItems: 'flex-start', gap: 32, maxWidth: 1380, margin: '0 auto', padding: '40px 48px 80px', position: 'relative', zIndex: 1 }}>
 
-        {/* ── LEFT: Photo + AI panel (sticky) ── */}
+        {/* Left panel: photo upload and AI suggestions (sticky) */}
         <div style={{ width: 360, flexShrink: 0, position: 'sticky', top: 88, display: 'flex', flexDirection: 'column', gap: 18 }}>
 
           {/* Photo upload or preview */}
@@ -746,7 +763,7 @@ const DonationForm = () => {
             </label>
           )}
 
-          {/* AI processing */}
+          {/* AI processing indicator */}
           {aiProcessing && (
             <div style={{ background: 'rgba(45,106,79,0.3)', border: '1px solid rgba(149,212,179,0.25)', borderRadius: 14, padding: '13px 16px', display: 'flex', alignItems: 'center', gap: 10, color: '#95d4b3', fontSize: 14, fontWeight: 500 }}>
               <span className="material-symbols-outlined" style={{ fontSize: 20 }}>auto_awesome</span>
@@ -772,11 +789,11 @@ const DonationForm = () => {
             </div>
           </div>
 
-          {/* Impact stats */}
+          {/* Impact stats panel */}
           <div style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(149,212,179,0.14)', borderRadius: 20, padding: '20px' }}>
             <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(149,212,179,0.55)', letterSpacing: '0.08em', textTransform: 'uppercase', marginBottom: 14 }}>Your average impact per post</div>
             {[
-              { icon: 'eco',      label: 'CO₂ avoided',        value: '0.9 kg' },
+              { icon: 'eco',      label: 'CO2 avoided',        value: '0.9 kg' },
               { icon: 'group',    label: 'Families reached',   value: '2–4' },
               { icon: 'schedule', label: 'Avg. claim time',    value: '< 20 min' },
             ].map(({ icon, label, value }) => (
@@ -791,7 +808,7 @@ const DonationForm = () => {
           </div>
         </div>
 
-        {/* ── RIGHT: White form card ── */}
+        {/* Right panel: main form card */}
         <div style={{ flex: 1, minWidth: 0 }}>
           <div style={{ background: 'rgba(249,249,246,0.98)', borderRadius: 24, boxShadow: '0 24px 80px rgba(0,0,0,0.35)', border: '1px solid rgba(149,212,179,0.22)', overflow: 'hidden' }}>
 
@@ -828,6 +845,7 @@ const DonationForm = () => {
                 ) : null}
               </div>
 
+              {/* Quantity field with step buttons */}
               <div className="ai-field">
                 <label className="field-label" htmlFor="quantity">{t('donation.quantity')}</label>
                 <div className="quantity-control">
@@ -859,6 +877,7 @@ const DonationForm = () => {
                 </div>
               </div>
 
+              {/* Category selector */}
               <div className="ai-field">
                 <label className="field-label" htmlFor="category">{t('donation.category')}</label>
                 <div className="form-select-wrapper">
@@ -878,6 +897,7 @@ const DonationForm = () => {
                 </div>
               </div>
 
+              {/* Portion size selector */}
               <div className="ai-field">
                 <label className="field-label" htmlFor="sizeCue">{t('donation.sizeCue', 'Portion size')}</label>
                 <div className="form-select-wrapper">
@@ -900,6 +920,7 @@ const DonationForm = () => {
                 </p>
               </div>
 
+              {/* Dietary tag selector */}
               <div className="ai-field">
                 <label className="field-label" htmlFor="dietaryChoice">{t('donation.dietary', 'Dietary tag')}</label>
                 <div className="form-select-wrapper">
@@ -919,6 +940,7 @@ const DonationForm = () => {
                 </div>
               </div>
 
+              {/* Expiry date field with calendar picker */}
               <div className="ai-field">
                 <label className="field-label" htmlFor="expiryDate">
                   {t('donation.expiryDateLabel', 'Use-by / best-before date')}
@@ -969,6 +991,7 @@ const DonationForm = () => {
                 ) : null}
               </div>
 
+              {/* Allergen chip selector */}
               <div className={allergenFieldError ? 'ai-field full allergen-field has-error' : 'ai-field full allergen-field'}>
                 <label className={allergenFieldError ? 'field-label field-label--error' : 'field-label'}>
                   {t('donation.allergenTags', 'Allergen information')}
@@ -1026,6 +1049,7 @@ const DonationForm = () => {
                 ) : null}
               </div>
 
+              {/* Storage condition selector */}
               <div className={storageFieldError ? 'ai-field has-error' : 'ai-field'}>
                 <label className={storageFieldError ? 'field-label field-label--error' : 'field-label'} htmlFor="storageCondition">
                   {t('donation.storageCondition', 'Storage condition')}
@@ -1059,6 +1083,7 @@ const DonationForm = () => {
                 ) : null}
               </div>
 
+              {/* Pickup window selector */}
               <div className={pickupWindowFieldError ? 'ai-field has-error' : 'ai-field'}>
                 <label className={pickupWindowFieldError ? 'field-label field-label--error' : 'field-label'} htmlFor="pickupWindow">
                   {t('donation.pickupWindow', 'Pickup window')}
@@ -1094,6 +1119,7 @@ const DonationForm = () => {
                 ) : null}
               </div>
 
+              {/* Postcode field */}
               <div className="ai-field">
                 {orgMode && focusPostcode ? (
                   <p className="response-context-hint">
@@ -1115,6 +1141,7 @@ const DonationForm = () => {
                 />
               </div>
 
+              {/* Extra notes textarea */}
               <div className="ai-field full">
                 <label className="field-label" htmlFor="description">{t('donation.extraNotes', 'Extra notes')}</label>
                 <textarea
@@ -1129,7 +1156,7 @@ const DonationForm = () => {
             </div>
             </div>
 
-            {/* Card footer — disclaimer + submit */}
+            {/* Card footer with disclaimer checkbox and submit button */}
             <div style={{ padding: '28px 44px 40px', borderTop: '1px solid #e8e8e5', background: 'linear-gradient(to top, rgba(177,240,206,0.05) 0%, transparent 80%)' }}>
               <label style={{ display: 'flex', alignItems: 'flex-start', gap: 12, marginBottom: 20, cursor: 'pointer' }}>
                 <input

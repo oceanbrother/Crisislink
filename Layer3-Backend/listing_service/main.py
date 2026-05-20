@@ -22,25 +22,32 @@ from slowapi import Limiter, _rate_limit_exceeded_handler
 from slowapi.errors import RateLimitExceeded
 from slowapi.util import get_remote_address
 
+# Load environment variables from the .env file next to this module
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
+# Add the AI image recognition module to the Python path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "../../Layer4-AI/image_recognition/food_photo_recognition")))
 
+# Conditionally import the AI recognizer based on the environment flag
 _enable_ai_recognizer = os.getenv("ENABLE_AI_RECOGNIZER", "true").lower() in ("true", "1", "yes")
 if _enable_ai_recognizer:
     from recognizer import get_recognizer
 else:
     def get_recognizer():
+        """Returns None because the AI recognizer is disabled via environment config."""
         return None
 
+# Read the database connection string from environment and fail fast if missing
 DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
     raise RuntimeError("DATABASE_URL not set in .env")
 
+# Create the async database connection and rate limiter instances
 database = databases.Database(DATABASE_URL)
 limiter = Limiter(key_func=get_remote_address)
 recognizer = None
 
+# Allowed image MIME types, max upload size, extension mapping, and valid listing statuses
 ALLOWED_TYPES = {"image/jpeg", "image/png", "image/webp"}
 MAX_SIZE = 5 * 1024 * 1024
 EXT_MAP = {"image/jpeg": ".jpg", "image/png": ".png", "image/webp": ".webp"}
@@ -65,6 +72,8 @@ SIZE_PREFIX = "[sizeCue:"
 
 
 async def ensure_schema_extensions():
+    """Runs idempotent ALTER TABLE and CREATE TABLE statements to keep the database schema
+    up to date without requiring a separate migration step on startup."""
     # Keep local/dev environments forward-compatible without requiring a manual
     # migration step before startup. This is intentionally idempotent.
     await database.execute("ALTER TABLE food_listing ADD COLUMN IF NOT EXISTS source_listing_id VARCHAR(36)")
@@ -112,6 +121,8 @@ async def ensure_schema_extensions():
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
+    """Manages application startup and shutdown. Connects to the database, runs schema
+    migrations, and optionally loads the food image recognition model."""
     global recognizer
     await database.connect()
     await ensure_schema_extensions()
@@ -143,13 +154,16 @@ app = FastAPI(
     openapi_url=None,
 )
 
+# Attach rate limiter and its error handler to the app
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
+# Set up the uploads directory and serve it as a static file path
 UPLOADS_DIR = os.path.join(os.path.dirname(__file__), "uploads")
 os.makedirs(UPLOADS_DIR, exist_ok=True)
 app.mount("/static", StaticFiles(directory=UPLOADS_DIR), name="static")
 
+# Build the CORS allowed origins list from environment or fall back to defaults
 default_cors_origins = [
     "http://localhost:3004",
     "http://127.0.0.1:3004",
@@ -176,6 +190,7 @@ from starlette.responses import Response as StarletteResponse
 
 class SecurityHeadersMiddleware(BaseHTTPMiddleware):
     async def dispatch(self, request, call_next):
+        """Adds basic security headers to every HTTP response."""
         response = await call_next(request)
         response.headers["X-Content-Type-Options"] = "nosniff"
         response.headers["X-Frame-Options"] = "DENY"
@@ -184,14 +199,17 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 
 app.add_middleware(SecurityHeadersMiddleware)
 
+# Regex for validating organisation codes — uppercase letters, digits, and hyphens only
 SAFE_CODE_RE = re.compile(r'^[A-Z0-9\-]{3,20}$')
 
+# Magic byte signatures used to verify uploaded image file content matches declared type
 MAGIC_BYTES = {
     "image/jpeg": b'\xff\xd8\xff',
     "image/png":  b'\x89PNG',
     "image/webp": b'RIFF',
 }
 
+# Allowed values for allergen tags and storage condition fields
 ALLERGEN_OPTIONS = {"nuts", "dairy", "gluten", "eggs", "soy", "sesame", "shellfish", "no known allergens"}
 STORAGE_OPTIONS = {"room_temp", "refrigerated", "frozen", "keep_dry"}
 
@@ -215,6 +233,7 @@ class ListingBase(BaseModel):
     @field_validator("dietary_tags")
     @classmethod
     def validate_tags(cls, tags):
+        """Checks that each dietary tag is no longer than 50 characters."""
         for tag in tags:
             if len(tag) > 50:
                 raise ValueError("Each dietary tag must be 50 characters or fewer")
@@ -223,6 +242,7 @@ class ListingBase(BaseModel):
     @field_validator("allergenTags")
     @classmethod
     def validate_allergen_tags(cls, tags):
+        """Checks that each allergen tag is one of the known allowed values."""
         for tag in tags:
             if tag.lower() not in ALLERGEN_OPTIONS:
                 raise ValueError(f"Unknown allergen tag: {tag}")
@@ -231,6 +251,7 @@ class ListingBase(BaseModel):
     @field_validator("storageCondition")
     @classmethod
     def validate_storage_condition(cls, value):
+        """Checks that the storage condition is one of the allowed option values."""
         if value and value not in STORAGE_OPTIONS:
             raise ValueError(f"storageCondition must be one of: {', '.join(STORAGE_OPTIONS)}")
         return value
@@ -238,6 +259,7 @@ class ListingBase(BaseModel):
     @field_validator("category")
     @classmethod
     def normalize_category_field(cls, value):
+        """Normalizes the category string to a standard display value."""
         return normalize_category(value)
 
 
@@ -249,6 +271,7 @@ class ListingCreate(ListingBase):
     @field_validator("expiryDate")
     @classmethod
     def expiry_not_past(cls, value):
+        """Rejects an expiry date that is already in the past."""
         if value < date.today():
             raise ValueError("expiryDate must not be in the past")
         return value
@@ -262,6 +285,7 @@ class ListingUpdate(ListingBase):
     @field_validator("expiryDate")
     @classmethod
     def expiry_not_past(cls, value):
+        """Rejects an expiry date that is already in the past."""
         if value < date.today():
             raise ValueError("expiryDate must not be in the past")
         return value
@@ -315,6 +339,7 @@ class ListingDeleteResponse(BaseModel):
 
 
 def normalize_category(value: Optional[str]) -> str:
+    """Maps a raw category string to a standard display value. Returns 'Other' if not recognized."""
     raw = (value or "Other").strip()
     if not raw:
         return "Other"
@@ -322,8 +347,9 @@ def normalize_category(value: Optional[str]) -> str:
 
 
 def encode_description(description: Optional[str], size_cue: Optional[str]) -> Optional[str]:
-    # Persist `sizeCue` inside description using a hidden marker so older schema
-    # deployments can round-trip the extra field without adding a dedicated column.
+    """Combines the user description and sizeCue into a single string for storage.
+    Persists sizeCue inside description using a hidden marker so older schema
+    deployments can round-trip the extra field without adding a dedicated column."""
     parts: list[str] = []
     if description and description.strip():
         parts.append(description.strip())
@@ -333,8 +359,9 @@ def encode_description(description: Optional[str], size_cue: Optional[str]) -> O
 
 
 def decode_description(raw: Optional[str]) -> tuple[Optional[str], Optional[str]]:
-    # Reverse `encode_description`: extract hidden size cue marker and return the
-    # user-visible notes separately.
+    """Splits a stored description back into the visible text and the hidden sizeCue marker.
+    Reverse of encode_description — extracts the hidden size cue marker and returns the
+    user-visible notes separately."""
     if not raw:
         return None, None
     size_cue = None
@@ -351,6 +378,8 @@ def decode_description(raw: Optional[str]) -> tuple[Optional[str], Optional[str]
 
 
 async def get_or_create_org(org_code: str) -> int:
+    """Looks up an organization by its code and returns the org_id.
+    If the organization does not exist yet, it is inserted and the new org_id is returned."""
     row = await database.fetch_one(
         "SELECT org_id FROM organization WHERE org_code = :org_code",
         {"org_code": org_code},
@@ -370,10 +399,12 @@ async def get_or_create_org(org_code: str) -> int:
 
 
 async def fetch_listing_row(listing_id: str):
+    """Fetches a single food listing row by its ID, including owner and claimer org codes
+    and a flag indicating whether any child claim rows exist."""
     return await database.fetch_one(
         """
         SELECT
-            fl.*, 
+            fl.*,
             COALESCE(fl.org_code, o.org_code) AS owner_org_code,
             co.org_code AS claimed_by_org_code,
             fl.source_listing_id,
@@ -392,6 +423,8 @@ async def fetch_listing_row(listing_id: str):
 
 
 async def ensure_owner(listing_id: str, org_code: str):
+    """Checks that the given org_code is the owner of the listing.
+    Raises 404 if listing not found, or 403 if the org does not own it."""
     row = await fetch_listing_row(listing_id)
     if not row:
         raise HTTPException(status_code=404, detail="Listing not found")
@@ -401,6 +434,9 @@ async def ensure_owner(listing_id: str, org_code: str):
 
 
 def row_to_listing(row) -> dict:
+    """Converts a database row into a dictionary matching the API response shape.
+    Handles DB-to-frontend naming, decodes the description field, and fills in
+    compatibility fields used by both old and new clients."""
     tags_raw = row["dietary_tags"] or ""
     tags_list = [t.strip() for t in tags_raw.split(",") if t.strip()]
     description, size_cue = decode_description(row["description"])
@@ -440,7 +476,8 @@ def row_to_listing(row) -> dict:
 
 
 def normalize_status_for_response(status: str) -> str:
-    # Backward compatibility: old records may still contain `picked_up`.
+    """Returns the normalized status string for API responses.
+    Backward compatibility: old records may still contain 'picked_up'."""
     return "collected" if status == "picked_up" else status
 
 
@@ -452,6 +489,8 @@ async def create_claim_thread_if_missing(
     claiming_org_code: str,
     created_at: datetime,
 ):
+    """Inserts a new claim thread row if one does not already exist for the given claim_id.
+    Uses ON CONFLICT DO NOTHING so it is safe to call more than once."""
     await database.execute(
         """
         INSERT INTO claim_thread (
@@ -474,6 +513,7 @@ async def create_claim_thread_if_missing(
 
 
 async def close_claim_thread(claim_id: str, closed_at: datetime):
+    """Marks a claim thread as closed and records the time it was closed."""
     await database.execute(
         """
         UPDATE claim_thread
@@ -485,6 +525,7 @@ async def close_claim_thread(claim_id: str, closed_at: datetime):
 
 
 async def fetch_claim_thread_or_404(claim_id: str):
+    """Fetches a claim thread row by claim_id. Raises a 404 error if it does not exist."""
     row = await database.fetch_one(
         "SELECT * FROM claim_thread WHERE claim_id = :claim_id",
         {"claim_id": claim_id},
@@ -495,12 +536,16 @@ async def fetch_claim_thread_or_404(claim_id: str):
 
 
 def ensure_thread_member(thread_row, org_code: str):
+    """Checks that the given org_code is either the donor or the claiming org for this thread.
+    Raises 403 if the org is not part of the claim."""
     code = (org_code or "").strip()
     if code not in {thread_row["donor_org_code"], thread_row["claiming_org_code"]}:
         raise HTTPException(status_code=403, detail="Access denied for this claim thread")
 
 
 def classify_sender(thread_row, sender_org_code: str) -> str:
+    """Returns 'organisation' if the sender is the claiming org, or 'donor' if they are the donor.
+    Raises 403 if the sender is neither party in the thread."""
     if sender_org_code == thread_row["claiming_org_code"]:
         return "organisation"
     if sender_org_code == thread_row["donor_org_code"]:
@@ -510,12 +555,14 @@ def classify_sender(thread_row, sender_org_code: str) -> str:
 
 @app.get("/health")
 def health_check():
+    """Returns a simple status response to confirm the service is running."""
     return {"status": "ok", "service": "listing-service", "db": "postgresql"}
 
 
 @app.post("/listings", response_model=Listing)
 @limiter.limit("10/minute")
 async def create_listing(request: Request, listing: ListingCreate):
+    """Creates a new food listing and saves it to the database. Returns the created listing."""
     listing_id = str(uuid.uuid4())
     org_id = await get_or_create_org(listing.orgCode)
     tags_str = ",".join(listing.dietary_tags)
@@ -569,12 +616,14 @@ async def get_listings(
     category: Optional[str] = None,
     status: str = "available",
 ):
+    """Returns a list of food listings filtered by status, postcode, food type, and category.
+    Raises 400 if an invalid status value is provided."""
     if status not in ALLOWED_STATUSES:
         raise HTTPException(status_code=400, detail="status must be one of: available, claimed, expired, collected")
 
     query = """
         SELECT
-            fl.*, 
+            fl.*,
             COALESCE(fl.org_code, o.org_code) AS owner_org_code,
             co.org_code AS claimed_by_org_code,
             fl.source_listing_id,
@@ -619,6 +668,7 @@ async def get_listings(
 @app.get("/listings/{listing_id}", response_model=Listing)
 @limiter.limit("30/minute")
 async def get_listing(request: Request, listing_id: str):
+    """Fetches a single listing by its ID. Raises 404 if the listing does not exist."""
     row = await fetch_listing_row(listing_id)
     if not row:
         raise HTTPException(status_code=404, detail="Listing not found")
@@ -630,6 +680,8 @@ async def get_listing(request: Request, listing_id: str):
 @app.patch("/listings/{listing_id}", response_model=Listing)
 @limiter.limit("10/minute")
 async def update_listing(request: Request, listing_id: str, listing: ListingUpdate):
+    """Updates an existing listing. Only the original poster can edit it, and it must
+    not already be claimed or collected."""
     row = await ensure_owner(listing_id, listing.orgCode)
     normalized_status = normalize_status_for_response(str(row["status"] or ""))
     if normalized_status in {"claimed", "collected"} or bool(row["has_claims"]):
@@ -680,6 +732,8 @@ async def update_listing(request: Request, listing_id: str, listing: ListingUpda
 @app.delete("/listings/{listing_id}", response_model=ListingDeleteResponse)
 @limiter.limit("10/minute")
 async def delete_listing(request: Request, listing_id: str, orgCode: str):
+    """Deletes a listing permanently. Only the original poster can delete it, and it must
+    not already be claimed or collected."""
     row = await ensure_owner(listing_id, orgCode)
     normalized_status = normalize_status_for_response(str(row["status"] or ""))
     if normalized_status in {"claimed", "collected"} or bool(row["has_claims"]):
@@ -697,6 +751,9 @@ async def delete_listing(request: Request, listing_id: str, orgCode: str):
 @app.post("/listings/{listing_id}/claim", response_model=dict)
 @limiter.limit("5/minute")
 async def claim_listing(request: Request, listing_id: str, claim: ClaimRequest):
+    """Claims a food listing for a given organization. If the claimed quantity is less
+    than the full available amount, a new child listing row is created for the claimed portion
+    and the original listing quantity is reduced. Returns claim details including the claim_id."""
     row = await fetch_listing_row(listing_id)
     if not row:
         raise HTTPException(status_code=404, detail="Listing not found")
@@ -715,6 +772,7 @@ async def claim_listing(request: Request, listing_id: str, claim: ClaimRequest):
     claim_id = str(uuid.uuid4())
 
     if abs(claim_quantity - available_quantity) < 0.00001:
+        # Full quantity claimed — update the existing listing in place
         await database.execute(
             """
             UPDATE food_listing
@@ -733,6 +791,7 @@ async def claim_listing(request: Request, listing_id: str, claim: ClaimRequest):
         )
         claimed_listing_id = listing_id
     else:
+        # Partial claim — reduce the source listing and create a child row for the claimed portion
         remaining_quantity = round(available_quantity - claim_quantity, 2)
         claimed_listing_id = str(uuid.uuid4())
 
@@ -806,6 +865,8 @@ async def claim_listing(request: Request, listing_id: str, claim: ClaimRequest):
 @app.patch("/listings/{listing_id}/unclaim", response_model=dict)
 @limiter.limit("5/minute")
 async def unclaim_listing(request: Request, listing_id: str, payload: UnclaimRequest):
+    """Removes a claim from a listing. If the listing was a partial-claim child row, it is
+    deleted and the quantity is restored to the source listing. Closes the associated claim thread."""
     row = await database.fetch_one(
         """
         SELECT
@@ -837,6 +898,7 @@ async def unclaim_listing(request: Request, listing_id: str, payload: UnclaimReq
                 {"listing_id": source_listing_id},
             )
             if source_row:
+                # Restore quantity to the source listing and delete the child claim row
                 restored_quantity = round(float(source_row["quantity"]) + float(row["quantity"]), 2)
                 await database.execute(
                     "UPDATE food_listing SET quantity = :quantity WHERE listing_id = :listing_id",
@@ -847,6 +909,7 @@ async def unclaim_listing(request: Request, listing_id: str, payload: UnclaimReq
                     {"listing_id": listing_id},
                 )
             else:
+                # Source listing is gone — just reset this row back to available
                 await database.execute(
                     """
                     UPDATE food_listing
@@ -860,6 +923,7 @@ async def unclaim_listing(request: Request, listing_id: str, payload: UnclaimReq
                     {"listing_id": listing_id},
                 )
     else:
+        # No source listing — reset this listing directly to available
         await database.execute(
             """
             UPDATE food_listing
@@ -881,6 +945,8 @@ async def unclaim_listing(request: Request, listing_id: str, payload: UnclaimReq
 @app.patch("/listings/{listing_id}/pickup")
 @limiter.limit("10/minute")
 async def pickup_listing(request: Request, listing_id: str, payload: PickupRequest):
+    """Marks a claimed listing as collected. Only the claiming organisation can confirm pickup.
+    Also closes the associated claim thread."""
     row = await database.fetch_one(
         """
         SELECT fl.status, fl.claim_id, co.org_code AS claimed_by_org_code
@@ -920,6 +986,7 @@ async def pickup_listing(request: Request, listing_id: str, payload: PickupReque
 @app.patch("/listings/{listing_id}/expire")
 @limiter.limit("10/minute")
 async def expire_listing(request: Request, listing_id: str):
+    """Sets a listing status to expired. Raises 404 if the listing does not exist."""
     row = await database.fetch_one(
         "SELECT listing_id FROM food_listing WHERE listing_id = :listing_id",
         {"listing_id": listing_id},
@@ -937,6 +1004,8 @@ async def expire_listing(request: Request, listing_id: str):
 @app.get("/claims/{claim_id}", response_model=dict)
 @limiter.limit("30/minute")
 async def get_claim_thread(request: Request, claim_id: str, orgCode: str):
+    """Returns the details of a claim thread. The requesting org must be either the donor
+    or the claiming organisation for this thread."""
     thread_row = await fetch_claim_thread_or_404(claim_id)
     ensure_thread_member(thread_row, orgCode)
     return {
@@ -954,6 +1023,8 @@ async def get_claim_thread(request: Request, claim_id: str, orgCode: str):
 @app.get("/claims/{claim_id}/messages", response_model=list[dict])
 @limiter.limit("30/minute")
 async def list_claim_messages(request: Request, claim_id: str, orgCode: str):
+    """Returns all messages in a claim thread in chronological order.
+    The requesting org must be a member of the thread."""
     thread_row = await fetch_claim_thread_or_404(claim_id)
     ensure_thread_member(thread_row, orgCode)
     rows = await database.fetch_all(
@@ -971,6 +1042,8 @@ async def list_claim_messages(request: Request, claim_id: str, orgCode: str):
 @app.post("/claims/{claim_id}/messages", response_model=dict)
 @limiter.limit("20/minute")
 async def send_claim_message(request: Request, claim_id: str, payload: MessageCreateRequest):
+    """Sends a message in a claim thread. Raises 400 if the thread is already closed,
+    and 403 if the sender is not a member of the thread."""
     thread_row = await fetch_claim_thread_or_404(claim_id)
     sender_org_code = payload.senderOrgCode.strip()
     sender_type = classify_sender(thread_row, sender_org_code)
@@ -1007,6 +1080,8 @@ async def send_claim_message(request: Request, claim_id: str, payload: MessageCr
 @app.patch("/claims/{claim_id}/messages/read", response_model=dict)
 @limiter.limit("30/minute")
 async def mark_claim_messages_read(request: Request, claim_id: str, orgCode: str):
+    """Marks all unread messages in a thread as read for the requesting org.
+    Only messages sent by the other party are marked — not the reader's own messages."""
     thread_row = await fetch_claim_thread_or_404(claim_id)
     reader_org_code = (orgCode or "").strip()
     ensure_thread_member(thread_row, reader_org_code)
@@ -1029,6 +1104,8 @@ async def mark_claim_messages_read(request: Request, claim_id: str, orgCode: str
 @app.post("/image-recognition/recognize", response_model=ImageRecognitionResult)
 @limiter.limit("5/minute")
 async def recognize_food_from_image(request: Request, image: UploadFile = File(...)):
+    """Runs the AI food recognition model on an uploaded image and returns a prediction.
+    Raises 503 if the model is not loaded, 415 for unsupported file types, and 413 if the file is too large."""
     if not image:
         raise HTTPException(status_code=400, detail="No image provided")
     if image.content_type not in ALLOWED_TYPES:
@@ -1055,6 +1132,8 @@ async def recognize_food_from_image(request: Request, image: UploadFile = File(.
 @app.post("/upload")
 @limiter.limit("5/minute")
 async def upload_food_image(request: Request, image: UploadFile = File(...)):
+    """Saves an uploaded food image to disk and returns the static URL path.
+    Validates file type via MIME type and magic bytes, and enforces a 5 MB size limit."""
     if not image:
         raise HTTPException(status_code=400, detail="No image provided")
     if image.content_type not in ALLOWED_TYPES:
@@ -1070,6 +1149,7 @@ async def upload_food_image(request: Request, image: UploadFile = File(...)):
     if expected_magic and not contents[:4].startswith(expected_magic):
         raise HTTPException(status_code=415, detail="File content does not match declared type")
 
+    # Generate a unique filename and write the image to the uploads directory
     ext = EXT_MAP[image.content_type]
     filename = f"{uuid.uuid4()}{ext}"
     filepath = os.path.join(UPLOADS_DIR, filename)
@@ -1078,12 +1158,6 @@ async def upload_food_image(request: Request, image: UploadFile = File(...)):
         f.write(contents)
 
     return {"url": f"/static/{filename}"}
-
-
-if __name__ == "__main__":
-    import uvicorn
-
-    uvicorn.run(app, host="0.0.0.0", port=8000)
 
 
 class RegisterRequest(BaseModel):
@@ -1097,6 +1171,7 @@ class RegisterRequest(BaseModel):
     @field_validator("orgName")
     @classmethod
     def clean_org_name(cls, v):
+        """Strips whitespace from the org name and rejects blank values."""
         cleaned = v.strip()
         if not cleaned:
             raise ValueError("Organisation name cannot be blank")
@@ -1105,6 +1180,7 @@ class RegisterRequest(BaseModel):
     @field_validator("orgCode")
     @classmethod
     def code_matches_type(cls, v, info):
+        """Checks that the org code prefix matches the org type — DNR- for donors, CBO- for community orgs."""
         org_type = info.data.get("orgType")
         if org_type == "donor" and not v.startswith("DNR-"):
             raise ValueError("Donor codes must begin with DNR-")
@@ -1116,6 +1192,8 @@ class RegisterRequest(BaseModel):
 @app.get("/check-code")
 @limiter.limit("10/minute")
 async def check_code_availability(request: Request, code: str):
+    """Checks if an organisation code is available for registration.
+    Returns available: true if no existing org uses that code."""
     if not SAFE_CODE_RE.match(code):
         raise HTTPException(status_code=400, detail="Invalid code format")
     row = await database.fetch_one(
@@ -1127,6 +1205,8 @@ async def check_code_availability(request: Request, code: str):
 
 @app.post("/register", status_code=201)
 async def register_identity(request: Request, body: RegisterRequest):
+    """Registers a new organisation or updates an existing one if the code already exists.
+    Returns the org code and type on success, or raises 500 if the database insert fails."""
     try:
         result = await database.fetch_one(
             """
@@ -1157,3 +1237,8 @@ async def register_identity(request: Request, body: RegisterRequest):
     except Exception:
         raise HTTPException(status_code=500, detail="Registration failed. Please try again.")
     return {"orgCode": result["org_code"], "orgType": result["org_type"]}
+
+
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

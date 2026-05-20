@@ -7,6 +7,7 @@ import suburbLookup from '../data/vic_postcode_suburbs.json'
 import '../styles/LiveListingBoard.css'
 import logoUrl from '../assets/outbackshare-logo.png'
 
+// Look up a human-readable suburb name for the given postcode
 function suburbName(postcode) {
   return suburbLookup[String(postcode)] || `Postcode ${postcode}`
 }
@@ -26,6 +27,7 @@ const OrgSupplyGapPage = () => {
   const [showInfoBanner, setShowInfoBanner] = useState(false)
 
 
+  // Read org code from route state or fall back to session storage
   const savedOrgSession = (() => {
     try {
       return JSON.parse(window.localStorage.getItem('crisislink-org-session') || '{}')
@@ -40,6 +42,7 @@ const OrgSupplyGapPage = () => {
     window.localStorage.setItem('crisislink-org-session', JSON.stringify({ orgCode }))
   }, [orgCode])
 
+  // Fetch supply gap data and compute coverage levels for each postcode
   useEffect(() => {
     let isCancelled = false
     setLoading(true)
@@ -54,7 +57,7 @@ const OrgSupplyGapPage = () => {
           const estimatedDemand = Math.max(1, Math.round(score * 500))
           const shortfall = Math.max(0, estimatedDemand - supply)
           const coverageRate = estimatedDemand > 0 ? Math.min(100, Math.round((supply / estimatedDemand) * 100)) : 0
-          // When supply exists: use coverage rate. When no supply yet: classify by risk score so colours are differentiated.
+          // When supply exists use coverage rate; when no supply classify by risk score so colours are differentiated
           const coverageLevel = supply > 0
             ? (coverageRate < 30 ? 'none' : coverageRate < 60 ? 'low' : coverageRate < 85 ? 'watch' : 'healthy')
             : (score >= 0.75 ? 'none' : score >= 0.5 ? 'low' : score >= 0.25 ? 'watch' : 'healthy')
@@ -99,6 +102,7 @@ const OrgSupplyGapPage = () => {
     return () => { isCancelled = true }
   }, [])
 
+  // Filter zones by the active coverage level button
   const filteredZones = useMemo(() => {
     if (coverageFilter === 'all') return coverageInsights.zones
     if (coverageFilter === 'critical') return coverageInsights.zones.filter((z) => z.coverageLevel === 'none')
@@ -106,6 +110,7 @@ const OrgSupplyGapPage = () => {
     return coverageInsights.zones.filter((z) => z.coverageLevel === 'watch')
   }, [coverageFilter, coverageInsights.zones])
 
+  // Keep selected postcode in sync when the filtered list changes
   useEffect(() => {
     if (filteredZones.length === 0) { setSelectedPostcode(''); return }
     setSelectedPostcode((cur) =>
@@ -121,6 +126,7 @@ const OrgSupplyGapPage = () => {
   const criticalZones = useMemo(() => coverageInsights.hotspotZones.slice(0, 4), [coverageInsights.hotspotZones])
   const watchZones = useMemo(() => coverageInsights.watchZones.slice(0, 4), [coverageInsights.watchZones])
 
+  // Convert zones to the shape expected by PostcodeMap
   const mapZones = useMemo(() => filteredZones.map((z) => ({
     postcode: z.postcode,
     suburb: z.suburb,
@@ -131,6 +137,7 @@ const OrgSupplyGapPage = () => {
     metric: `${z.shortfallPortions} portions short`,
   })), [filteredZones])
 
+  // Return display label, badge text and summary for a given coverage level
   const getCoverageMeta = (coverageLevel) => {
     if (coverageLevel === 'none') return {
       tone: 'none',
@@ -158,6 +165,7 @@ const OrgSupplyGapPage = () => {
     }
   }
 
+  // Navigate to the donation form to respond to a supply gap in a specific postcode
   const handleRespondToNeed = (zone) => {
     navigate('/form', {
       state: {
@@ -211,7 +219,7 @@ const OrgSupplyGapPage = () => {
 
       <main className="feed-content org-feed-content">
 
-        {/* Compact hero */}
+        {/* Compact hero with summary stats */}
         <section className="org-page-intro org-hero-card">
           <div className="org-page-heading-row">
             <div className="org-page-heading">
@@ -227,6 +235,7 @@ const OrgSupplyGapPage = () => {
               </div>
             </div>
 
+            {/* Summary stat cards */}
             <div className="org-coverage-summary">
               <div className="org-coverage-summary-card">
                 <strong>{coverageInsights.totals.zeroSupply}</strong>
@@ -244,7 +253,7 @@ const OrgSupplyGapPage = () => {
           </div>
         </section>
 
-        {/* Info banner */}
+        {/* Collapsible info banner explaining the supply gaps tab */}
         <section style={{
           background: '#e0f2fe',
           border: '1px solid #bae6fd',
@@ -298,7 +307,7 @@ const OrgSupplyGapPage = () => {
           </div>
         ) : (
           <div className="org-coverage-grid">
-            {/* Left: map + filters */}
+            {/* Left column: map and coverage filter buttons */}
             <article className="org-coverage-map-card">
               <div className="org-coverage-filter-row">
                 {FILTER_OPTIONS.map((f) => (
@@ -328,6 +337,7 @@ const OrgSupplyGapPage = () => {
                 defaultZoom={7}
               />
 
+              {/* Coverage legend */}
               <div className="org-coverage-legend" aria-label={t('dashboard.coverageInsights.legendLabel', 'Coverage legend')}>
                 {['none', 'low', 'watch', 'healthy'].map((level) => (
                   <span key={level} className={`org-coverage-badge org-coverage-badge--${level}`}>
@@ -337,7 +347,7 @@ const OrgSupplyGapPage = () => {
               </div>
             </article>
 
-            {/* Right: detail + lists */}
+            {/* Right column: detail card, critical list, watch list */}
             <div className="org-coverage-card-stack">
               <aside className="org-coverage-detail-card">
                 {selectedZone ? (
@@ -358,6 +368,7 @@ const OrgSupplyGapPage = () => {
                       {getCoverageMeta(selectedZone.coverageLevel).summary}
                     </p>
 
+                    {/* Detail stats grid */}
                     <div className="org-coverage-detail-grid">
                       <div>
                         <span>{t('dashboard.coverageInsights.fields.estimatedNeed', 'Estimated need')}</span>
@@ -393,6 +404,7 @@ const OrgSupplyGapPage = () => {
                 )}
               </aside>
 
+              {/* Critical zones list */}
               <section className="org-coverage-list-card">
                 <div className="org-coverage-card-header">
                   <h3>{t('dashboard.coverageInsights.criticalListTitle', 'Critical now')}</h3>
@@ -431,6 +443,7 @@ const OrgSupplyGapPage = () => {
                 </div>
               </section>
 
+              {/* Watch zones list */}
               <section className="org-coverage-list-card">
                 <div className="org-coverage-card-header">
                   <h3>{t('dashboard.coverageInsights.watchListTitle', 'Watch next')}</h3>

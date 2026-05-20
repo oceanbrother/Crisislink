@@ -36,22 +36,26 @@ function pickRandom(charset, count) {
   return Array.from(buf, b => charset[b % charset.length]).join('')
 }
 
-// ── Code generators ───────────────────────────────────────────────────────────
+// Code generators
 
+// generates a donor identity code in the DNR-XXXXXX format
 export function generateDonorCode() {
   return `DNR-${pickRandom(ALPHANUMERIC, 6)}`
 }
 
+// generates an org identity code in the CBO-XXX-XXXX format
 export function generateOrgCode() {
   return `CBO-${pickRandom(ALPHA_ONLY, 3)}-${pickRandom(DIGITS_ONLY, 4)}`
 }
 
-// ── Format validators (exported so backend round-trip can be verified) ────────
+// Format validators (exported so backend round-trip can be verified)
 
+// checks if a code matches the new DNR-XXXXXX donor format
 export function isNewDonorCode(code) {
   return typeof code === 'string' && /^DNR-[A-Z0-9]{6}$/.test(code)
 }
 
+// checks if a code matches the new CBO-XXX-XXXX org format
 export function isNewOrgCode(code) {
   return typeof code === 'string' && /^CBO-[A-Z]{3}-\d{4}$/.test(code)
 }
@@ -61,7 +65,7 @@ export function isSafeCode(code) {
   return typeof code === 'string' && SAFE_CODE_RE.test(code)
 }
 
-// ── localStorage helpers ──────────────────────────────────────────────────────
+// localStorage helpers
 
 /** Returns the stored donor code only if it passes the safe-pattern check. */
 export function getStoredDonorCode() {
@@ -111,18 +115,22 @@ export function storeOrgCode(code) {
   }
 }
 
+// saves the org display name to localStorage, truncated to 255 characters
 export function storeOrgName(name) {
   try { localStorage.setItem(STORAGE_KEYS.orgName, String(name || '').slice(0, 255)); return true } catch { return false }
 }
 
+// reads back the stored org name, returns null if nothing is saved
 export function getStoredOrgName() {
   try { return localStorage.getItem(STORAGE_KEYS.orgName) || null } catch { return null }
 }
 
+// saves the donor display name to localStorage, truncated to 255 characters
 export function storeDonorName(name) {
   try { localStorage.setItem(STORAGE_KEYS.donorName, String(name || '').slice(0, 255)); return true } catch { return false }
 }
 
+// reads back the stored donor name, returns null if nothing is saved
 export function getStoredDonorName() {
   try { return localStorage.getItem(STORAGE_KEYS.donorName) || null } catch { return null }
 }

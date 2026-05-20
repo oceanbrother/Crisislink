@@ -55,6 +55,8 @@ export default function CoverageGapMap() {
   const [selected, setSelected]         = useState(null) // postcode string
   const [loading, setLoading]           = useState(true)
   const [showInfo, setShowInfo]         = useState(false)
+  const [showMenu, setShowMenu]         = useState(false)
+  const menuRef = useRef(null)
 
   const savedOrgSession = (() => {
     if (fromDonor.current) return {}
@@ -97,9 +99,31 @@ export default function CoverageGapMap() {
   const totalCount  = riskData.length
   const selectedRow = selected ? riskMap[selected] : null
 
+  // closes the dropdown if user clicks anywhere outside the menu
+  useEffect(() => {
+    if (!showMenu) return
+    function handleClickOutside(e) {
+      if (menuRef.current && !menuRef.current.contains(e.target)) setShowMenu(false)
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [showMenu])
+
+  // navigates back to listings or to the donor return path depending on context
   function goBack() {
     if (fromDonor.current) navigate(donorReturn.current)
     else navigate('/org/listings', { state: { orgCode } })
+  }
+
+  // clears session and sends user to the right login page
+  function handleLogout() {
+    setShowMenu(false)
+    if (fromDonor.current) {
+      navigate('/')
+    } else {
+      window.localStorage.removeItem('crisislink-org-session')
+      navigate('/org/code')
+    }
   }
 
   return (
@@ -115,7 +139,7 @@ export default function CoverageGapMap() {
 
       <div style={{ position: 'relative', zIndex: 1 }}>
 
-        {/* ── Header ── */}
+        {/* Header */}
         <header style={{ position: 'sticky', top: 0, zIndex: 100, background: 'rgba(27,67,50,0.84)', backdropFilter: 'blur(18px)', borderBottom: '1px solid rgba(149,212,179,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 48px', height: 68 }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
             <button type="button" onClick={goBack}
@@ -125,9 +149,44 @@ export default function CoverageGapMap() {
             >
               <span className="material-symbols-outlined" style={{ fontSize: 22 }}>arrow_back</span>
             </button>
-            <button type="button" onClick={goBack} style={{ border: 'none', background: 'transparent', padding: 0, cursor: 'pointer' }}>
-              <img src={logoUrl} alt="OutBackShare" style={{ height: 30, width: 'auto', objectFit: 'contain', filter: 'brightness(0) invert(1)', opacity: 0.9 }} />
-            </button>
+            {/* Logo with profile dropdown */}
+            <div ref={menuRef} style={{ position: 'relative' }}>
+              <button type="button" onClick={() => setShowMenu(v => !v)}
+                style={{ border: 'none', background: 'transparent', padding: '4px 8px', cursor: 'pointer', borderRadius: 8, display: 'flex', alignItems: 'center', gap: 6, transition: 'background 0.15s' }}
+                onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.08)'}
+                onMouseLeave={e => e.currentTarget.style.background = 'transparent'}
+              >
+                <img src={logoUrl} alt="OutBackShare" style={{ height: 30, width: 'auto', objectFit: 'contain', filter: 'brightness(0) invert(1)', opacity: 0.9 }} />
+                <span className="material-symbols-outlined" style={{ fontSize: 16, color: 'rgba(255,255,255,0.5)', transition: 'transform 0.2s', transform: showMenu ? 'rotate(180deg)' : 'none' }}>expand_more</span>
+              </button>
+
+              {showMenu && (
+                <div style={{ position: 'absolute', top: 'calc(100% + 8px)', left: 0, width: 228, background: 'rgba(15,42,30,0.97)', border: '1px solid rgba(149,212,179,0.22)', borderRadius: 16, boxShadow: '0 20px 60px rgba(0,0,0,0.5)', zIndex: 200, overflow: 'hidden' }}>
+                  <div style={{ padding: '16px 16px 12px' }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                      <div style={{ width: 38, height: 38, borderRadius: 10, background: 'rgba(149,212,179,0.15)', border: '1px solid rgba(149,212,179,0.25)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                        <span className="material-symbols-outlined" style={{ fontSize: 20, color: '#95d4b3' }}>{fromDonor.current ? 'volunteer_activism' : 'groups'}</span>
+                      </div>
+                      <div style={{ minWidth: 0 }}>
+                        <div style={{ fontSize: 13, fontWeight: 700, color: '#fff', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{fromDonor.current ? 'Donor' : (orgCode || 'Organisation')}</div>
+                        <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.45)', marginTop: 1 }}>{fromDonor.current ? 'Browsing as donor' : 'Community workspace'}</div>
+                      </div>
+                    </div>
+                  </div>
+                  <div style={{ height: 1, background: 'rgba(149,212,179,0.12)', margin: '0 12px' }} />
+                  <div style={{ padding: '8px' }}>
+                    <button type="button" onClick={handleLogout}
+                      style={{ width: '100%', display: 'flex', alignItems: 'center', gap: 10, padding: '10px 12px', borderRadius: 10, border: 'none', background: 'transparent', color: 'rgba(255,255,255,0.7)', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', textAlign: 'left', transition: 'all 0.15s' }}
+                      onMouseEnter={e => { e.currentTarget.style.background = 'rgba(252,145,116,0.12)'; e.currentTarget.style.color = '#fc9174' }}
+                      onMouseLeave={e => { e.currentTarget.style.background = 'transparent'; e.currentTarget.style.color = 'rgba(255,255,255,0.7)' }}
+                    >
+                      <span className="material-symbols-outlined" style={{ fontSize: 18 }}>logout</span>
+                      {fromDonor.current ? 'Back to donor login' : 'Log out of workspace'}
+                    </button>
+                  </div>
+                </div>
+              )}
+            </div>
           </div>
 
           <nav style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
@@ -161,7 +220,7 @@ export default function CoverageGapMap() {
           </div>
         </header>
 
-        {/* ── Page heading ── */}
+        {/* Page heading */}
         <div style={{ padding: '40px 48px 20px' }}>
           <h1 style={{ fontSize: 36, fontWeight: 700, color: '#fff', letterSpacing: '-0.02em', margin: '0 0 6px 0' }}>Around Me</h1>
           <p style={{ fontSize: 15, color: 'rgba(255,255,255,0.55)', margin: 0 }}>
@@ -169,7 +228,7 @@ export default function CoverageGapMap() {
           </p>
         </div>
 
-        {/* ── Info banner ── */}
+        {/* Info banner */}
         <div style={{ margin: '0 48px 20px', background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(149,212,179,0.2)', borderRadius: 12, padding: '12px 18px' }}>
           <button
             onClick={() => setShowInfo(!showInfo)}
@@ -186,7 +245,7 @@ export default function CoverageGapMap() {
           )}
         </div>
 
-        {/* ── Map + Side panel ── */}
+        {/* Map and side panel */}
         <div style={{ display: 'flex', margin: '0 48px 48px', gap: 0, borderRadius: 16, overflow: 'hidden', border: '1px solid rgba(149,212,179,0.15)', height: '62vh', minHeight: 480 }}>
 
           {/* Map */}

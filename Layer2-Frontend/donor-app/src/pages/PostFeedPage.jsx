@@ -14,9 +14,12 @@ import mapPreviewImg from '../assets/donor-map-preview.jpg'
 import textureImg from '../assets/post-food-texture.jpg'
 import LanguageSwitcher from '../components/LanguageSwitcher'
 
-// ─── helpers ────────────────────────────────────────────────────────────────
+// helpers
 
+// normalise dietary tag to a consistent lowercase slug
 function normalizeDietaryTag(value) { return String(value || '').trim().toLowerCase().replace(/\s+/g, '-') }
+
+// map a dietary tag slug to the i18n translation key
 function resolveDietaryTranslationKey(value) {
   const n = normalizeDietaryTag(value)
   if (n === 'non-vegetarian') return 'nonVegetarian'
@@ -24,6 +27,8 @@ function resolveDietaryTranslationKey(value) {
   if (n === 'gluten-free') return 'glutenFree'
   return n
 }
+
+// check if a listing matches the selected dietary filter
 function matchesDietaryFilter(tags, filterValue) {
   if (filterValue === 'all') return true
   if (!Array.isArray(tags) || tags.length === 0) return false
@@ -33,18 +38,28 @@ function matchesDietaryFilter(tags, filterValue) {
     return n === filterValue
   })
 }
+
+// translate the storage condition string using i18n
 function formatStorageCondition(storageCondition, t) {
   const value = String(storageCondition || '').trim()
   if (!value) return t('listing.storage.unknown', 'Not provided')
   return t(`listing.storage.${value}`, value)
 }
+
+// normalise an allergen tag to lowercase
 function normalizeAllergenTag(tag) { return String(tag || '').trim().toLowerCase() }
+
+// read allergen tags from either field name variant
 function getAllergenTags(listing) {
   if (Array.isArray(listing?.allergenTags)) return listing.allergenTags
   if (Array.isArray(listing?.allergen_tags)) return listing.allergen_tags
   return []
 }
+
+// read storage condition from either field name variant
 function getStorageCondition(listing) { return String(listing?.storageCondition || listing?.storage_condition || '').trim() }
+
+// parse a date string to midnight local time, return null if invalid
 function normalizeDateOnly(value) {
   const raw = String(value || '').trim()
   if (!raw) return null
@@ -53,6 +68,8 @@ function normalizeDateOnly(value) {
   parsed.setHours(0, 0, 0, 0)
   return parsed
 }
+
+// return flags for whether the expiry date is today or already passed
 function getExpiryMeta(expiryDate) {
   const parsed = normalizeDateOnly(expiryDate)
   if (!parsed) return { hasDate: false, isToday: false, isExpired: false }
@@ -60,20 +77,28 @@ function getExpiryMeta(expiryDate) {
   const deltaDays = Math.round((parsed.getTime() - today.getTime()) / 86400000)
   return { hasDate: true, isToday: deltaDays === 0, isExpired: deltaDays < 0 }
 }
+
+// translate a single allergen tag using i18n
 function formatAllergenTag(tag, t) {
   const n = normalizeAllergenTag(tag)
   if (!n) return ''
   if (n === 'no known allergens') return t('listing.allergens.noknownallergens', 'No known allergens')
   return t(`listing.allergens.${n.replace(/\s+/g, '')}`, tag)
 }
+
+// detect old-style listings created using a donor postcode as the org code
 function isLegacyDonorListing(listing, currentPostcode) {
   const listingOrgCode = String(listing?.orgCode || '').trim().toUpperCase()
   const postcode = String(currentPostcode || '').trim()
   return postcode !== '' && listingOrgCode === ('DONOR-' + postcode).toUpperCase()
 }
+
+// return true if the current donor owns this listing
 function isOwnedDonorListing(listing, donorCode, postcode) {
   return listing.orgCode === donorCode || isRememberedDonorListing(listing.id) || isLegacyDonorListing(listing, postcode)
 }
+
+// return a human-readable relative time string for a listing
 function getRelativeTime(createdAt, t) {
   if (!createdAt) return t('listing.justNow')
   const diff = Date.now() - new Date(createdAt).getTime()
@@ -83,17 +108,23 @@ function getRelativeTime(createdAt, t) {
   if (hours < 24) return t('listing.hoursAgo', { count: hours })
   return t('listing.daysAgo', { count: days })
 }
+
+// format the collected-at timestamp for display
 function formatCollectedAtLabel(collectedAt, locale) {
   if (!collectedAt) return ''
   const date = new Date(collectedAt)
   if (Number.isNaN(date.getTime())) return ''
   return date.toLocaleString(locale || 'en-AU', { hour: 'numeric', minute: '2-digit', day: '2-digit', month: 'short' })
 }
+
+// format quantity as integer or up to 2 decimal places
 function formatQuantityValue(value) {
   const numeric = Number(value)
   if (Number.isFinite(numeric) === false) return String(value ?? '')
   return Number.isInteger(numeric) ? String(numeric) : String(numeric.toFixed(2)).replace(/\.00$/, '')
 }
+
+// build the approximate quantity string shown on a listing card
 function formatApproxQuantityLabel(listing, t) {
   const quantity = Number(listing?.quantity)
   const formattedQuantity = formatQuantityValue(quantity)
@@ -107,7 +138,11 @@ function formatApproxQuantityLabel(listing, t) {
   }
   return t('listing.approxQuantity', { quantity: formattedQuantity, unit: displayUnit })
 }
+
+// split a search string into individual word tokens
 function tokenizeSearch(value) { return String(value || '').toLowerCase().split(/[^\p{L}\p{N}]+/gu).filter(Boolean) }
+
+// return true if any field contains the search term
 function matchesSearchFields(fields, term) {
   const normalizedTerm = String(term || '').trim().toLowerCase()
   if (!normalizedTerm) return true
@@ -119,6 +154,8 @@ function matchesSearchFields(fields, term) {
     return text.includes(normalizedTerm) || tokens.some((token) => token.startsWith(normalizedTerm))
   })
 }
+
+// collect the listing fields that should be matched against the search term
 function getSearchableFields(listing, term) {
   const normalizedTerm = String(term || '').trim().toLowerCase()
   const primary = [listing.foodType, listing.description]
@@ -129,7 +166,7 @@ function getSearchableFields(listing, term) {
   return [...primary, ...secondary]
 }
 
-// ─── style constants ─────────────────────────────────────────────────────────
+// style constants
 
 const CHIP_ACTIVE   = { background: '#9a442d', color: '#fff', border: '1px solid rgba(154,68,45,0.5)', borderRadius: 999, padding: '6px 14px', fontSize: 13, fontWeight: 600, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.15s', fontFamily: 'inherit' }
 const CHIP_INACTIVE = { background: 'rgba(255,255,255,0.1)', color: 'rgba(255,255,255,0.75)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: 999, padding: '6px 14px', fontSize: 13, fontWeight: 500, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.15s', fontFamily: 'inherit' }
@@ -138,7 +175,7 @@ const BTN_OUTLINE_TERRACOTTA = { background: 'transparent', color: '#9a442d', bo
 const BTN_MUTED = { background: 'transparent', color: '#707973', border: '1px solid #bfc9c1', borderRadius: 12, fontWeight: 500, fontSize: 14, cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6, padding: '10px 16px', width: '100%', fontFamily: 'inherit' }
 const DETAIL_ROW = { display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: '#404943' }
 
-// ─── component ───────────────────────────────────────────────────────────────
+// main component
 
 const PostFeedPage = () => {
   const { postcode: routePostcode } = useParams()
@@ -156,13 +193,14 @@ const PostFeedPage = () => {
   const [brokenImageIds, setBrokenImageIds] = useState([])
   const [chatClaim, setChatClaim] = useState(null)
 
-  // ref for scrolling to the listings section (card 3 "Manage My Listings")
+  // ref for scrolling to the listings section from the action cards
   const listingsSectionRef = useRef(null)
 
   const donorCode = useMemo(() => getOrCreateDonorCode(), [])
   const donorName = getStoredDonorName()
   const postcode = String(routePostcode || location.state?.postcode || getSavedDonorPostcode() || '').trim()
 
+  // fetch available, claimed, and collected listings then merge by id
   const fetchListings = async () => {
     try {
       setLoading(true)
@@ -189,6 +227,7 @@ const PostFeedPage = () => {
 
   useEffect(() => { saveDonorPostcode(postcode); fetchListings() }, [postcode])
 
+  // filter listings by ownership, scope, category, dietary type, and search term
   const filteredListings = useMemo(() => {
     const term = search.trim().toLowerCase()
     return listings.filter((listing) => {
@@ -211,8 +250,11 @@ const PostFeedPage = () => {
   const hasActiveControls = hasActiveSearch || hasActiveFilter || hasActiveFoodTypeFilter || hasActiveScopeFilter
   const isBaseEmpty = listings.length === 0
   const isFilteredEmpty = !loading && !isBaseEmpty && filteredListings.length === 0
+
+  // reset all active filters at once
   const clearFilters = () => { setSearch(''); setActiveFilter('All'); setActiveFoodType('all'); setListingScope('all') }
 
+  // count donor listings by status for the summary strip
   const donorSummary = useMemo(() =>
     listings.reduce((acc, listing) => {
       if (!isOwnedDonorListing(listing, donorCode, postcode)) return acc
@@ -227,8 +269,13 @@ const PostFeedPage = () => {
     [donorCode, listings, postcode]
   )
 
+  // navigate to the post form in edit mode for an existing listing
   const handleEdit = (listing) => navigate('/donor/post', { state: { postcode: listing.postcode, editMode: true, listing, orgMode: false } })
+
+  // navigate to the post form to create a new listing
   const handleCreatePost = () => navigate('/donor/post', { state: { postcode, orgMode: false } })
+
+  // delete a listing and refresh the feed
   const handleRemove = async (listing) => {
     try {
       await deleteListing(listing.id, listing.orgCode || donorCode)
@@ -236,12 +283,14 @@ const PostFeedPage = () => {
       await fetchListings()
     } catch { setError(t('feed.removeError', 'Unable to remove this listing right now.')) }
   }
+
+  // mark an image as broken so the fallback placeholder is shown instead
   const markImageBroken = (listingId) => setBrokenImageIds((prev) => prev.includes(listingId) ? prev : [...prev, listingId])
 
-  // donor state passed to intelligence/around-me pages so back-button returns here
+  // donor state passed to map pages so the back button returns to this feed
   const donorNavState = { fromDonor: true, returnPath: location.pathname }
 
-  // ─── nav items ───────────────────────────────────────────────────────────
+  // nav items for the left sidebar
   const NAV = [
     { icon: 'list_alt',       label: 'My Listings',       active: true,  onClick: () => {} },
     { icon: 'travel_explore', label: 'Area Intelligence', active: false, onClick: () => navigate('/org/intelligence', { state: donorNavState }) },
@@ -249,7 +298,6 @@ const PostFeedPage = () => {
     { icon: 'location_on',    label: 'Change Location',   active: false, onClick: () => navigate('/postcode') },
   ]
 
-  // ─── render ──────────────────────────────────────────────────────────────
   return (
     <div style={{ display: 'flex', minHeight: '100vh', background: '#1b4332', fontFamily: 'Inter, system-ui, sans-serif', position: 'relative' }}>
 
@@ -261,7 +309,7 @@ const PostFeedPage = () => {
       {/* Texture overlay */}
       <div style={{ position: 'fixed', inset: 0, backgroundImage: `url(${textureImg})`, backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.05, pointerEvents: 'none', zIndex: 0 }} />
 
-      {/* ── Left Sidebar ── */}
+      {/* Left sidebar */}
       <aside style={{ width: 256, flexShrink: 0, position: 'fixed', top: 0, left: 0, bottom: 0, background: 'rgba(20,52,38,0.97)', borderRight: '1px solid rgba(149,212,179,0.2)', display: 'flex', flexDirection: 'column', zIndex: 50, overflowY: 'auto' }}>
         {/* Logo */}
         <div style={{ padding: '24px 20px 20px' }}>
@@ -288,7 +336,7 @@ const PostFeedPage = () => {
           </nav>
         </div>
 
-        {/* Bottom section */}
+        {/* Bottom section with post button and language switcher */}
         <div style={{ marginTop: 'auto', padding: '16px 20px 24px', borderTop: '1px solid rgba(149,212,179,0.15)', display: 'flex', flexDirection: 'column', gap: 12 }}>
           <button type="button" onClick={handleCreatePost}
             style={{ width: '100%', background: '#9a442d', color: '#fff', border: 'none', borderRadius: 14, padding: '13px 0', fontWeight: 700, fontSize: 15, cursor: 'pointer', fontFamily: 'inherit', boxShadow: '0 4px 16px rgba(154,68,45,0.30)', transition: 'opacity 0.15s' }}
@@ -304,7 +352,7 @@ const PostFeedPage = () => {
         </div>
       </aside>
 
-      {/* ── Main area ── */}
+      {/* Main area */}
       <div style={{ marginLeft: 256, flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0, position: 'relative', zIndex: 1 }}>
 
         {/* Top header */}
@@ -334,7 +382,7 @@ const PostFeedPage = () => {
 
         <main style={{ padding: '40px 48px 80px' }}>
 
-          {/* ── Welcome section ── */}
+          {/* Welcome section */}
           <section style={{ marginBottom: 40 }}>
             <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 24 }}>
               <div>
@@ -361,7 +409,7 @@ const PostFeedPage = () => {
             </div>
           </section>
 
-          {/* ── Action cards (3-col grid) ── */}
+          {/* Action cards (3-col grid) */}
           <section style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 20, marginBottom: 36 }}>
             {[
               {
@@ -407,9 +455,9 @@ const PostFeedPage = () => {
             ))}
           </section>
 
-          {/* ── Map + Analytics (5-col asymmetric) ── */}
+          {/* Map and analytics asymmetric grid */}
           <section style={{ display: 'grid', gridTemplateColumns: '3fr 2fr', gap: 20, marginBottom: 40 }}>
-            {/* Map preview — routes to Area Intelligence */}
+            {/* Map preview — links to Area Intelligence */}
             <div
               role="button"
               tabIndex={0}
@@ -443,7 +491,7 @@ const PostFeedPage = () => {
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
 
-                {/* Area Intelligence — passes donor context so back-button returns here */}
+                {/* Area Intelligence button — passes donor context so back button returns here */}
                 <button type="button"
                   onClick={() => navigate('/org/intelligence', { state: donorNavState })}
                   style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '14px', borderRadius: 14, border: '1px solid rgba(252,145,116,0.2)', background: 'rgba(252,145,116,0.06)', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', transition: 'background 0.15s, border-color 0.15s' }}
@@ -464,7 +512,7 @@ const PostFeedPage = () => {
                   </div>
                 </button>
 
-                {/* Around Me — passes donor context so back-button returns here */}
+                {/* Around Me button — passes donor context so back button returns here */}
                 <button type="button"
                   onClick={() => navigate('/org/coverage-map', { state: donorNavState })}
                   style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: '14px', borderRadius: 14, border: '1px solid rgba(194,196,229,0.2)', background: 'rgba(194,196,229,0.06)', cursor: 'pointer', textAlign: 'left', fontFamily: 'inherit', transition: 'background 0.15s, border-color 0.15s' }}
@@ -489,7 +537,7 @@ const PostFeedPage = () => {
             </div>
           </section>
 
-          {/* ── Listings section (ref target for card 3) ── */}
+          {/* Listings section (scroll target for the manage card) */}
           <div ref={listingsSectionRef}>
 
             {/* Status summary strip */}
@@ -516,7 +564,7 @@ const PostFeedPage = () => {
               })}
             </div>
 
-            {/* ── Filter panel ── */}
+            {/* Filter panel */}
             <div style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(149,212,179,0.15)', borderRadius: 20, padding: '20px 24px', marginBottom: 28, boxShadow: '0 2px 12px rgba(0,0,0,0.15)', backdropFilter: 'blur(10px)' }}>
               <div style={{ position: 'relative', marginBottom: 16 }}>
                 <span className="material-symbols-outlined" style={{ position: 'absolute', left: 14, top: '50%', transform: 'translateY(-50%)', fontSize: 20, color: 'rgba(255,255,255,0.5)', pointerEvents: 'none' }}>search</span>
@@ -568,7 +616,7 @@ const PostFeedPage = () => {
               )}
             </div>
 
-            {/* Result count + error */}
+            {/* Result count and error message */}
             {!loading && !isBaseEmpty && !isFilteredEmpty && (
               <div style={{ fontSize: 13, color: 'rgba(255,255,255,0.55)', marginBottom: 20, fontWeight: 500 }}>
                 {hasActiveControls ? t('feed.showingMatches', { count: filteredListings.length }) : t('listing.itemsAvailable', { count: filteredListings.length })}
@@ -576,7 +624,7 @@ const PostFeedPage = () => {
             )}
             {error && <div style={{ padding: '12px 18px', borderRadius: 12, background: 'rgba(186,26,26,0.25)', color: '#ffb4a1', fontSize: 14, marginBottom: 20 }}>{error}</div>}
 
-            {/* ── Listing grid / empty states ── */}
+            {/* Listing grid and empty states */}
             {loading ? (
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, padding: '60px 0', color: 'rgba(255,255,255,0.5)' }}>
                 <span className="material-symbols-outlined" style={{ fontSize: 48, color: 'rgba(255,255,255,0.25)' }}>hourglass_empty</span>
@@ -637,7 +685,7 @@ const PostFeedPage = () => {
                       onMouseEnter={e => { e.currentTarget.style.boxShadow = '0 12px 40px rgba(0,0,0,0.3)'; e.currentTarget.style.transform = 'translateY(-2px)' }}
                       onMouseLeave={e => { e.currentTarget.style.boxShadow = '0 4px 20px rgba(0,0,0,0.2)'; e.currentTarget.style.transform = 'translateY(0)' }}
                     >
-                      {/* Image */}
+                      {/* Listing image */}
                       <div style={{ position: 'relative', height: 192, flexShrink: 0, overflow: 'hidden' }}>
                         {shouldShowImage ? (
                           <img src={imageUrl} alt={listing.foodType} onError={() => markImageBroken(listing.id)}
@@ -656,7 +704,7 @@ const PostFeedPage = () => {
                         </span>
                       </div>
 
-                      {/* Body */}
+                      {/* Listing body */}
                       <div style={{ padding: 20, display: 'flex', flexDirection: 'column', gap: 10, flex: 1 }}>
                         <div>
                           <h3 style={{ fontSize: 17, fontWeight: 700, color: '#1a1c1b', margin: '0 0 4px', lineHeight: 1.3 }}>{listing.foodType}</h3>
@@ -748,7 +796,7 @@ const PostFeedPage = () => {
               </div>
             )}
 
-          </div>{/* end listings section */}
+          </div>
         </main>
       </div>
 

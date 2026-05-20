@@ -13,22 +13,26 @@ const DonorDashboardPage = () => {
   const { t, i18n } = useTranslation()
   const [showLanguageMenu, setShowLanguageMenu] = useState(false)
 
+  // resolve postcode from route state or local storage
   const postcode = useMemo(() => {
     return String(location.state?.postcode || getSavedDonorPostcode() || '').trim()
   }, [location.state?.postcode])
 
+  // save postcode whenever it changes
   useEffect(() => {
     if (postcode) {
       saveDonorPostcode(postcode)
     }
   }, [postcode])
 
+  // change app language and persist choice
   const handleLanguageChange = (lang) => {
     i18n.changeLanguage(lang)
     localStorage.setItem('preferredLanguage', lang)
     setShowLanguageMenu(false)
   }
 
+  // navigate to a path while keeping postcode in state
   const goTo = (path) => {
     navigate(path, { state: { postcode } })
   }
@@ -68,7 +72,7 @@ const DonorDashboardPage = () => {
 
   return (
     <div className="donor-dashboard-page donor-role-page min-h-screen bg-background">
-      {/* Desktop Sidebar */}
+      {/* Desktop sidebar */}
       <SideNav
         navItems={navItems}
         onPostFood={() => goTo('/donor/post')}
@@ -129,7 +133,7 @@ const DonorDashboardPage = () => {
                   className="block w-full text-left px-md py-sm text-body-sm text-on-surface hover:bg-surface-container transition-colors"
                   onClick={() => handleLanguageChange('zh')}
                 >
-                  中文
+                  Chinese
                 </button>
               </div>
             ) : null}
@@ -146,7 +150,7 @@ const DonorDashboardPage = () => {
       <main className="lg:ml-64 pt-16">
         <div className="px-margin-mobile md:px-margin-desktop py-lg max-w-[1200px] mx-auto">
 
-          {/* Welcome / hero section */}
+          {/* Welcome hero section */}
           <section className="mb-lg">
             <div className="flex flex-wrap items-start justify-between gap-md mb-md">
               <div>
@@ -164,7 +168,7 @@ const DonorDashboardPage = () => {
               </div>
             </div>
 
-            {/* Postcode pill + stats row */}
+            {/* Postcode pill and stats row */}
             <div className="flex flex-wrap items-center gap-sm">
               <div
                 className="inline-flex items-center gap-xs bg-surface-container-lowest border border-outline-variant rounded-full px-sm py-2 shadow-paper"
@@ -188,12 +192,12 @@ const DonorDashboardPage = () => {
             </div>
           </section>
 
-          {/* action card grid */}
+          {/* Action card grid */}
           <section
             className="grid grid-cols-1 md:grid-cols-3 gap-md mb-lg"
             aria-label={t('donorWorkspace.actionsAria', 'Donor workspace actions')}
           >
-            {/* Post Food card — terracotta */}
+            {/* Post Food card */}
             <div
               className="paper-card rounded-3xl p-md flex flex-col h-full cursor-pointer group"
               onClick={() => goTo('/donor/post')}
@@ -245,7 +249,7 @@ const DonorDashboardPage = () => {
               </div>
             </div>
 
-            {/* Manage Listings card — slate/tertiary */}
+            {/* Manage Listings card */}
             <div
               className="paper-card rounded-3xl p-md flex flex-col h-full cursor-pointer group"
               onClick={() => goTo('/donor/listings')}
@@ -272,7 +276,7 @@ const DonorDashboardPage = () => {
             </div>
           </section>
 
-          {/* Area Intelligence + Around Me cards */}
+          {/* Area Intelligence and Around Me cards */}
           <section className="grid grid-cols-1 md:grid-cols-2 gap-md mb-lg">
             {/* Area Intelligence */}
             <div
@@ -366,7 +370,7 @@ const DonorDashboardPage = () => {
         ))}
       </nav>
 
-      {/* FAB — mobile, terracotta */}
+      {/* FAB for mobile — quick post button */}
       <button
         type="button"
         onClick={() => goTo('/donor/post')}

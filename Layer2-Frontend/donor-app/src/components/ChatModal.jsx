@@ -17,6 +17,7 @@ export default function ChatModal({ claimId, listingTitle, orgCode, onClose }) {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' })
   }, [messages])
 
+  // Fetch latest messages and mark them as read
   const fetchMessages = useCallback(async () => {
     try {
       const rows = await getClaimMessages(claimId, orgCode)
@@ -32,6 +33,7 @@ export default function ChatModal({ claimId, listingTitle, orgCode, onClose }) {
     }
   }, [claimId, orgCode])
 
+  // Load thread on mount and start polling
   useEffect(() => {
     let cancelled = false
 
@@ -59,6 +61,7 @@ export default function ChatModal({ claimId, listingTitle, orgCode, onClose }) {
     }
   }, [claimId, orgCode, fetchMessages])
 
+  // Send a new message from the current user
   const handleSend = async () => {
     const text = inputText.trim()
     if (!text || sending || status !== 'ready') return
@@ -78,6 +81,7 @@ export default function ChatModal({ claimId, listingTitle, orgCode, onClose }) {
     }
   }
 
+  // Send on Enter, allow Shift+Enter for new line
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault()
@@ -85,16 +89,18 @@ export default function ChatModal({ claimId, listingTitle, orgCode, onClose }) {
     }
   }
 
+  // Close modal when clicking outside the dialog
   const handleOverlayClick = (e) => {
     if (e.target === e.currentTarget) onClose()
   }
 
+  // Check if a message was sent by the current org
   const isMe = (sender) => String(sender || '').toUpperCase() === String(orgCode || '').toUpperCase()
 
   const statusLabel = {
-    loading: 'Connecting…',
-    ready: 'Claim chat · Messages are stored securely',
-    closed: 'Chat closed — pickup confirmed.',
+    loading: 'Connecting...',
+    ready: 'Claim chat - Messages are stored securely',
+    closed: 'Chat closed - pickup confirmed.',
     error: 'Connection error. Please close and try again.',
   }
 
@@ -102,6 +108,7 @@ export default function ChatModal({ claimId, listingTitle, orgCode, onClose }) {
     <div className="chat-overlay" onClick={handleOverlayClick}>
       <div className="chat-modal" role="dialog" aria-modal="true" aria-label="Claim Chat">
 
+        {/* Modal header with title and close button */}
         <div className="chat-header">
           <div className="chat-header-left">
             <span className="material-symbols-outlined chat-header-icon">forum</span>
@@ -109,7 +116,7 @@ export default function ChatModal({ claimId, listingTitle, orgCode, onClose }) {
               <h3 className="chat-title">{listingTitle}</h3>
               {thread && (
                 <p className="chat-subtitle">
-                  {thread.donor_org_code} ↔ {thread.claiming_org_code}
+                  {thread.donor_org_code} to {thread.claiming_org_code}
                 </p>
               )}
             </div>
@@ -119,6 +126,7 @@ export default function ChatModal({ claimId, listingTitle, orgCode, onClose }) {
           </button>
         </div>
 
+        {/* Status bar showing connection or thread state */}
         <div className={`chat-status-bar status-${status}`}>
           <span className="material-symbols-outlined chat-status-icon">
             {status === 'ready' && 'chat'}
@@ -129,6 +137,7 @@ export default function ChatModal({ claimId, listingTitle, orgCode, onClose }) {
           <span className="chat-status-text">{statusLabel[status]}</span>
         </div>
 
+        {/* Message list area */}
         <div className="chat-messages">
           {messages.length === 0 && status === 'ready' && (
             <div className="chat-empty">
@@ -155,11 +164,12 @@ export default function ChatModal({ claimId, listingTitle, orgCode, onClose }) {
           <div ref={messagesEndRef} />
         </div>
 
+        {/* Input row shown only when chat is active */}
         {status === 'ready' && (
           <div className="chat-input-row">
             <textarea
               className="chat-input"
-              placeholder="Type a message… (Enter to send)"
+              placeholder="Type a message... (Enter to send)"
               value={inputText}
               onChange={(e) => setInputText(e.target.value)}
               onKeyDown={handleKeyDown}

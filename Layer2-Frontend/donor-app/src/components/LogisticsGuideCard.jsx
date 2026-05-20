@@ -1,6 +1,7 @@
 import React from 'react'
 import { useTranslation } from 'react-i18next'
 
+// Step definitions for the donor pickup workflow
 const DONOR_STEPS = [
   {
     titleKey: 'logisticsGuide.donor.step1.title',
@@ -14,7 +15,7 @@ const DONOR_STEPS = [
     descKey: 'logisticsGuide.donor.step2.desc',
     descDefault: 'Review claim requests and confirm availability.',
     statusKey: 'logisticsGuide.donor.step2.status',
-    statusDefault: 'Status: Available → Claimed',
+    statusDefault: 'Status: Available Claimed',
   },
   {
     titleKey: 'logisticsGuide.donor.step3.title',
@@ -34,6 +35,7 @@ const DONOR_STEPS = [
   },
 ]
 
+// Step definitions for the organisation pickup workflow
 const ORG_STEPS = [
   {
     titleKey: 'logisticsGuide.org.step1.title',
@@ -47,7 +49,7 @@ const ORG_STEPS = [
     descKey: 'logisticsGuide.org.step2.desc',
     descDefault: 'Reserve suitable food for your organisation.',
     statusKey: 'logisticsGuide.org.step2.status',
-    statusDefault: 'Status: Available → Claimed',
+    statusDefault: 'Status: Available Claimed',
   },
   {
     titleKey: 'logisticsGuide.org.step3.title',
@@ -75,11 +77,13 @@ const LogisticsGuideCard = ({ role = 'donor' }) => {
 
   return (
     <section className={`logistics-guide logistics-guide--${role}`} aria-label={t('logisticsGuide.ariaLabel', 'Pickup workflow guide')}>
+      {/* Guide heading */}
       <div className="logistics-guide__head">
         <p className="logistics-guide__eyebrow">{t(eyebrowKey, 'How it works')}</p>
         <h3>{t(titleKey, 'Track each donation from listing to confirmed collection.')}</h3>
       </div>
 
+      {/* Numbered step list */}
       <ol className="logistics-guide__steps">
         {steps.map((step, index) => (
           <li key={step.titleKey} className="logistics-guide__step">

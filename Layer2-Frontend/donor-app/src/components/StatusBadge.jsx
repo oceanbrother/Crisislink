@@ -17,6 +17,7 @@ const ICONS = {
   posted:    'campaign',
 }
 
+// Renders a coloured badge showing the current listing status
 const StatusBadge = ({
   status = 'available',
   label,

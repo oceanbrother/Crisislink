@@ -53,7 +53,7 @@ export default function OrgIntelligencePage() {
     return () => { cancelled = true }
   }, [])
 
-  // ── Alerts transform ──────────────────────────────────────────────────────
+  // Alerts transform
   const alertsList = useMemo(() => apiRows
     .filter(item => item.demand_risk_score >= 0.5)
     .map(item => {
@@ -74,7 +74,7 @@ export default function OrgIntelligencePage() {
     .sort((a, b) => b.demandLift - a.demandLift),
   [apiRows])
 
-  // ── Zones transform ───────────────────────────────────────────────────────
+  // Zones transform
   const zonesList = useMemo(() => apiRows.map(item => {
     const score          = item.demand_risk_score
     const supply         = item.total_supply || 0
@@ -97,7 +97,7 @@ export default function OrgIntelligencePage() {
     }
   }).sort((a, b) => b.gapScore - a.gapScore), [apiRows])
 
-  // ── Derived counts ────────────────────────────────────────────────────────
+  // Derived counts
   const spikeCount         = useMemo(() => alertsList.filter(a => a.pressureScore >= 75).length, [alertsList])
   const totalAtRisk        = useMemo(() => alertsList.reduce((s, a) => s + a.householdsAtRisk, 0), [alertsList])
   const avgConfidence      = useMemo(() => alertsList.length ? Math.round(alertsList.reduce((s, a) => s + a.confidence, 0) / alertsList.length) : 0, [alertsList])
@@ -107,7 +107,7 @@ export default function OrgIntelligencePage() {
   const avgCoverage        = useMemo(() => zonesList.length ? Math.round(zonesList.reduce((s, z) => s + z.coverageRatePercent, 0) / zonesList.length) : 0, [zonesList])
   const totalEstimatedNeed = useMemo(() => zonesList.reduce((s, z) => s + z.estimatedDemand, 0), [zonesList])
 
-  // ── Filtered lists ────────────────────────────────────────────────────────
+  // Filtered lists
   const filteredAlerts = useMemo(() => {
     if (alertToneFilter === 'spike') return alertsList.filter(a => a.pressureScore >= 75)
     if (alertToneFilter === 'watch') return alertsList.filter(a => a.pressureScore < 75)
@@ -121,7 +121,7 @@ export default function OrgIntelligencePage() {
     return zonesList
   }, [coverageFilter, zonesList])
 
-  // ── Sync selectedPostcode ─────────────────────────────────────────────────
+  // Sync selectedPostcode
   const currentList = activeView === 'spikes' ? filteredAlerts : filteredZones
   useEffect(() => {
     setSelectedPostcode(cur =>
@@ -129,7 +129,7 @@ export default function OrgIntelligencePage() {
     )
   }, [currentList])
 
-  // ── Map zones ─────────────────────────────────────────────────────────────
+  // Map zones
   const mapZones = useMemo(() => {
     if (activeView === 'spikes') {
       return filteredAlerts.map(a => ({
@@ -148,7 +148,8 @@ export default function OrgIntelligencePage() {
     }))
   }, [activeView, filteredAlerts, filteredZones])
 
-  // ── Helpers ───────────────────────────────────────────────────────────────
+  // Helpers
+  // returns badge colour and label based on how urgent a demand alert is
   function getAlertToneMeta(pressureScore, demandLift) {
     if (pressureScore >= 75 || demandLift >= 30)
       return { tone: 'critical', badge: 'High priority', badgeColor: '#7c2e19', badgeBg: '#ffdbd2' }
@@ -157,6 +158,7 @@ export default function OrgIntelligencePage() {
     return { tone: 'watch',    badge: 'Watch item',    badgeColor: '#5a4500', badgeBg: '#fff3c4' }
   }
 
+  // returns badge colour and label based on supply coverage level of a zone
   function getCoverageMeta(coverageLevel) {
     if (coverageLevel === 'none')  return { badge: 'No supply',    badgeColor: '#7c2e19', badgeBg: '#ffdbd2' }
     if (coverageLevel === 'low')   return { badge: 'Low coverage', badgeColor: '#9a442d', badgeBg: '#ffe8e1' }
@@ -164,10 +166,12 @@ export default function OrgIntelligencePage() {
     return                                { badge: 'Healthy',      badgeColor: '#0f5238', badgeBg: '#dcf5e7' }
   }
 
+  // converts a numeric confidence score to a short text label
   function confLabel(c) {
     return c >= HIGH_CONF ? 'High conf' : c >= MED_CONF ? 'Med conf' : 'Low conf'
   }
 
+  // navigates to the post food form with the selected postcode pre-filled
   const handlePost = (postcode) =>
     navigate('/form', { state: { orgMode: true, orgCode, orgName: `Organisation ${orgCode}`, focusPostcode: postcode || '' } })
 
@@ -193,7 +197,7 @@ export default function OrgIntelligencePage() {
   const activeFilterVal = activeView === 'spikes' ? alertToneFilter : coverageFilter
   const setActiveFilter = activeView === 'spikes' ? setAlertToneFilter : setCoverageFilter
 
-  // ── legend colours ────────────────────────────────────────────────────────
+  // legend colours
   const spikeLegend = [{ color:'#e53030', label:'High demand' }, { color:'#e8711a', label:'Spike risk' }]
   const gapLegend   = [{ color:'#e53030', label:'No supply' }, { color:'#e8711a', label:'Low coverage' }, { color:'#d69e2e', label:'Watch' }, { color:'#1a9c67', label:'Healthy' }]
   const legend      = activeView === 'spikes' ? spikeLegend : gapLegend
@@ -208,7 +212,7 @@ export default function OrgIntelligencePage() {
       {/* Texture overlay */}
       <div style={{ position: 'fixed', inset: 0, backgroundImage: `url(${textureImg})`, backgroundSize: 'cover', opacity: 0.05, zIndex: 0, pointerEvents: 'none' }} />
 
-      {/* ── Header ── */}
+      {/* Header */}
       <header style={{ position: 'sticky', top: 0, zIndex: 100, background: 'rgba(27,67,50,0.84)', backdropFilter: 'blur(18px)', borderBottom: '1px solid rgba(149,212,179,0.18)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 48px', height: 68 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
           <button type="button" onClick={() => fromDonor.current ? navigate(donorReturnPath.current) : navigate('/org/listings', { state: { orgCode } })}
@@ -251,7 +255,7 @@ export default function OrgIntelligencePage() {
 
       <main style={{ position: 'relative', zIndex: 1, maxWidth: 1280, margin: '0 auto', padding: '52px 32px 80px' }}>
 
-        {/* ── Page heading ── */}
+        {/* Page heading */}
         <header style={{ marginBottom: 40 }}>
           <h1 style={{ fontSize: 52, fontWeight: 700, color: '#fff', letterSpacing: '-0.025em', margin: '0 0 8px 0', lineHeight: 1.05 }}>Area Intelligence</h1>
           <p style={{ fontSize: 18, color: 'rgba(255,255,255,0.60)', margin: 0, maxWidth: 580, lineHeight: 1.55 }}>
@@ -268,7 +272,7 @@ export default function OrgIntelligencePage() {
           <div style={{ color: '#fc9174', fontSize: 16 }}>Could not load intelligence data. Check your connection.</div>
         ) : (
           <>
-            {/* ── Metric cards (real data, tab-aware) ── */}
+            {/* Metric cards */}
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: 20, marginBottom: 36 }}>
               {metricCards.map(card => (
                 <div key={card.label} style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)', borderRadius: 22, padding: '24px 26px', backdropFilter: 'blur(10px)', display: 'flex', flexDirection: 'column', gap: 8 }}>
@@ -287,7 +291,7 @@ export default function OrgIntelligencePage() {
               ))}
             </div>
 
-            {/* ── Tab switcher + filter pills ── */}
+            {/* Tab switcher and filter pills */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 22, flexWrap: 'wrap' }}>
               {/* Main view tabs */}
               {[
@@ -322,7 +326,7 @@ export default function OrgIntelligencePage() {
               </div>
             </div>
 
-            {/* ── Bento grid ── */}
+            {/* Bento grid */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 420px', gap: 20, alignItems: 'start' }}>
 
               {/* Left: choropleth map */}

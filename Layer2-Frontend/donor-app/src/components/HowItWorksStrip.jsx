@@ -13,7 +13,6 @@ export default function HowItWorksStrip({ role = 'donor', onNavigate }) {
   const color = role === 'donor' ? '#b86e10' : '#1a7c54'
   const softBg = role === 'donor' ? '#fff8ee' : '#f0faf5'
   const borderColor = role === 'donor' ? 'rgba(184,110,16,0.14)' : 'rgba(26,124,84,0.14)'
-  const ns = role === 'donor' ? 'donor' : 'org'
 
   const steps = role === 'donor'
     ? [
@@ -29,6 +28,7 @@ export default function HowItWorksStrip({ role = 'donor', onNavigate }) {
         { icon: 'volunteer_activism', title: t(`hiw.org.step4Title`), desc: t(`hiw.org.step4Desc`), cta: null, path: null },
       ]
 
+  // Mark strip as dismissed in local storage
   const dismiss = () => {
     try { window.localStorage.setItem(storageKey, '1') } catch {}
     setDismissed(true)
@@ -42,6 +42,7 @@ export default function HowItWorksStrip({ role = 'donor', onNavigate }) {
       padding: '0.85rem 1rem 0.9rem',
       marginBottom: '0.25rem',
     }}>
+      {/* Strip header with label and dismiss button */}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.65rem' }}>
         <span style={{ fontSize: '0.68rem', fontWeight: 800, color, textTransform: 'uppercase', letterSpacing: '0.09em' }}>
           {t('hiw.label')}
@@ -60,6 +61,7 @@ export default function HowItWorksStrip({ role = 'donor', onNavigate }) {
         </button>
       </div>
 
+      {/* Four-column step grid */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '0.6rem' }}>
         {steps.map((step, i) => (
           <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '5px' }}>

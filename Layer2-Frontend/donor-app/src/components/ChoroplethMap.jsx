@@ -16,9 +16,10 @@ const TONE_FILL = {
 // ABS ASGS 2021 Postal Areas MapServer
 const ABS_URL = 'https://geo.abs.gov.au/arcgis/rest/services/ASGS2021/POA/MapServer/0/query'
 
-// Module-level cache persists across remounts — keyed by postcode string
+// Module-level cache persists across remounts, keyed by postcode string
 const geoCache = {}
 
+// Fetch GeoJSON boundaries from ABS for the given postcodes, batching requests
 async function loadBoundaries(postcodes) {
   const uncached = postcodes.filter(p => !(p in geoCache))
   if (!uncached.length) return
@@ -58,6 +59,7 @@ async function loadBoundaries(postcodes) {
   }
 }
 
+// Build Leaflet style object for a polygon based on tone and selection state
 function layerStyle(tone, isSelected) {
   const { color, opacity } = TONE_FILL[tone] || TONE_FILL.watch
   return {
@@ -79,14 +81,14 @@ export default function ChoroplethMap({
 }) {
   const containerRef = useRef(null)
   const mapRef       = useRef(null)
-  const layersRef    = useRef({})   // postcode → L.GeoJSON
+  const layersRef    = useRef({})   // postcode to L.GeoJSON
   const onSelectRef  = useRef(onSelect)
   const zonesRef     = useRef(zones)
   const selectedRef  = useRef(selectedPostcode)
 
   useEffect(() => { onSelectRef.current = onSelect }, [onSelect])
 
-  // ── Init map once ──────────────────────────────────────────────────────────
+  // Init map once on mount
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return
 
@@ -112,7 +114,7 @@ export default function ChoroplethMap({
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Rebuild polygon layers when zones change ───────────────────────────────
+  // Rebuild polygon layers when zones change
   useEffect(() => {
     zonesRef.current = zones
     const map = mapRef.current
@@ -167,7 +169,7 @@ export default function ChoroplethMap({
     return () => { cancelled = true }
   }, [zones]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Restyle on selection change (no fetch needed) ─────────────────────────
+  // Restyle polygons when selected postcode changes, no fetch needed
   useEffect(() => {
     selectedRef.current = selectedPostcode
     const map = mapRef.current

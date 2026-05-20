@@ -26,6 +26,7 @@ const TONE_RADIUS = {
 
 const MELBOURNE = [-37.835, 144.975]
 
+// Build circle marker style based on tone and selection state
 function markerStyle(tone, isSelected) {
   const color = TONE_COLOR[tone] || '#888'
   const base  = TONE_RADIUS[tone] || 10
@@ -39,6 +40,7 @@ function markerStyle(tone, isSelected) {
   }
 }
 
+// Build translucent halo ring style shown behind the selected marker
 function haloStyle(tone, radius) {
   const color = TONE_COLOR[tone] || '#888'
   return {
@@ -77,7 +79,7 @@ export default function PostcodeMap({
   useEffect(() => { onSelectRef.current = onSelect },        [onSelect])
   useEffect(() => { zonesRef.current    = zones },           [zones])
 
-  // ── Init map once ─────────────────────────────────────────────────────────
+  // Init map once on mount
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return
 
@@ -108,7 +110,7 @@ export default function PostcodeMap({
     }
   }, []) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Rebuild all markers when zones change ─────────────────────────────────
+  // Rebuild all markers when zones change
   useEffect(() => {
     const map = mapRef.current
     if (!map) return
@@ -161,7 +163,7 @@ export default function PostcodeMap({
     }
   }, [zones]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // ── Handle user postcode marker and route ─────────────────────────────────
+  // Handle user postcode marker and route polyline
   useEffect(() => {
     const map = mapRef.current
     if (!map || !mapReady) return
@@ -205,7 +207,7 @@ export default function PostcodeMap({
       }
     }
 
-    // Add route polyline if exists
+    // Add route polyline if both endpoints are given
     if (route && route.from && route.to) {
       const fromCoords = POSTCODE_COORDS[route.from]
       const toCoords = POSTCODE_COORDS[route.to]
@@ -222,7 +224,7 @@ export default function PostcodeMap({
     }
   }, [userPostcode, route, mapReady])
 
-  // ── Handle selection changes ───────────────────────────────────────────────
+  // Handle selection changes: restyle markers and pan to selected
   useEffect(() => {
     selectedRef.current = selectedPostcode
     const map = mapRef.current
@@ -230,7 +232,7 @@ export default function PostcodeMap({
 
     const curZones = zonesRef.current
 
-    // 1. Update every marker's visual style
+    // Update every marker's visual style
     curZones.forEach(zone => {
       const marker = markersRef.current[zone.postcode]
       if (!marker) return
@@ -265,13 +267,13 @@ export default function PostcodeMap({
       }
     })
 
-    // 2. Pan to selected marker
+    // Pan to selected marker
     if (selectedPostcode) {
       const coords = POSTCODE_COORDS[selectedPostcode]
       if (coords) map.panTo(coords, { animate: true, duration: 0.45, easeLinearity: 0.4 })
     }
 
-    // 3. Bounce animation on selected marker via setRadius sequence
+    // Bounce animation on selected marker via setRadius sequence
     const sel = markersRef.current[selectedPostcode]
     if (sel) {
       const tone  = curZones.find(z => z.postcode === selectedPostcode)?.tone || 'watch'
@@ -294,13 +296,15 @@ export default function PostcodeMap({
   )
 }
 
-// ── Helpers ───────────────────────────────────────────────────────────────
+// Helpers
 
+// Add glow CSS class to a marker element
 function applyGlow(marker) {
   const el = marker.getElement()
   if (el) el.classList.add('pcmap-selected-glow')
 }
 
+// Build tooltip HTML string for a zone marker
 function buildTooltip(zone) {
   return `<span class="pcmap-tip-inner">
     <strong>${zone.suburb}</strong>

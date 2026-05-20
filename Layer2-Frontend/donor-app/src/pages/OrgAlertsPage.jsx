@@ -7,6 +7,7 @@ import suburbLookup from '../data/vic_postcode_suburbs.json'
 import '../styles/LiveListingBoard.css'
 import logoUrl from '../assets/outbackshare-logo.png'
 
+// Look up a human-readable suburb name for the given postcode
 function suburbName(postcode) {
   return suburbLookup[String(postcode)] || `Postcode ${postcode}`
 }
@@ -29,6 +30,7 @@ const OrgAlertsPage = () => {
   const [selectedAlertPostcode, setSelectedAlertPostcode] = useState('')
   const [showInfoBanner, setShowInfoBanner] = useState(false)
 
+  // Read org code from route state or fall back to session storage
   const savedOrgSession = (() => {
     try {
       return JSON.parse(window.localStorage.getItem('crisislink-org-session') || '{}')
@@ -43,6 +45,7 @@ const OrgAlertsPage = () => {
     window.localStorage.setItem('crisislink-org-session', JSON.stringify({ orgCode }))
   }, [orgCode])
 
+  // Fetch demand alerts from the prediction API and map them to alert objects
   useEffect(() => {
     let isCancelled = false
     setLoading(true)
@@ -56,7 +59,7 @@ const OrgAlertsPage = () => {
           .filter(item => item.demand_risk_score >= 0.5)
           .map(item => {
             const score = item.demand_risk_score
-            // Scale so 0.62 (medium-high) → ~17% watch, 0.82 (high) → ~32% critical
+            // Scale so 0.62 (medium-high) maps to roughly 17% watch, 0.82 (high) maps to roughly 32% critical
             const demandLift = Math.max(0, Math.round((score - 0.4) * 75))
             const name = suburbName(item.postcode)
             return {
@@ -82,6 +85,7 @@ const OrgAlertsPage = () => {
     return () => { isCancelled = true }
   }, [])
 
+  // Flatten alerts to a single array, supporting both full list and single top-alert fallback
   const demandAlerts = useMemo(() => {
     if (Array.isArray(demandInsights.alerts) && demandInsights.alerts.length > 0) {
       return demandInsights.alerts
@@ -99,11 +103,13 @@ const OrgAlertsPage = () => {
     [demandAlerts]
   )
 
+  // Compute the average confidence across all visible alerts
   const averageConfidence = useMemo(() => {
     if (demandAlerts.length === 0) return 0
     return Math.round(demandAlerts.reduce((s, a) => s + Number(a.confidence || 0), 0) / demandAlerts.length)
   }, [demandAlerts])
 
+  // Map a demandLift value to a tone string used for badge and card styling
   function getDemandTone(demandLift) {
     const v = Number(demandLift || 0)
     if (v >= DEMAND_CRITICAL_THRESHOLD) return 'critical'
@@ -111,6 +117,7 @@ const OrgAlertsPage = () => {
     return 'watch'
   }
 
+  // Return display labels and tone metadata for the given demandLift value
   function getDemandToneMeta(demandLift) {
     const tone = getDemandTone(demandLift)
     if (tone === 'critical') return {
@@ -136,6 +143,7 @@ const OrgAlertsPage = () => {
     }
   }
 
+  // Apply the active tone filter to the full alert list
   const filteredDemandAlerts = useMemo(() => {
     if (alertToneFilter === 'all') return demandAlerts
     if (alertToneFilter === 'spike') return demandAlerts.filter((a) => a.pressureScore >= 75)
@@ -148,6 +156,7 @@ const OrgAlertsPage = () => {
     }
   }, [alertToneFilter, watchAlertCount])
 
+  // Keep selected postcode in sync when filtered list changes
   useEffect(() => {
     setSelectedAlertPostcode((cur) =>
       filteredDemandAlerts.some((a) => a.postcode === cur) ? cur : filteredDemandAlerts[0]?.postcode || ''
@@ -161,6 +170,7 @@ const OrgAlertsPage = () => {
   const hasAnyAlerts = demandAlerts.length > 0
   const hasFilteredAlerts = filteredDemandAlerts.length > 0
 
+  // Convert alerts to the shape expected by PostcodeMap
   const mapZones = useMemo(
     () => filteredDemandAlerts.map((a) => ({
       ...a,
@@ -170,6 +180,7 @@ const OrgAlertsPage = () => {
     [filteredDemandAlerts]
   )
 
+  // Return a tone and label based on the confidence percentage
   function getConfidenceLevel(confidence) {
     const v = Number(confidence || 0)
     if (v >= HIGH_CONFIDENCE_THRESHOLD) return { tone: 'high', label: t('dashboard.intelligence.confidenceHigh', 'High confidence') }
@@ -177,6 +188,7 @@ const OrgAlertsPage = () => {
     return { tone: 'watch', label: t('dashboard.intelligence.confidenceLow', 'Low confidence') }
   }
 
+  // Navigate to the form page to post extra food for the selected zone
   const handleRespondToNeed = (zone) => {
     navigate('/form', {
       state: {
@@ -233,7 +245,7 @@ const OrgAlertsPage = () => {
 
       <main className="feed-content org-feed-content">
 
-        {/* Compact hero */}
+        {/* Compact hero with summary stats */}
         <section className="org-page-intro org-hero-card">
           <div className="org-page-heading-row">
             <div className="org-page-heading">
@@ -249,6 +261,7 @@ const OrgAlertsPage = () => {
               </div>
             </div>
 
+            {/* Summary stat cards */}
             <div className="org-coverage-summary">
               <div className="org-coverage-summary-card">
                 <strong>{spikeAlertCount}</strong>
@@ -266,7 +279,7 @@ const OrgAlertsPage = () => {
           </div>
         </section>
 
-        {/* Info banner */}
+        {/* Collapsible info banner explaining the alerts tab */}
         <section style={{
           background: '#e0f2fe',
           border: '1px solid #bae6fd',
@@ -334,7 +347,7 @@ const OrgAlertsPage = () => {
           <section className="org-demand-section" aria-labelledby="org-demand-intelligence">
             <div className="org-demand-layout">
 
-              {/* Left: map + compact alert list */}
+              {/* Left column: map and compact alert list */}
               <div className="org-demand-map-col">
                 <div className="org-alert-filter-row org-alert-filter-row--top">
                   <button
@@ -371,6 +384,7 @@ const OrgAlertsPage = () => {
                   defaultZoom={7}
                 />
 
+                {/* Alert card grid */}
                 {hasFilteredAlerts ? (
                   <div className="org-demand-alert-grid" role="list" aria-label={t('dashboard.intelligence.postcodeAlerts', 'Postcode alerts')}>
                     {filteredDemandAlerts.map((alert) => {
@@ -441,7 +455,7 @@ const OrgAlertsPage = () => {
                 )}
               </div>
 
-              {/* Right: detail panel */}
+              {/* Right column: detail panel for selected alert */}
               <article className="org-demand-primary-card">
                 {selectedAlert ? (
                   <>
@@ -468,6 +482,7 @@ const OrgAlertsPage = () => {
                 </h3>
                 <p className="org-demand-detail-reason">{selectedAlert.alertReason}</p>
 
+                {/* Evidence fields */}
                 <div className="org-demand-evidence">
                   <div className="org-demand-evidence-row">
                     <span>{t('dashboard.intelligence.fields.predictedWindow')}</span>
@@ -483,6 +498,7 @@ const OrgAlertsPage = () => {
                   </div>
                 </div>
 
+                {/* Key metric tiles */}
                 <div className="org-demand-metrics">
                   <div className="org-demand-metric">
                     <span>{t('dashboard.intelligence.metrics.demandLift')}</span>

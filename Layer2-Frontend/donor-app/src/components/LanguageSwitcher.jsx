@@ -10,6 +10,7 @@ const LANGUAGES = [
 const LanguageSwitcher = ({ dark = false }) => {
   const { i18n } = useTranslation()
 
+  // Save chosen language to local storage and apply it
   const handleLanguageChange = (lang) => {
     i18n.changeLanguage(lang)
     localStorage.setItem('preferredLanguage', lang)

@@ -34,7 +34,7 @@ except Exception as e:
 	AsyncIOScheduler = None
 	CronTrigger = None
 	APSCHEDULER_AVAILABLE = False
-	print(f"[WARN] APScheduler not available: {e}")
+	print(f" APScheduler not available: {e}")
 
 from demand_prediction.risk_scorer import RiskScorer
 
@@ -48,6 +48,7 @@ if not DATABASE_URL:
 
 app = FastAPI(title="Prediction Service")
 
+# Build list of allowed CORS origins from env var, fall back to local dev defaults
 _cors_origins = [o.strip() for o in os.getenv("CORS_ALLOWED_ORIGINS", "").split(",") if o.strip()]
 if not _cors_origins:
     _cors_origins = ["http://localhost:3004", "http://127.0.0.1:3004", "https://donor-app-dusky.vercel.app"]
@@ -60,6 +61,7 @@ app.add_middleware(
     allow_headers=["Authorization", "Content-Type"],
 )
 
+# Module-level singletons shared across request handlers
 database = databases.Database(DATABASE_URL) if DATABASE_URL else None
 risk_scorer: Optional[RiskScorer] = None
 scheduler: Optional[AsyncIOScheduler] = None
@@ -87,9 +89,9 @@ def _ensure_model_file(dest_path, url: str, label: str) -> None:
 	print(f"Downloading {label} from {url} ...")
 	try:
 		urllib.request.urlretrieve(url, dest_path)
-		print(f"[OK] {label} downloaded ({dest_path.stat().st_size // 1024} KB)")
+		print(f" {label} downloaded ({dest_path.stat().st_size // 1024} KB)")
 	except Exception as e:
-		print(f"[WARN] Failed to download {label}: {e}")
+		print(f" Failed to download {label}: {e}")
 
 
 def _ensure_models(models_dir) -> None:
@@ -100,7 +102,7 @@ def _ensure_models(models_dir) -> None:
 	_ensure_model_file(models_dir / "shap_surrogate.pkl",     os.getenv("MODEL_SHAP_URL", ""),        "shap_surrogate.pkl")
 
 
-# ─── Startup / Shutdown ──────────────────────────────────────────────────
+# Startup / Shutdown
 @app.on_event("startup")
 async def startup():
 	"""Initialize database connection and load ML models."""
@@ -116,9 +118,9 @@ async def startup():
 		# Auto-fetch model artifacts when URLs are provided in env vars.
 		_ensure_models(_models_dir)
 		risk_scorer = RiskScorer(models_dir=_models_dir)
-		print("[OK] Risk scorer models loaded successfully")
+		print(" Risk scorer models loaded successfully")
 	except Exception as e:
-		print(f"[WARN] Risk scorer models not available: {e}")
+		print(f" Risk scorer models not available: {e}")
 		risk_scorer = None
 
 	# Setup scheduler for periodic tasks (optional)
@@ -132,7 +134,7 @@ async def startup():
 		scheduler.start()
 	else:
 		scheduler = None
-		print("[WARN] Scheduler disabled; APScheduler not available")
+		print(" Scheduler disabled; APScheduler not available")
 
 
 @app.on_event("shutdown")
@@ -145,6 +147,7 @@ async def shutdown():
 		await database.disconnect()
 
 
+# SQL template for inserting or updating a postcode risk score row
 _UPSERT_RISK_SCORES = """
 	INSERT INTO postcode_risk_scores (
 		postcode, week_start, demand_risk_score, risk_label,
@@ -168,6 +171,7 @@ _UPSERT_RISK_SCORES = """
 
 
 def _upsert_params(postcode: str, week_start: date, score: float, top_features=None, confidence: float = 0.92) -> dict:
+	"""Build parameter dictionary for the upsert query from individual score fields."""
 	return {
 		"postcode": postcode,
 		"week_start": week_start,
@@ -276,7 +280,7 @@ async def _daily_gap_detection_job():
 	print(f"Daily gap detection complete: found {len(rows)} postcodes")
 
 
-# ─── Health Check ───────────────────────────────────────────────────────
+# Health Check
 @app.get("/health")
 async def health_check():
 	"""Check service health and model status."""
@@ -288,7 +292,7 @@ async def health_check():
 	}
 
 
-# ─── Models ──────────────────────────────────────────────────────────────
+# Models
 class DemandForecastRequest(BaseModel):
 	"""Request to forecast demand for a specific week."""
 	postcode: str
@@ -316,7 +320,7 @@ class SupplyGapRequest(BaseModel):
 	region_category: Optional[str] = None
 
 
-# ─── Endpoints ───────────────────────────────────────────────────────────
+# Endpoints
 @app.post("/predictions/demand-forecast", response_model=DemandForecastResponse)
 async def post_demand_forecast(req: DemandForecastRequest):
 	"""
@@ -448,6 +452,7 @@ async def post_postcode_risk(postcode: str):
 	}
 
 
+# Minimum number of historical claim records a postcode needs before ML scores are trusted
 COLD_START_THRESHOLD = 10  # minimum historical claim records per postcode before using ML scores
 
 
@@ -514,7 +519,7 @@ async def get_supply_gaps(region_category: Optional[str] = None):
 		postcode = row["postcode"]
 		count = record_counts.get(postcode, 0)
 		cold_start = count < COLD_START_THRESHOLD
-		# Data source: if models loaded and postcode has enough history → AI, else rule-based
+		# Data source: if models loaded and postcode has enough history, use AI, else rule-based
 		data_source = "ai_forecast" if (risk_scorer is not None and not cold_start) else "rule_based"
 		result.append({
 			"postcode": postcode,
@@ -530,7 +535,7 @@ async def get_supply_gaps(region_category: Optional[str] = None):
 
 @app.get('/predictions/all-risk-scores')
 async def api_all_risk_scores():
-	"""Return the latest risk score for every scored postcode — used by the coverage map."""
+	"""Return the latest risk score for every scored postcode, used by the coverage map."""
 	if not database:
 		raise HTTPException(status_code=503, detail="Database not configured")
 
@@ -584,12 +589,14 @@ async def api_gap_postcodes(radius_km: Optional[float] = None, lat: Optional[flo
 	db_rows = await database.fetch_all(query, postcodes)
 
 	def haversine_km(lat1, lon1, lat2, lon2):
+		"""Calculate great-circle distance in km between two lat/lon points."""
 		from math import radians, sin, cos, asin, sqrt
 		dlat = radians(lat2 - lat1)
 		dlon = radians(lon2 - lon1)
 		a = sin(dlat / 2) ** 2 + cos(radians(lat1)) * cos(radians(lat2)) * sin(dlon / 2) ** 2
 		return 2 * 6371 * asin(sqrt(a))
 
+	# Build a lookup map from postcode to coordinates
 	loc_map = {r['postcode']: (r['latitude'], r['longitude']) for r in db_rows}
 	for row in rows:
 		pc = row['postcode']
@@ -650,7 +657,7 @@ async def api_hotspots(limit: int = 50):
 	return result
 
 
-# ─── Batch Processing ────────────────────────────────────────────────────
+# Batch Processing
 @app.post("/batch/score-all-postcodes")
 async def batch_score_all_postcodes():
 	"""
@@ -681,7 +688,7 @@ async def batch_score_all_postcodes():
 	results = risk_scorer.score(df[df.columns.difference(["irsd_decile"])])
 	week_start = date.today() - timedelta(days=date.today().weekday())
 
-	# Detect degenerate ML output (all scores identical) → fall back to SEIFA rule
+	# Detect degenerate ML output (all scores identical), fall back to SEIFA rule
 	scores = results["demand_risk_score"].values
 	ml_degenerate = len(set(round(float(s), 3) for s in scores)) <= 1
 

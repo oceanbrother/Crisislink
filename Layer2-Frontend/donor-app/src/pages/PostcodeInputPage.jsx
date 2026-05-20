@@ -12,15 +12,18 @@ const PostcodeInputPage = () => {
   const [location, setLocation] = useState('')
   const [error, setError] = useState('')
 
+  // focus the text input on first render
   useEffect(() => {
     document.getElementById('location-input')?.focus()
   }, [])
 
+  // trim input and clear error on each keystroke
   const handleInputChange = (e) => {
     setLocation(e.target.value.slice(0, 60))
     if (error) setError('')
   }
 
+  // validate postcode or suburb then navigate to listings
   const handleSubmit = (e) => {
     e.preventDefault()
     const trimmed = location.trim()
@@ -36,6 +39,7 @@ const PostcodeInputPage = () => {
     }
   }
 
+  // request browser geolocation and pass coordinates to listings page
   const handleUseLocation = () => {
     if (!navigator.geolocation) {
       setError(t('postcode.noGeo', 'Geolocation is not supported by your browser.'))
@@ -72,10 +76,10 @@ const PostcodeInputPage = () => {
         </button>
       </header>
 
-      {/* Split body — fills remaining height exactly */}
+      {/* Split body */}
       <main style={{ flex: 1, display: 'flex', flexDirection: 'row', minHeight: 0 }}>
 
-        {/* Left: Image panel */}
+        {/* Left image panel */}
         <section style={{ position: 'relative', width: '50%', flexShrink: 0, overflow: 'hidden' }}>
           <img
             src={produceImg}
@@ -83,7 +87,7 @@ const PostcodeInputPage = () => {
             style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
           />
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to right, rgba(15,82,56,0.4), transparent), linear-gradient(to top, rgba(8,24,16,0.72) 0%, transparent 52%)' }} />
-          {/* Caption */}
+          {/* Caption overlay */}
           <div style={{ position: 'absolute', bottom: 52, left: 52, maxWidth: 420 }}>
             <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: 'rgba(255,255,255,0.93)', backdropFilter: 'blur(12px)', padding: '5px 14px', borderRadius: 999, border: '1px solid #e8e8e5', marginBottom: 18 }}>
               <span className="material-symbols-outlined" style={{ fontSize: 14, color: '#9a442d', fontVariationSettings: "'FILL' 1" }}>favorite</span>
@@ -98,14 +102,14 @@ const PostcodeInputPage = () => {
           </div>
         </section>
 
-        {/* Right: Form panel — fills height, form spreads with space-between */}
+        {/* Right form panel */}
         <section style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#f9f9f6', padding: '0 64px', overflowY: 'auto' }}>
           <form
             onSubmit={handleSubmit}
             style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'space-between', padding: '52px 0 48px' }}
           >
 
-            {/* 1 — Heading */}
+            {/* Heading block */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
               <h1 style={{ fontSize: 'clamp(34px, 3.6vw, 48px)', fontWeight: 700, color: '#1a1c1b', lineHeight: 1.15, letterSpacing: '-0.02em', margin: 0 }}>
                 Find your local circle
@@ -115,7 +119,7 @@ const PostcodeInputPage = () => {
               </p>
             </div>
 
-            {/* 2 — Input + buttons */}
+            {/* Input and action buttons */}
             <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 <label htmlFor="location-input" style={{ fontSize: 15, fontWeight: 600, color: '#404943', marginLeft: 2, letterSpacing: '0.01em' }}>
@@ -177,7 +181,7 @@ const PostcodeInputPage = () => {
               </button>
             </div>
 
-            {/* 3 — Bento grid */}
+            {/* Feature bento grid */}
             <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 14, paddingTop: 28, borderTop: '1px solid #e8e8e5' }}>
               <div
                 style={{ display: 'flex', alignItems: 'flex-start', gap: 16, padding: '18px 16px', borderRadius: 14, transition: 'background 0.2s', cursor: 'default' }}
@@ -208,7 +212,7 @@ const PostcodeInputPage = () => {
               </div>
             </div>
 
-            {/* 4 — Progress dots */}
+            {/* Progress dots */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10 }}>
               <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#0f5238', display: 'block' }} />
               <span style={{ width: 10, height: 10, borderRadius: '50%', background: '#e2e3e0', display: 'block' }} />

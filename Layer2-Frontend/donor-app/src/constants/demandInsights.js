@@ -1,12 +1,15 @@
 import { ALERT_DATA_SOURCE, ALERT_ZONE_SAMPLES } from '../utils/alertsSampleData'
 
+// Strip whitespace from a postcode value
 const normalizePostcode = (value) => String(value || '').trim()
 
+// Extract a numeric quantity from a listing, returning 0 if not a valid number
 const getNumericQuantity = (listing) => {
   const numeric = Number(listing?.quantity)
   return Number.isFinite(numeric) ? numeric : 0
 }
 
+// Return the highest-scoring sample alert zone, used when live data is unavailable
 const getFallbackTopAlert = () => {
   if (ALERT_ZONE_SAMPLES.length === 0) {
     return null
@@ -18,6 +21,7 @@ const getFallbackTopAlert = () => {
   })[0]
 }
 
+// Aggregate listing supply by postcode and enrich alert zones with live counts
 export const buildDemandInsights = (listings) => {
   const supplyByPostcode = (Array.isArray(listings) ? listings : []).reduce((accumulator, listing) => {
     if (listing?.status !== 'available') return accumulator
@@ -46,6 +50,7 @@ export const buildDemandInsights = (listings) => {
     }
   })
 
+  // Pick the top alert by demand lift, then confidence, then pressure score
   const topAlert = (() => {
     if (enriched.length === 0) return null
 

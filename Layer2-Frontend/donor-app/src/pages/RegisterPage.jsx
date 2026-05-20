@@ -17,7 +17,10 @@ import { registerUser, checkCodeAvailability } from '../services/api'
 import logoUrl from '../assets/outbackshare-logo.png'
 import donorBgImg from '../assets/Gemini_Generated_Image_9mucwo9mucwo9muc.png'
 
+// strip HTML-sensitive characters and trim to safe length
 const sanitiseText      = (v) => v.replace(/[<>"'`;]/g, '').slice(0, 500)
+
+// uppercase and strip non-alphanumeric/dash characters from code input
 const sanitiseCodeInput = (v) => v.toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 20)
 const DISTANCE_OPTIONS  = [5, 10, 20, 30, 50, 100]
 
@@ -44,12 +47,16 @@ const LABEL_BASE = {
   letterSpacing: '0.1em', textTransform: 'uppercase', color: '#6b7280', marginBottom: '10px',
 }
 const HELPER_BASE = { fontSize: '13px', color: '#9ca3af', marginTop: '7px', lineHeight: 1.5 }
+
+// return a filled primary button style for the given accent colour
 const BTN_PRIMARY = (accent) => ({
   width: '100%', padding: '17px 24px', borderRadius: '14px', border: 'none',
   cursor: 'pointer', background: accent, color: '#fff', fontSize: '16px',
   fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center',
   gap: '10px', transition: 'opacity 0.15s',
 })
+
+// return an outline button style for the given accent colour
 const BTN_OUTLINE = (accent, accentPale) => ({
   width: '100%', padding: '17px 24px', borderRadius: '14px',
   border: `1.5px solid ${accentPale}`, cursor: 'pointer',
@@ -57,8 +64,7 @@ const BTN_OUTLINE = (accent, accentPale) => ({
   display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '10px',
 })
 
-/* ─── Donor left panel ─── */
-
+// Donor left hero panel with background image and feature list
 function DonorHeroPanel() {
   return (
     <div style={{ position: 'relative', width: '100%', minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
@@ -114,7 +120,7 @@ function DonorHeroPanel() {
   )
 }
 
-/* ─── Org left panel — Sarah's pain point ─── */
+// Org left panel showing Sarah's coordinator pain points
 function OrgStoryPanel() {
   return (
     <div style={{ position: 'relative', width: '100%', minHeight: '100vh', display: 'flex', flexDirection: 'column', background: 'linear-gradient(160deg, #0d2b1a 0%, #152e1e 50%, #0f3d20 100%)' }}>
@@ -157,7 +163,7 @@ function OrgStoryPanel() {
             </div>
           </div>
 
-          {/* Pain points */}
+          {/* Pain points list */}
           <p style={{ fontSize: '11px', fontWeight: 700, letterSpacing: '0.2em', textTransform: 'uppercase', color: 'rgba(255,255,255,0.38)', marginBottom: '18px' }}>
             What she faces every week
           </p>
@@ -177,7 +183,7 @@ function OrgStoryPanel() {
             ))}
           </div>
 
-          {/* Bridge */}
+          {/* Bridge message */}
           <div style={{ padding: '18px 22px', background: 'rgba(177,240,206,0.07)', border: '1px solid rgba(177,240,206,0.18)', borderRadius: '14px' }}>
             <p style={{ fontSize: '15px', fontWeight: 700, color: '#b1f0ce', marginBottom: '6px' }}>
               For coordinators like Sarah &mdash; and the thousands facing these same challenges every week.
@@ -192,7 +198,7 @@ function OrgStoryPanel() {
   )
 }
 
-/* ─── Main component ─── */
+// Main registration and sign-in component
 const RegisterPage = () => {
   const { role } = useParams()
   const navigate  = useNavigate()
@@ -214,6 +220,7 @@ const RegisterPage = () => {
   const [submitLoading, setSubmitLoading] = useState(false)
   const [submitError,   setSubmitError]   = useState('')
 
+  // redirect invalid roles and pre-fill any stored code
   useEffect(() => {
     if (role !== 'donor' && role !== 'org') { navigate('/', { replace: true }); return }
     const stored = isDonor ? getStoredDonorCode() : getStoredOrgCode()
@@ -221,6 +228,7 @@ const RegisterPage = () => {
     setStep('signin')
   }, [role, isDonor, navigate])
 
+  // verify an existing code and navigate to the correct workspace
   const handleSignIn = async () => {
     setSubmitError('')
     const code = existingInput.trim()
@@ -243,6 +251,7 @@ const RegisterPage = () => {
     }
   }
 
+  // validate the registration form fields before proceeding to the code step
   const handleFormContinue = () => {
     setFormError('')
     if (!orgName.trim()) { setFormError(isDonor ? 'Business name is required.' : 'Organisation name is required.'); return }
@@ -252,19 +261,23 @@ const RegisterPage = () => {
     setGeneratedCode(''); setCodeMode('generate'); setSubmitError(''); setStep('code')
   }
 
+  // generate a new random code for the current role
   const handleGenerateCode = useCallback(() => {
     setGeneratedCode(isDonor ? generateDonorCode() : generateOrgCode())
     setCopied(false); setSubmitError('')
   }, [isDonor])
 
+  // copy the generated code to clipboard and show brief confirmation
   const handleCopy = useCallback(async () => {
     if (!generatedCode) return
     try { await navigator.clipboard.writeText(generatedCode); setCopied(true); setTimeout(() => setCopied(false), 2000) }
     catch { /* silent */ }
   }, [generatedCode])
 
+  // sanitise code input and clear any previous error
   const handleExistingInputChange = (e) => { setExistingInput(sanitiseCodeInput(e.target.value)); setSubmitError('') }
 
+  // confirm the chosen code, check availability, register if new, and navigate
   const handleConfirm = async () => {
     if (submitLoading) return
     const code = codeMode === 'existing' ? existingInput : generatedCode
@@ -315,9 +328,13 @@ const RegisterPage = () => {
   const accentPale  = isDonor ? '#ffdbd2' : '#b1f0ce'
   const accentLight = isDonor ? '#fc9174' : '#52b788'
 
+  // apply focus ring style matching the accent colour
   const focusStyle = (e) => { e.target.style.borderColor = accent; e.target.style.boxShadow = `0 0 0 3px ${accentPale}66` }
+
+  // remove focus ring on blur
   const blurStyle  = (e) => { e.target.style.borderColor = '#e2e3e0'; e.target.style.boxShadow = 'none' }
 
+  // navigate backwards through the multi-step form
   const backStep = () => {
     if (step === 'form') { setStep('signin'); setFormError('') }
     else if (step === 'code') { setStep('form'); setSubmitError('') }
@@ -349,15 +366,15 @@ const RegisterPage = () => {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', fontFamily: 'Inter, system-ui, sans-serif' }}>
 
-      {/* ── Left panel ── */}
+      {/* Left hero/story panel */}
       <div className="hidden lg:block" style={{ width: '42%', flexShrink: 0, position: 'sticky', top: 0, height: '100vh', overflowY: 'auto' }}>
         {isDonor ? <DonorHeroPanel /> : <OrgStoryPanel />}
       </div>
 
-      {/* ── Right panel ── */}
+      {/* Right form panel */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', background: '#f9f9f6', overflowY: 'auto', minHeight: '100vh' }}>
 
-        {/* Top strip */}
+        {/* Top navigation strip */}
         <div style={{
           position: 'sticky', top: 0, zIndex: 40, height: '64px',
           display: 'flex', alignItems: 'center', padding: '0 48px',
@@ -373,10 +390,10 @@ const RegisterPage = () => {
           </button>
         </div>
 
-        {/* Form body — fills the panel width with generous horizontal padding */}
+        {/* Form body */}
         <div style={{ flex: 1, padding: '52px 64px 72px', display: 'flex', flexDirection: 'column' }}>
 
-          {/* Step icon + heading — left aligned, large */}
+          {/* Step icon and heading */}
           <div style={{ display: 'flex', alignItems: 'flex-start', gap: '20px', marginBottom: '40px' }}>
             <div style={{ width: '72px', height: '72px', borderRadius: '20px', background: accentPale, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
               <span className="material-symbols-outlined" style={{ fontSize: '34px', color: accent }}>{stepMeta.icon}</span>
@@ -387,7 +404,7 @@ const RegisterPage = () => {
             </div>
           </div>
 
-          {/* ── SIGN IN ── */}
+          {/* Sign in step */}
           {step === 'signin' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
 
@@ -429,7 +446,7 @@ const RegisterPage = () => {
                 <div style={{ flex: 1, height: '1px', background: '#e2e3e0' }} />
               </div>
 
-              {/* New user block */}
+              {/* New user registration block */}
               <div style={{ padding: '28px', background: `${accentPale}33`, borderRadius: '18px', border: `1.5px solid ${accentPale}` }}>
                 <p style={{ fontSize: '13px', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.1em', color: accent, marginBottom: '6px' }}>
                   {isDonor ? 'Register Your Business' : 'Register Your Organisation'}
@@ -463,11 +480,11 @@ const RegisterPage = () => {
             </div>
           )}
 
-          {/* ── FORM ── */}
+          {/* Form step */}
           {step === 'form' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '28px' }}>
 
-              {/* Section intro */}
+              {/* Privacy notice */}
               <div style={{ padding: '22px 26px', background: `${accentPale}28`, borderRadius: '16px', border: `1px solid ${accentPale}` }}>
                 <p style={{ fontSize: '15px', color: '#374151', lineHeight: 1.65 }}>
                   {isDonor
@@ -476,7 +493,7 @@ const RegisterPage = () => {
                 </p>
               </div>
 
-              {/* Business / Org Name */}
+              {/* Business or org name field */}
               <div>
                 <p style={{ fontSize: '15px', color: '#374151', lineHeight: 1.6, marginBottom: '14px' }}>
                   {isDonor
@@ -500,7 +517,7 @@ const RegisterPage = () => {
                 </p>
               </div>
 
-              {/* Org type — org only */}
+              {/* Org type selector — shown only for organisations */}
               {!isDonor && (
                 <div>
                   <p style={{ fontSize: '15px', color: '#374151', lineHeight: 1.6, marginBottom: '14px' }}>
@@ -521,7 +538,7 @@ const RegisterPage = () => {
                 </div>
               )}
 
-              {/* Public Business Address (donor) / Service Address (org) */}
+              {/* Address field */}
               <div>
                 <p style={{ fontSize: '15px', color: '#374151', lineHeight: 1.6, marginBottom: '14px' }}>
                   {isDonor
@@ -547,7 +564,7 @@ const RegisterPage = () => {
                 </p>
               </div>
 
-              {/* Preferred Drop-off — donor only */}
+              {/* Preferred drop-off — shown only for donors */}
               {isDonor && (
                 <div>
                   <p style={{ fontSize: '15px', color: '#374151', lineHeight: 1.6, marginBottom: '14px' }}>
@@ -568,7 +585,7 @@ const RegisterPage = () => {
                 </div>
               )}
 
-              {/* Max Pickup Distance — org only */}
+              {/* Max pickup distance — shown only for organisations */}
               {!isDonor && (
                 <div>
                   <p style={{ fontSize: '15px', color: '#374151', lineHeight: 1.6, marginBottom: '14px' }}>
@@ -607,11 +624,11 @@ const RegisterPage = () => {
             </div>
           )}
 
-          {/* ── CODE ── */}
+          {/* Code step */}
           {step === 'code' && (
             <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
 
-              {/* Explain the code */}
+              {/* Code explanation */}
               <div style={{ padding: '22px 26px', background: `${accentPale}28`, borderRadius: '16px', border: `1px solid ${accentPale}` }}>
                 <p style={{ fontSize: '15px', color: '#374151', lineHeight: 1.65 }}>
                   Your access code is a short unique identifier that links to your {isDonor ? 'business' : 'organisation'} within the OutBackShare network.
@@ -619,7 +636,7 @@ const RegisterPage = () => {
                 </p>
               </div>
 
-              {/* Tabs */}
+              {/* Generate / existing code tabs */}
               <div style={{ display: 'flex', background: '#eeeeeb', borderRadius: '14px', padding: '5px', gap: '5px' }}>
                 {[{ id: 'generate', label: 'Get a new code' }, { id: 'existing', label: 'I have a code' }].map(tab => (
                   <button key={tab.id} onClick={() => { setCodeMode(tab.id); setSubmitError('') }}
@@ -636,7 +653,7 @@ const RegisterPage = () => {
 
               {codeMode === 'generate' && (
                 <>
-                  {/* Code display */}
+                  {/* Generated code display */}
                   <div style={{
                     borderRadius: '18px', padding: '32px', textAlign: 'center', minHeight: '108px',
                     display: 'flex', alignItems: 'center', justifyContent: 'center',

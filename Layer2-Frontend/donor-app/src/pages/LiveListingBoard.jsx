@@ -11,14 +11,16 @@ import LanguageSwitcher from '../components/LanguageSwitcher'
 import logoUrl from '../assets/outbackshare-logo.png'
 import textureImg from '../assets/post-food-texture.jpg'
 
-// ─── helpers ────────────────────────────────────────────────────────────────
+// helpers
 
+// returns the translated display name for a food category
 const getTranslatedCategory = (category, foodType, t) => {
   const resolvedCategory = resolveListingCategory(category, foodType)
   const option = FILTER_OPTIONS.find((item) => item.value === resolvedCategory)
   return t(`dashboard.tabs.${option?.key || 'other'}`, resolvedCategory)
 }
 
+// converts a timestamp to a human-readable relative time string
 const getRelativeTime = (createdAt, t) => {
   if (!createdAt) return t('listing.justNow')
   const created = new Date(createdAt)
@@ -32,8 +34,10 @@ const getRelativeTime = (createdAt, t) => {
   return t('listing.daysAgo', { count: days })
 }
 
+// normalises a dietary tag to lowercase with dashes
 const normalizeDietaryTag = (value) => String(value || '').trim().toLowerCase().replace(/\s+/g, '-')
 
+// maps a dietary tag value to its i18n translation key
 const resolveDietaryTranslationKey = (value) => {
   const normalized = normalizeDietaryTag(value)
   if (normalized === 'non-vegetarian') return 'nonVegetarian'
@@ -42,6 +46,7 @@ const resolveDietaryTranslationKey = (value) => {
   return normalized
 }
 
+// checks if a listing's dietary tags match the chosen filter value
 const matchesDietaryFilter = (tags, filterValue) => {
   if (filterValue === 'all') return true
   if (!Array.isArray(tags) || tags.length === 0) return false
@@ -52,9 +57,11 @@ const matchesDietaryFilter = (tags, filterValue) => {
   })
 }
 
+// splits a string into word tokens for prefix-matching search
 const tokenizeSearch = (value) =>
   String(value || '').toLowerCase().split(/[^\p{L}\p{N}]+/gu).filter(Boolean)
 
+// checks whether any of the given field values contain or start with the search term
 const matchesSearchFields = (fields, term) => {
   const normalizedTerm = String(term || '').trim().toLowerCase()
   if (!normalizedTerm) return true
@@ -67,6 +74,7 @@ const matchesSearchFields = (fields, term) => {
   })
 }
 
+// builds the list of listing fields to search based on what the user typed
 const getSearchableFields = (listing, term) => {
   const normalizedTerm = String(term || '').trim().toLowerCase()
   const primaryFields = [listing.foodType, listing.description]
@@ -78,6 +86,7 @@ const getSearchableFields = (listing, term) => {
   return [...primaryFields, ...secondaryFields]
 }
 
+// determines whether a listing was posted by us, claimed, collected, or is available
 const getListingViewState = (listing, orgCode) => {
   const ownerCode = String(listing?.orgCode || '').trim().toUpperCase()
   const currentOrgCode = String(orgCode || '').trim().toUpperCase()
@@ -121,18 +130,21 @@ const STATUS_BADGE = {
   available: { bg: 'rgba(15,82,56,0.88)',  color: '#fff',     label: (t) => t('dashboard.statusPills.available', 'Available') },
 }
 
+// parses a claim quantity input string to a number, returns null if invalid
 const parseClaimQuantityValue = (value) => {
   const parsed = Number.parseFloat(String(value ?? '').replace(',', '.').trim())
   if (Number.isFinite(parsed) === false) return null
   return parsed
 }
 
+// formats a numeric quantity for display, removing unnecessary decimal zeros
 const formatQuantityValue = (value) => {
   const numeric = Number(value)
   if (Number.isFinite(numeric) === false) return String(value ?? '')
   return Number.isInteger(numeric) ? String(numeric) : String(numeric.toFixed(2)).replace(/\.00$/, '')
 }
 
+// parses a date string and strips the time component so comparisons are date-only
 const normalizeDateOnly = (value) => {
   const raw = String(value || '').trim()
   if (!raw) return null
@@ -142,6 +154,7 @@ const normalizeDateOnly = (value) => {
   return parsed
 }
 
+// returns flags for whether a listing is expired, expires today, or has a date at all
 const getExpiryMeta = (expiryDate) => {
   const parsed = normalizeDateOnly(expiryDate)
   if (!parsed) return { hasDate: false, isToday: false, isExpired: false }
@@ -151,23 +164,28 @@ const getExpiryMeta = (expiryDate) => {
   return { hasDate: true, isToday: deltaDays === 0, isExpired: deltaDays < 0 }
 }
 
+// translates a storage condition key to a readable label
 const formatStorageCondition = (storageCondition, t) => {
   const value = String(storageCondition || '').trim()
   if (!value) return t('listing.storage.unknown', 'Not provided')
   return t(`listing.storage.${value}`, value)
 }
 
+// normalises an allergen tag string to lowercase trimmed form
 const normalizeAllergenTag = (tag) => String(tag || '').trim().toLowerCase()
 
+// extracts allergen tags from a listing regardless of which field name the backend used
 const getAllergenTags = (listing) => {
   if (Array.isArray(listing?.allergenTags)) return listing.allergenTags
   if (Array.isArray(listing?.allergen_tags)) return listing.allergen_tags
   return []
 }
 
+// reads storage condition from whichever field name the listing uses
 const getStorageCondition = (listing) =>
   String(listing?.storageCondition || listing?.storage_condition || '').trim()
 
+// translates a single allergen tag to its display label
 const formatAllergenTag = (tag, t) => {
   const normalized = normalizeAllergenTag(tag)
   if (!normalized) return ''
@@ -176,6 +194,7 @@ const formatAllergenTag = (tag, t) => {
   return t(`listing.allergens.${key}`, tag)
 }
 
+// checks if a listing has allergen and storage info filled in
 const hasSafetyFields = (listing) => {
   const allergenTags = getAllergenTags(listing).map((tag) => String(tag || '').trim()).filter(Boolean)
   const hasAllergenInfo = allergenTags.length > 0
@@ -183,6 +202,7 @@ const hasSafetyFields = (listing) => {
   return { hasAllergenInfo, hasStorageInfo, hasCompleteSafetyInfo: hasAllergenInfo && hasStorageInfo }
 }
 
+// returns the reason a listing cannot be claimed, or empty string if it can be claimed
 const getClaimBlockReason = (listing, t) => {
   const expiryMeta = getExpiryMeta(listing?.expiryDate)
   if (expiryMeta.isExpired) return t('listing.claimBlockedExpired', 'This listing is expired and can no longer be claimed.')
@@ -196,6 +216,7 @@ const getClaimBlockReason = (listing, t) => {
   return ''
 }
 
+// builds the quantity display string with correct singular/plural unit
 const formatApproxQuantityLabel = (listing, t) => {
   const quantity = Number(listing?.quantity)
   const formattedQuantity = formatQuantityValue(quantity)
@@ -210,6 +231,7 @@ const formatApproxQuantityLabel = (listing, t) => {
   return t('listing.approxQuantity', { quantity: formattedQuantity, unit: displayUnit })
 }
 
+// shows whether the listing came from us, a donor code, or another organisation
 const formatSourceLabel = (listing, orgCode, t) => {
   const ownerCode = String(listing?.orgCode || '').trim()
   const currentOrgCode = String(orgCode || '').trim()
@@ -218,7 +240,7 @@ const formatSourceLabel = (listing, orgCode, t) => {
   return t('listing.fromOrganizationCode', { code: ownerCode || t('dashboard.communityFallback', 'Community') })
 }
 
-// ─── inline style constants (dark-green theme) ───────────────────────────────
+// inline style constants (dark-green theme)
 
 const BTN_PRIMARY = {
   background: '#95d4b3', color: '#002114', border: 'none', borderRadius: 12,
@@ -248,7 +270,7 @@ const CHIP_ACTIVE = { background: '#95d4b3', color: '#002114', border: '1px soli
 const CHIP_INACTIVE = { background: 'rgba(255,255,255,0.06)', color: 'rgba(255,255,255,0.65)', border: '1px solid rgba(255,255,255,0.15)', borderRadius: 999, padding: '6px 14px', fontSize: 13, fontWeight: 500, cursor: 'pointer', whiteSpace: 'nowrap', transition: 'all 0.15s' }
 const DETAIL_ROW = { display: 'flex', alignItems: 'center', gap: 6, fontSize: 13, color: 'rgba(255,255,255,0.7)' }
 
-// ─── component ──────────────────────────────────────────────────────────────
+// component
 
 const LiveListingBoard = () => {
   const navigate = useNavigate()
@@ -288,6 +310,7 @@ const LiveListingBoard = () => {
 
   useEffect(() => { filterAndDisplayListings() }, [listings, searchTerm, filterCategory, filterFoodType, filterStatus, orgCode])
 
+  // fetches available, claimed, and collected listings and merges them into state
   const loadListings = async () => {
     setLoading(true); setError('')
     try {
@@ -313,6 +336,7 @@ const LiveListingBoard = () => {
     } finally { setLoading(false) }
   }
 
+  // applies all active filters and sort order to the listings and updates the display list
   const filterAndDisplayListings = () => {
     let filtered = listings
     if (filterCategory !== 'All') filtered = filtered.filter(l => resolveListingCategory(l.category, l.foodType) === filterCategory)
@@ -330,6 +354,7 @@ const LiveListingBoard = () => {
     setFilteredListings(filtered)
   }
 
+  // validates claim eligibility then opens the claim dialog
   const handleClaim = (listing) => {
     if (!listing) return
     const blockReason = getClaimBlockReason(listing, t)
@@ -337,6 +362,7 @@ const LiveListingBoard = () => {
     openClaimDialog(listing)
   }
 
+  // removes an existing claim for the current org from the backend
   const handleRemoveClaim = async (listingId) => {
     setRemovingId(listingId); setError(''); setSuccess('')
     try {
@@ -347,6 +373,7 @@ const LiveListingBoard = () => {
     finally { setRemovingId(null) }
   }
 
+  // marks a claimed listing as collected and refreshes the board
   const handlePickupConfirm = async (listingId) => {
     setPickingUpId(listingId); setError(''); setSuccess('')
     try {
@@ -357,9 +384,12 @@ const LiveListingBoard = () => {
     finally { setPickingUpId(null) }
   }
 
+  // navigates to the post food form in org mode
   const handlePostExcess = () => navigate('/form', { state: { orgMode: true, orgCode, orgName: orgName || `Organisation ${orgCode}` } })
+  // opens the post food form pre-filled with an existing listing for editing
   const handleEditListing = (listing) => navigate('/form', { state: { editMode: true, listing, orgMode: true, orgCode, orgName: orgName || `Organisation ${orgCode}` } })
 
+  // deletes a listing posted by this org and refreshes the board
   const handleRemoveListing = async (listing) => {
     setRemovingId(listing.id); setError(''); setSuccess('')
     try {
@@ -381,6 +411,7 @@ const LiveListingBoard = () => {
   const isBaseEmpty = listings.length === 0
   const isFilteredEmpty = !loading && !isBaseEmpty && filteredListings.length === 0
 
+  // resets all search and filter controls to their default values
   const clearFilters = () => { setSearchTerm(''); setFilterCategory('All'); setFilterFoodType('all'); setFilterStatus('all') }
 
   const listingSummary = useMemo(() =>
@@ -392,6 +423,7 @@ const LiveListingBoard = () => {
     [listings, orgCode]
   )
 
+  // opens the claim quantity dialog and pre-fills a sensible default quantity
   const openClaimDialog = (listing) => {
     setDetailDialogListing(null); setClaimDialogListing(listing)
     const quantity = Number(listing?.quantity || 0)
@@ -399,10 +431,14 @@ const LiveListingBoard = () => {
     setClaimQuantity(formatQuantityValue(initialQuantity))
     setClaimError(getClaimBlockReason(listing, t)); setError(''); setSuccess('')
   }
+  // closes the claim dialog if no claim request is in flight
   const closeClaimDialog = () => { if (claimingId) return; setClaimDialogListing(null); setClaimQuantity('1'); setClaimError('') }
+  // opens the details modal for a listing
   const openDetailsDialog = (listing) => { if (!listing) return; setDetailDialogListing(listing); setError(''); setSuccess('') }
+  // closes the details modal
   const closeDetailsDialog = () => setDetailDialogListing(null)
 
+  // increments or decrements the claim quantity within the allowed range
   const handleClaimQuantityAdjust = (delta) => {
     setClaimQuantity((prev) => {
       const current = parseClaimQuantityValue(prev) ?? 0
@@ -410,8 +446,10 @@ const LiveListingBoard = () => {
       return formatQuantityValue(next)
     })
   }
+  // sets the claim quantity to the full available amount
   const handleClaimAll = () => { if (!claimDialogListing) return; setClaimQuantity(formatQuantityValue(maxClaimQuantity)); setClaimError('') }
 
+  // validates quantity then submits the claim request to the backend
   const submitClaimQuantity = async () => {
     if (!claimDialogListing) return
     const blockReason = getClaimBlockReason(claimDialogListing, t)
@@ -434,7 +472,7 @@ const LiveListingBoard = () => {
   const detailDialogBlockReason = useMemo(() => detailDialogListing ? getClaimBlockReason(detailDialogListing, t) : '', [detailDialogListing, t])
   const detailDialogIsClaimBlocked = Boolean(detailDialogBlockReason)
 
-  // ─── render ───────────────────────────────────────────────────────────────
+  // render
 
   const SIDEBAR_NAV = [
     { icon: 'list_alt',       label: 'Listings',          active: true,  onClick: () => {} },
@@ -456,7 +494,7 @@ const LiveListingBoard = () => {
       {/* Texture overlay */}
       <div style={{ position: 'fixed', inset: 0, backgroundImage: `url(${textureImg})`, backgroundSize: 'cover', backgroundPosition: 'center', opacity: 0.04, pointerEvents: 'none', zIndex: 0 }} />
 
-      {/* ── Left Sidebar ── */}
+      {/* Left sidebar */}
       <aside style={{ width: 256, flexShrink: 0, position: 'fixed', top: 0, left: 0, bottom: 0, background: 'rgba(20,52,38,0.97)', borderRight: '1px solid rgba(149,212,179,0.2)', display: 'flex', flexDirection: 'column', zIndex: 50, overflowY: 'auto' }}>
         {/* Logo */}
         <div style={{ padding: '24px 20px 20px' }}>
@@ -537,7 +575,7 @@ const LiveListingBoard = () => {
         </div>
       </aside>
 
-      {/* ── Main area ── */}
+      {/* Main content area */}
       <div style={{ marginLeft: 256, flex: 1, display: 'flex', flexDirection: 'column', position: 'relative', zIndex: 1 }}>
 
         {/* Top header */}
@@ -567,10 +605,10 @@ const LiveListingBoard = () => {
           </div>
         </header>
 
-        {/* ── Page content ── */}
+        {/* Page content */}
         <main style={{ padding: '32px 40px 80px', flex: 1 }}>
 
-          {/* ── Summary strip ── */}
+          {/* Summary strip */}
           <div style={{ display: 'flex', gap: 12, marginBottom: 28, overflowX: 'auto', paddingBottom: 4 }}>
             {STATUS_OPTIONS.map((option) => {
               const cfg = SUMMARY_STYLE[option.key]
@@ -612,7 +650,7 @@ const LiveListingBoard = () => {
             </div>
           </div>
 
-          {/* ── Filter panel ── */}
+          {/* Filter panel */}
           <div style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 20, padding: '20px 24px', marginBottom: 28, backdropFilter: 'blur(12px)' }}>
             {/* Search */}
             <div style={{ position: 'relative', marginBottom: 16 }}>
@@ -707,7 +745,7 @@ const LiveListingBoard = () => {
             </div>
           )}
 
-          {/* ── Card grid / empty states ── */}
+          {/* Card grid and empty states */}
           {loading ? (
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 16, padding: '80px 0', color: 'rgba(255,255,255,0.5)' }}>
               <span className="material-symbols-outlined" style={{ fontSize: 48, color: 'rgba(149,212,179,0.4)' }}>hourglass_empty</span>
@@ -999,7 +1037,7 @@ const LiveListingBoard = () => {
         </main>
       </div>
 
-      {/* ── Claim modal ── */}
+      {/* Claim modal */}
       {claimDialogListing && (
         <div onClick={closeClaimDialog}
           style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(10,25,18,0.75)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
@@ -1070,7 +1108,7 @@ const LiveListingBoard = () => {
         </div>
       )}
 
-      {/* ── Details modal ── */}
+      {/* Details modal */}
       {detailDialogListing && (
         <div onClick={closeDetailsDialog}
           style={{ position: 'fixed', inset: 0, zIndex: 100, background: 'rgba(10,25,18,0.75)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
@@ -1119,7 +1157,7 @@ const LiveListingBoard = () => {
         </div>
       )}
 
-      {/* ── Chat modal ── */}
+      {/* Chat modal */}
       {chatClaimId && (
         <ChatModal claimId={chatClaimId} orgCode={orgCode} listingTitle={chatListingTitle} onClose={() => setChatClaimId(null)} />
       )}

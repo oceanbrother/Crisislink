@@ -13,7 +13,7 @@
  *          info  = UTF-8(donorOrgCode + "|" + claimerOrgCode + "|" + listingId)
  *        )
  *      The org codes in the `info` field bind the key to this specific
- *      donor–organisation pair, so the same ECDH output with different
+ *      donor-organisation pair, so the same ECDH output with different
  *      org codes produces a different AES key.
  *   5. Messages are encrypted with AES-256-GCM (random 96-bit IV per message).
  *   6. When the session ends (food collected), the ephemeral private key is
@@ -22,7 +22,7 @@
  * All operations use the browser's built-in Web Crypto API (crypto.subtle).
  */
 
-// ── Key generation ────────────────────────────────────────────────────────────
+// Key generation
 
 /**
  * Generate a fresh ephemeral EC P-256 key pair for this chat session.
@@ -36,7 +36,7 @@ export async function generateEphemeralKeyPair() {
   )
 }
 
-// ── Key serialisation ─────────────────────────────────────────────────────────
+// Key serialisation
 
 /**
  * Export the public key of a key pair as a JWK object (safe to send to server).
@@ -58,7 +58,7 @@ export async function importPublicKeyJwk(jwk) {
   )
 }
 
-// ── Shared key derivation ─────────────────────────────────────────────────────
+// Shared key derivation
 
 /**
  * Derive the session AES-256-GCM key from:
@@ -107,7 +107,7 @@ export async function deriveSharedKey(
   )
 }
 
-// ── Message encryption / decryption ──────────────────────────────────────────
+// Message encryption and decryption
 
 /**
  * Encrypt a UTF-8 plaintext string with AES-256-GCM.
@@ -143,8 +143,9 @@ export async function decryptMessage(aesKey, ciphertextB64, ivB64) {
   return new TextDecoder().decode(plainBuf)
 }
 
-// ── Internal helpers ──────────────────────────────────────────────────────────
+// Internal helpers
 
+// converts an ArrayBuffer to a base64 string, chunked to avoid call-stack overflow
 function _bufToBase64(buffer) {
   const bytes = new Uint8Array(buffer)
   // Chunk to avoid call-stack overflow on large messages
@@ -156,6 +157,7 @@ function _bufToBase64(buffer) {
   return btoa(binary)
 }
 
+// converts a base64 string back to an ArrayBuffer
 function _base64ToBuf(base64) {
   const binary = atob(base64)
   const bytes  = new Uint8Array(binary.length)

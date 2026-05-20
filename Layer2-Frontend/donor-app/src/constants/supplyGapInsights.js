@@ -1,29 +1,35 @@
 import { SUPPLY_GAP_DATA_SOURCE, SUPPLY_GAP_ZONE_SAMPLES } from '../utils/supplyGapSampleData'
 
+// Strip whitespace from a postcode value
 const normalizePostcode = (value) => String(value || '').trim()
 
+// Extract a numeric quantity from a listing, returning 0 if not a valid number
 const getNumericQuantity = (listing) => {
   const numeric = Number(listing?.quantity)
   return Number.isFinite(numeric) ? numeric : 0
 }
 
+// Safely parse a value to a finite number, returning 0 on failure
 const getNumericValue = (value) => {
   const numeric = Number(value)
   return Number.isFinite(numeric) ? numeric : 0
 }
 
+// Compute a resource requirement score combining pressure and SEIFA disadvantage
 const buildResourceRequirementScore = (zone) => {
   const pressure = getNumericValue(zone?.pressureScore)
   const seifaPenalty = Math.max(0, (1000 - getNumericValue(zone?.seifaScore)) / 6)
   return Math.round(pressure + seifaPenalty)
 }
 
+// Estimate total portions needed based on population and pressure score
 const buildEstimatedDemand = (zone) => {
   const pressure = getNumericValue(zone?.pressureScore)
   const population = getNumericValue(zone?.estimatedPopulationInNeed)
   return Math.max(60, Math.round(population * 0.22 + pressure * 1.9))
 }
 
+// Classify a zone into a coverage level based on listing count, coverage rate, and shortfall
 const formatCoverageLevel = ({ listingCount, coverageRatePercent, shortfallPortions }) => {
   if (listingCount <= 0 || coverageRatePercent < 35 || shortfallPortions >= 180) return 'none'
   if (coverageRatePercent < 60 || shortfallPortions >= 110) return 'low'
@@ -31,6 +37,7 @@ const formatCoverageLevel = ({ listingCount, coverageRatePercent, shortfallPorti
   return 'healthy'
 }
 
+// Aggregate live listing supply by postcode and compute gap metrics for each zone
 export const buildSupplyGapInsights = (listings) => {
   const supplyByPostcode = (Array.isArray(listings) ? listings : []).reduce((accumulator, listing) => {
     if (listing?.status !== 'available') return accumulator

@@ -42,6 +42,7 @@ const DonorHotspotsPage = () => {
     }
   }, [focusPostcode])
 
+  // Load live hotspot data from the API; fall back to sample data if unavailable
   useEffect(() => {
     let isCancelled = false
 
@@ -70,6 +71,7 @@ const DonorHotspotsPage = () => {
     }
   }, [focusPostcode])
 
+  // Add computed priority fields to each zone
   const enrichedHotspots = useMemo(() => {
     return hotspotZones.map((zone) => {
       const priorityScore = computeHotspotPriorityScore(zone)
@@ -83,10 +85,12 @@ const DonorHotspotsPage = () => {
     })
   }, [hotspotZones])
 
+  // Build unique region list for the region filter dropdown
   const regions = useMemo(() => {
     return ['all', ...new Set(enrichedHotspots.map((zone) => zone.region))]
   }, [enrichedHotspots])
 
+  // Apply region, distance, priority filters and sort the visible zones
   const visibleHotspots = useMemo(() => {
     let zones = [...enrichedHotspots]
 
@@ -107,6 +111,7 @@ const DonorHotspotsPage = () => {
       : zones.sort((a, b) => b.priorityScore - a.priorityScore)
   }, [distanceFilter, enrichedHotspots, priorityFilter, regionFilter, sortMode])
 
+  // Keep the selected postcode in sync when filters change the visible list
   useEffect(() => {
     setSelectedPostcode((currentSelection) => {
       if (visibleHotspots.some((zone) => zone.postcode === currentSelection)) {
@@ -116,11 +121,13 @@ const DonorHotspotsPage = () => {
     })
   }, [visibleHotspots])
 
+  // Find the full data object for the currently selected postcode
   const selectedHotspot = useMemo(() => {
     if (!selectedPostcode) return null
     return visibleHotspots.find((zone) => zone.postcode === selectedPostcode) || null
   }, [selectedPostcode, visibleHotspots])
 
+  // Count zones per priority band for the filter chip labels
   const priorityCounts = useMemo(() => {
     return enrichedHotspots.reduce(
       (counts, zone) => {
@@ -131,6 +138,7 @@ const DonorHotspotsPage = () => {
     )
   }, [enrichedHotspots])
 
+  // Convert zones to the shape expected by PostcodeMap
   const mapZones = useMemo(() => {
     return visibleHotspots.map((zone) => ({
       postcode: zone.postcode,
@@ -140,6 +148,7 @@ const DonorHotspotsPage = () => {
     }))
   }, [visibleHotspots])
 
+  // Pick the highest-priority zone to show in the top priority hint
   const topPriorityHotspot = useMemo(() => {
     if (visibleHotspots.length === 0) return null
     const ranked = [...visibleHotspots].sort((a, b) => {
@@ -164,6 +173,7 @@ const DonorHotspotsPage = () => {
           <DonorFeatureNav active="hotspots" postcode={focusPostcode} />
         </div>
 
+        {/* Hotspot board: header, filters, map, and detail panel */}
         <section className="hotspot-board" aria-label={t('hotspots.ariaLabel', 'Hotspot priority board')}>
           <div className="hotspot-board-header">
             <div className="hotspot-board-title-wrap">
@@ -202,6 +212,7 @@ const DonorHotspotsPage = () => {
               ) : null}
             </div>
 
+            {/* Priority filter chips */}
             <div className="hotspot-chip-filter-group hotspot-chip-filter-group--compact">
               <div className="hotspot-chip-row">
                 <button
@@ -243,6 +254,7 @@ const DonorHotspotsPage = () => {
           </div>
 
           <div className="hotspot-map-layout">
+            {/* Map column with sort and filter controls */}
             <div className="hotspot-map-col">
               <div className="hotspot-controls hotspot-controls--inline">
                 <div className="hotspot-sort-group">
@@ -277,9 +289,9 @@ const DonorHotspotsPage = () => {
                   <span>{t('hotspots.controls.distance', 'Dist.')}</span>
                   <select value={distanceFilter} onChange={(event) => setDistanceFilter(event.target.value)}>
                     <option value="all">{t('common.all', 'All')}</option>
-                    <option value="10">≤ 10 km</option>
-                    <option value="25">≤ 25 km</option>
-                    <option value="50">≤ 50 km</option>
+                    <option value="10">10 km</option>
+                    <option value="25">25 km</option>
+                    <option value="50">50 km</option>
                   </select>
                 </label>
               </div>
@@ -291,6 +303,7 @@ const DonorHotspotsPage = () => {
                 height={440}
               />
 
+              {/* Map legend */}
               <div className="hotspot-map-legend">
                 <span className="hotspot-legend-dot hotspot-legend-dot--critical" />
                 <span className="hotspot-legend-label">Critical</span>
@@ -307,6 +320,7 @@ const DonorHotspotsPage = () => {
               ) : null}
             </div>
 
+            {/* Detail panel for the selected postcode */}
             <aside className="hotspot-detail-panel">
               {selectedHotspot ? (
                 <>
@@ -322,6 +336,7 @@ const DonorHotspotsPage = () => {
                     {selectedHotspot.nearestHub?.name || selectedHotspot.region}
                   </p>
 
+                  {/* Key stats for selected zone */}
                   <div className="hotspot-detail-stats">
                     <div>
                       <span>{t('hotspots.fields.distance', 'Distance')}</span>
@@ -341,6 +356,7 @@ const DonorHotspotsPage = () => {
                     </div>
                   </div>
 
+                  {/* Items needed list */}
                   <h4 className="hotspot-needed-heading">{t('hotspots.neededHeading', 'Items needed')}</h4>
                   <ul className="hotspot-needed-list">
                     {selectedHotspot.neededItems.map((item) => (
